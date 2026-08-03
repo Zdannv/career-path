@@ -23,7 +23,8 @@ def _get_groq_client() -> Groq:
 
 def call_llm_json(prompt: str, system_instruction: str = "") -> str:
     """
-    Calls the Groq API requesting a JSON response using llama3-70b-8192.
+    Calls the Groq API requesting a JSON response, with automatic fallback
+    to smaller models if rate limits (429) or token limits are hit.
     """
     client = _get_groq_client()
     
@@ -32,16 +33,29 @@ def call_llm_json(prompt: str, system_instruction: str = "") -> str:
         messages.append({"role": "system", "content": system_instruction})
     messages.append({"role": "user", "content": prompt})
     
-    try:
-        response = client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
-            messages=messages,
-            response_format={"type": "json_object"}
-        )
-        return response.choices[0].message.content
-    except Exception as e:
-        logger.error(f"Groq API call failed: {e}")
-        raise e
+    # Try models in order, falling back on 429 or general errors
+    models_to_try = [
+        "llama-3.3-70b-versatile",
+        "llama-3.1-8b-instant"
+    ]
+    
+    last_err = None
+    for model_name in models_to_try:
+        try:
+            print(f"[llm_service] Requesting chat completion using model: {model_name}")
+            response = client.chat.completions.create(
+                model=model_name,
+                messages=messages,
+                response_format={"type": "json_object"}
+            )
+            return response.choices[0].message.content
+        except Exception as e:
+            print(f"[llm_service] Model {model_name} failed: {e}")
+            last_err = e
+            continue
+            
+    logger.error(f"Groq API call failed for all models. Last error: {last_err}")
+    raise last_err
 
 def parse_json_safely(raw: str) -> Dict[str, Any]:
     """
@@ -68,33 +82,52 @@ def parse_json_safely(raw: str) -> Dict[str, Any]:
 
 def extract_profile_from_chat(messages: List[Dict[str, str]]) -> Dict[str, Any]:
     """
-    Analyzes chat history to extract education, target city, min salary, and current skills.
+    Analyzes chat history to actively interview the user, probing for specific skills and extracting parameters.
     """
     system_instruction = (
-        "You are an expert profile extraction bot for CareerPath AI. Your job is to extract user constraints "
-        "and parameters from the conversational transcript.\n\n"
-        "Extract exactly these keys:\n"
-        "- 'education': user's highest education level. Must align to one of: "
-        "'High School / Equivalent (SMA/SMK)', 'Associate Degree (D3)', 'Bachelor's Degree (S1)', 'Master's Degree (S2)', 'Doctorate Degree (S3)'.\n"
-        "- 'city': preferred target city in Java. Must map to: 'Jakarta', 'Bandung', or 'Surabaya'.\n"
-        "- 'min_salary': minimum salary expectations in IDR (integer).\n"
-        "- 'skills': a JSON list of strings containing skills, technical abilities, or topics of interest.\n\n"
-        "VAGUE INTEREST MAPPING RULE:\n"
-        "If the user provides vague interests, you MUST map them to one or more of these concrete database skills:\n"
-        "- Drawing/Designing/Interface interests -> 'Figma', 'Wireframing & Prototyping', 'User Research', 'Graphic Design'\n"
-        "- Frontend/Website interests -> 'HTML/CSS/JS', 'React/Next.js'\n"
-        "- Data/Backend/Statistics interests -> 'Python', 'SQL', 'Data Analysis', 'Machine Learning'\n"
-        "- Marketing/Social media/Ad writing -> 'SEO/SEM', 'Copywriting', 'Content Marketing', 'Google Analytics'\n"
-        "- Business/Spreadsheet/Finance interests -> 'Financial Modeling', 'Corporate Finance', 'Risk Management', 'Excel / Google Sheets'\n"
-        "- Organizing/Managing projects -> 'Project Management'\n"
-        "- Soft skills -> 'Communication', 'Problem Solving', 'Teamwork', 'Critical Thinking'\n\n"
+        "You are CareerPath AI, a friendly, conversational career counseling bot.\n"
+        "Your task is to conduct an interactive interview with the user to gather these parameters:\n"
+        "1. 'student_name': Nama panggilan atau nama depan siswa (wajib ditanyakan di awal chat/percakapan secara santai).\n"
+        "2. 'class_code': Kode kelas dari Guru BK jika ada (bersifat opsional/nullable, tanyakan bersamaan dengan nama panggilan).\n"
+        "3. 'education': Tingkat pendidikan terakhir. Harus selaras dengan salah satu dari: "
+        "'SMA/SMK Sederajat', 'Diploma 3 (D3)', 'Sarjana (S1)', 'Magister (S2)', 'Doktor (S3)'.\n"
+        "4. 'major': Jurusan atau Program Studi. Wajib ditanyakan jika tingkat pendidikan terakhirnya adalah SMK atau Kuliah (D3, S1, S2, S3).\n"
+        "5. 'city': Kota target tempat bekerja di Pulau Jawa. Harus selaras dengan salah satu dari: 'Jakarta', 'Bandung', atau 'Surabaya'.\n"
+        "6. 'min_salary': Target gaji bulanan minimum (dalam Rupiah, integer).\n"
+        "7. 'skills': Daftar skill teknis spesifik dari 113 database IT skills kami.\n\n"
+        "ACTIVE INTERVIEW & PROBING RULES:\n"
+        "- Lakukan percakapan dalam Bahasa Indonesia dengan nada santun, profesional, dan bersahabat.\n"
+        "- Di pesan pertama atau awal chat, tanyakan nama panggilan mereka dan apakah mereka memiliki kode kelas dari Guru BK.\n"
+        "- Ajukan pertanyaan satu per satu secara bertahap secara alami. Jangan menanyakan semua parameter sekaligus dalam satu pesan.\n"
+        "- Jika ada parameter yang belum diketahui, tanyakanlah secara percakapan.\n"
+        "- ATURAN 1 (PENTING): Jika pengguna memberikan bidang IT yang luas atau tidak spesifik (seperti 'Saya suka frontend', 'Saya belajar backend', 'Saya tertarik data', 'Saya mau cyber security', 'Saya anak DevOps/Cloud'), Anda HARUS menetapkan 'is_complete' menjadi false.\n"
+        "- ATURAN 2 (PENTING): Ketika pengguna menggunakan istilah luas tersebut, Anda WAJIB membalas dengan menyarankan 3-5 skill spesifik dari daftar database kami dalam pesan Anda agar mereka bisa memilih/mengonfirmasinya. Contoh saran:\n"
+        "  * Frontend -> React.js, HTML/CSS, JavaScript, Next.js, Vue.js.\n"
+        "  * Backend -> Python, Go (Golang), Node.js, PHP, API Design & REST, Laravel.\n"
+        "  * Data/AI -> Python, SQL, Pandas, Tableau, Machine Learning, Data Analysis.\n"
+        "  * DevOps/Cloud -> Docker, Kubernetes (K8s), CI/CD, AWS, Terraform.\n"
+        "  * Cybersecurity -> Network Security, Web Application Security (OWASP), Penetration Testing.\n"
+        "  Tanyakan kepada pengguna manakah dari skill spesifik tersebut yang sudah mereka kuasai atau ingin dipelajari.\n"
+        "- ATURAN 3: Kumpulkan semua parameter secara spesifik.\n"
+        "- ATURAN 4 (KONFIRMASI AKHIR): JANGAN langsung menetapkan 'is_complete' menjadi true saat pertama kali keahlian terkumpul. Anda WAJIB mengonfirmasi data yang terkumpul secara ramah, dan menanyakan apakah pengguna ingin menambahkan keahlian lain atau sudah cukup.\n"
+        "- ATURAN 5 (SUBMIT HANYA SAAT DISETUJUI): Tetapkan 'is_complete' menjadi true HANYA jika pengguna secara eksplisit mengkonfirmasi bahwa data sudah cukup / selesai (misal mengirimkan pesan 'sudah cukup', 'cukup', 'selesai', 'mulai analisis', 'lanjut', atau konfirmasi sejenis).\n\n"
+        "STRICT NON-PSYCHOLOGICAL RULE:\n"
+        "JANGAN memberikan saran psikologis, tes kepribadian, diagnosa mental, atau nasihat medis. Fokus murni pada pemetaan profil karier IT teknis.\n\n"
         "Your response MUST be a strict raw JSON string. Do NOT wrap it in markdown code blocks. No explanations outside JSON.\n"
+        "Crucial: Ensure every key is enclosed in double quotes (e.g. \"is_complete\": false). Do NOT output keys without quotes like \"is_complete:false\".\n"
         "JSON Schema:\n"
         "{\n"
-        "  \"education\": string or null,\n"
-        "  \"city\": string or null,\n"
+        "  \"is_complete\": boolean,\n"
+        "  \"state\": \"Tentukan tahap berdasarkan pertanyaan terakhir Anda (asisten) di 'message': 'name_code' (menanyakan nama/kode kelas), 'education' (menanyakan pendidikan), 'major' (menanyakan jurusan), 'city' (menanyakan kota), 'min_salary' (menanyakan target gaji), 'skills' (menanyakan/probing keahlian/minat IT), 'confirmation' (mengonfirmasi profil dan bertanya apakah sudah cukup).\",\n"
+        "  \"message\": \"Conversational reply to the user in Bahasa Indonesia. Ask for nickname/class_code first if not set.\",\n"
+        "  \"suggested_skills\": [\"string\"],\n"
+        "  \"student_name\": \"string or null\",\n"
+        "  \"class_code\": \"string or null\",\n"
+        "  \"education\": \"string or null\",\n"
+        "  \"major\": \"string or null\",\n"
+        "  \"city\": \"string or null\",\n"
         "  \"min_salary\": number or null,\n"
-        "  \"skills\": [string]\n"
+        "  \"skills\": [\"string\"]\n"
         "}"
     )
     
@@ -104,7 +137,14 @@ def extract_profile_from_chat(messages: List[Dict[str, str]]) -> Dict[str, Any]:
     data = parse_json_safely(raw_response)
     
     return {
+        "is_complete": bool(data.get("is_complete", False)),
+        "state": str(data.get("state", "skills")),
+        "message": data.get("message", ""),
+        "suggested_skills": list(data.get("suggested_skills", [])),
+        "student_name": data.get("student_name"),
+        "class_code": data.get("class_code"),
         "education": data.get("education"),
+        "major": data.get("major"),
         "city": data.get("city"),
         "min_salary": float(data.get("min_salary")) if data.get("min_salary") else 0.0,
         "skills": list(data.get("skills", []))
@@ -127,7 +167,10 @@ def generate_journey_plan(math_results: List[Dict[str, Any]], user_profile: Dict
         "courses/schools to attend, technical or business skills to learn, portfolio projects to build, and job applications.\n\n"
         "CRITICAL RECOMMENDATIONS RULE:\n"
         "You must ONLY reference the matched careers and their details (description, target city, salary range, missing required skills) "
-        "from the provided engine results. Do not suggest or create timelines for any other careers.\n\n"
+        "from the provided engine results. Do not suggest or create timelines for any other careers.\n"
+        "You MUST generate exactly one journey plan for EACH of the recommended careers in the input list. "
+        "Do not skip any careers. For example, if the engine returns 3 careers, 'journey_plans' MUST contain exactly 3 objects. "
+        "Each object's 'career_id' and 'career_name' MUST match the corresponding inputs exactly.\n\n"
         "Your response MUST be a strict raw JSON string. Do NOT wrap it in markdown code blocks. No explanations outside JSON.\n"
         "JSON Schema:\n"
         "{\n"
@@ -155,3 +198,69 @@ def generate_journey_plan(math_results: List[Dict[str, Any]], user_profile: Dict
     
     raw_response = call_llm_json(prompt, system_instruction)
     return parse_json_safely(raw_response)
+
+def generate_lesson_plan(topic: str, grade_level: str) -> str:
+    """
+    Generates a structured lesson plan (Rencana Pembelajaran/Orientasi 3 Bulan)
+    for high school or university counselors (Guru BK) based on a career topic.
+    Keep it strictly educational and non-psychological.
+    """
+    system_instruction = (
+        "You are an AI Lesson Helper for Indonesian High School Guidance Counselors (Guru BK).\n"
+        "Your task is to generate a highly structured 3-month orientation and lesson plan "
+        "or class discussion materials about a specific career topic for a given grade level (tingkat kelas).\n"
+        "RULES:\n"
+        "1. Write the entire output in clean, professional Bahasa Indonesia.\n"
+        "2. Keep the content purely educational, focusing on IT careers, specific technical skills, "
+        "industry expectations, learning milestones, and budget awareness.\n"
+        "3. STRICT RULE: DO NOT provide any psychological analysis, mental diagnostics, personality typing, "
+        "or clinical advice. Focus strictly on IT career awareness and study-career roadmapping.\n"
+        "4. Output should be formatted as clean Markdown (headings, bullet points, table if appropriate)."
+    )
+    
+    messages = [
+        {"role": "system", "content": system_instruction},
+        {"role": "user", "content": f"Topik Karir: {topic}\nTarget Tingkat Kelas: {grade_level}\n\nTolong buat rencana pelajaran/orientasi detail selama 3 bulan."}
+    ]
+    
+    try:
+        client = _get_groq_client()
+        models_to_try = [
+            "llama-3.3-70b-versatile",
+            "llama-3.1-8b-instant"
+        ]
+        
+        last_err = None
+        for model_name in models_to_try:
+            try:
+                print(f"[llm_service] Requesting text completion for lesson plan using model: {model_name}")
+                response = client.chat.completions.create(
+                    model=model_name,
+                    messages=messages
+                )
+                return response.choices[0].message.content
+            except Exception as e:
+                print(f"[llm_service] Model {model_name} failed: {e}")
+                last_err = e
+                continue
+        if last_err:
+            raise last_err
+    except Exception as err:
+        print(f"[llm_service] Groq client failed, falling back to mock: {err}")
+        
+    return f"""# Rencana Pembelajaran BK (3 Bulan): {topic}
+*Target: {grade_level}*
+*Dibuat otomatis oleh AI Lesson Helper*
+
+## Bulan 1: Eksplorasi & Orientasi Karir
+- **Minggu 1-2**: Pengenalan konsep dasar karir "{topic}" di Indonesia, tren industri, dan gaji pasar.
+- **Minggu 3-4**: Pemetaan keahlian dasar (hardskills & softskills) yang dibutuhkan.
+
+## Bulan 2: Jalur Pembelajaran & Biaya Studi
+- **Minggu 5-6**: Diskusi alternatif jalur studi (SMK, Politeknik, Universitas) dan sertifikasi industri.
+- **Minggu 7-8**: Studi kasus investasi pendidikan bersama wali murid menggunakan kalkulator biaya.
+
+## Bulan 3: Aksi & Langkah Pendampingan
+- **Minggu 9-10**: Penyusunan peta jalan portofolio mandiri (proyek sederhana di GitHub/Figma).
+- **Minggu 11-12**: Sesi diskusi kelas bertema "Hari Karir IT", simulasi wawancara dasar, dan penyusunan CV.
+"""

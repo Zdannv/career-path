@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { GraduationCap, MapPin, Landmark, Hammer, ArrowLeft, RefreshCw, Save } from "lucide-react";
 import OpportunityOverview from "./OpportunityOverview";
 import JourneyTimeline from "./JourneyTimeline";
+import CostForecaster from "./CostForecaster";
 
 interface SkillItem {
   name: string;
@@ -43,7 +44,10 @@ interface IndividualJourneyPlan {
 interface DashboardProps {
   data: {
     extracted_params: {
+      student_name?: string;
+      class_code?: string;
       education: string;
+      major?: string;
       city: string;
       min_salary: number;
       skills: string[];
@@ -64,6 +68,25 @@ export default function Dashboard({ data, onRestart }: DashboardProps) {
   const [selectedCareerId, setSelectedCareerId] = useState<number>(defaultCareerId);
   const [saving, setSaving] = useState<boolean>(false);
   const [toast, setToast] = useState<{ show: boolean; title: string; message: string; type: "success" | "error" } | null>(null);
+  const [costForecast, setCostForecast] = useState<{
+    tuition_annual: number;
+    housing_monthly: number;
+    living_monthly: number;
+    duration_years: number;
+    total_cost: number;
+  } | null>(null);
+
+  const getEduDuration = (edu?: string) => {
+    if (!edu) return 4;
+    const lower = edu.toLowerCase();
+    if (lower.includes("s3") || lower.includes("doktor")) return 3;
+    if (lower.includes("s2") || lower.includes("magister")) return 2;
+    if (lower.includes("s1") || lower.includes("sarjana") || lower.includes("d4")) return 4;
+    if (lower.includes("d3") || lower.includes("diploma 3")) return 3;
+    if (lower.includes("d1") || lower.includes("d2") || lower.includes("diploma 1") || lower.includes("diploma 2")) return 2;
+    if (lower.includes("smk") || lower.includes("sma") || lower.includes("sederajat")) return 3;
+    return 4;
+  };
 
   const activePlan = journey_plan.journey_plans.find(
     (p) => p.career_id === selectedCareerId
@@ -85,12 +108,16 @@ export default function Dashboard({ data, onRestart }: DashboardProps) {
     setToast(null);
 
     const payload = {
+      student_name: extracted_params.student_name,
+      class_code: extracted_params.class_code,
       education: extracted_params.education,
+      major: extracted_params.major,
       city: extracted_params.city,
       min_salary: extracted_params.min_salary,
       skills: extracted_params.skills,
       opportunity_overview: journey_plan.opportunity_overview,
-      journey_plan: activePlan
+      journey_plan: activePlan,
+      cost_forecast: costForecast
     };
 
     try {
@@ -188,7 +215,10 @@ export default function Dashboard({ data, onRestart }: DashboardProps) {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-[10px] font-bold text-slate-700 max-w-7xl mx-auto w-full">
           <div className="px-3 py-2 rounded bg-white border border-slate-200 flex items-center gap-1.5 shadow-sm">
             <GraduationCap className="w-3.5 h-3.5 text-slate-500 shrink-0" />
-            <span className="truncate">{extracted_params.education || "Sarjana (S1)"}</span>
+            <span className="truncate">
+              {extracted_params.education || "Sarjana (S1)"}
+              {extracted_params.major ? ` - ${extracted_params.major}` : ""}
+            </span>
           </div>
           <div className="px-3 py-2 rounded bg-white border border-slate-200 flex items-center gap-1.5 shadow-sm">
             <MapPin className="w-3.5 h-3.5 text-slate-500 shrink-0" />
@@ -223,6 +253,14 @@ export default function Dashboard({ data, onRestart }: DashboardProps) {
               <JourneyTimeline
                 overviewText={journey_plan.opportunity_overview}
                 plan={activePlan}
+              />
+            </div>
+
+            {/* Cost Forecaster Section */}
+            <div className="lg:col-span-12 mt-2">
+              <CostForecaster
+                defaultDurationYears={getEduDuration(extracted_params.education)}
+                onChangeForecast={setCostForecast}
               />
             </div>
           </div>

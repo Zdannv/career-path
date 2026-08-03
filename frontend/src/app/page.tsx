@@ -19,17 +19,17 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen w-full bg-slate-50 flex items-center justify-center p-0 sm:p-4">
+    <div className="min-h-screen w-full bg-slate-50 flex items-center justify-center p-0 sm:p-6">
       {view === "onboarding" ? (
-        /* Chat Onboarding keeps a centered mobile container because conversational chat looks best inside a phone width */
-        <div className="w-full min-h-screen sm:min-h-[800px] sm:max-w-md sm:rounded-xl sm:border sm:border-slate-200 bg-white flex flex-col shadow-sm overflow-hidden">
+        /* Chat Onboarding supports split desktop layout with live summary */
+        <div className="w-full min-h-screen sm:min-h-[85vh] sm:max-w-5xl sm:rounded-xl sm:border sm:border-slate-200 bg-white flex flex-col shadow-md overflow-hidden transition-all duration-300">
           <div className="flex-1 flex flex-col overflow-hidden relative">
             <ChatOnboarding onComplete={handleOnboardingComplete} />
           </div>
         </div>
       ) : (
-        /* Dashboard expands fully on desktop to support a dual-pane responsive layout, and adapts on mobile */
-        <div className="w-full min-h-screen sm:min-h-[800px] sm:rounded-xl sm:border sm:border-slate-200 bg-white flex flex-col shadow-sm overflow-hidden max-w-7xl">
+        /* Dashboard expands to max-w-7xl for side-by-side matching and cost planning sheets */
+        <div className="w-full min-h-screen sm:min-h-[90vh] sm:rounded-xl sm:border sm:border-slate-200 bg-white flex flex-col shadow-md overflow-hidden max-w-7xl transition-all duration-300">
           <div className="flex-1 flex flex-col overflow-hidden relative">
             <Dashboard data={results} onRestart={handleRestart} />
           </div>
