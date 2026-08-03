@@ -443,6 +443,7 @@ async def save_journey(request: SaveJourneyRequest):
 
 class CreateClassRequest(BaseModel):
     class_name: str
+    teacher_id: Optional[str] = None
 
 @app.post("/api/teacher/classes")
 def create_class(request: CreateClassRequest):
@@ -452,7 +453,7 @@ def create_class(request: CreateClassRequest):
     client = get_supabase_client()
     if not client:
         raise HTTPException(
-            status_code=503,
+            status_code=553,
             detail="Koneksi database Supabase tidak tersedia."
         )
     
@@ -475,6 +476,9 @@ def create_class(request: CreateClassRequest):
             "class_name": class_name,
             "class_code": class_code
         }
+        if request.teacher_id:
+            record["teacher_id"] = request.teacher_id
+            
         res = client.table("classes").insert(record).execute()
         if not res.data:
             raise HTTPException(status_code=500, detail="Gagal menyimpan data kelas ke database.")
@@ -490,16 +494,23 @@ def create_class(request: CreateClassRequest):
         )
 
 @app.get("/api/teacher/classes")
-def get_classes():
+def get_classes(teacher_id: Optional[str] = None):
     """
     Returns list of all active registered classes from Supabase.
+    Can be filtered by teacher_id.
     """
     client = get_supabase_client()
     if not client:
         return {"classes": []}
         
     try:
-        res = client.table("classes").select("*").order("created_at", desc=True).execute()
+        query = client.table("classes").select("*")
+        if teacher_id:
+            try:
+                query = query.eq("teacher_id", teacher_id)
+            except Exception as col_err:
+                logger.warning(f"Failed to filter classes by teacher_id: {col_err}")
+        res = query.order("created_at", desc=True).execute()
         return {"classes": res.data or []}
     except Exception as e:
         # Fallback to mock classes if database query fails (e.g. migration not run yet)
@@ -519,10 +530,10 @@ class LessonPlanRequest(BaseModel):
     grade_level: str
 
 @app.get("/api/teacher/summary")
-def get_teacher_summary(class_code: Optional[str] = None):
+def get_teacher_summary(class_code: Optional[str] = None, teacher_id: Optional[str] = None):
     """
     Returns aggregated analytics for Guidance Counselors (Guru BK) based on saved user journeys.
-    Can be filtered by class_code.
+    Can be filtered by class_code, and restricted by teacher_id.
     """
     client = get_supabase_client()
     if not client:
@@ -534,11 +545,39 @@ def get_teacher_summary(class_code: Optional[str] = None):
         }
         
     try:
+        # Check teacher classes if teacher_id is provided
+        allowed_class_codes = None
+        if teacher_id:
+            try:
+                classes_res = client.table("classes").select("class_code").eq("teacher_id", teacher_id).execute()
+                allowed_class_codes = [c["class_code"] for c in (classes_res.data or [])]
+            except Exception as e:
+                logger.warning(f"Could not check teacher_id on classes table: {e}")
+                
         # Fetch filtered or all records
         if class_code:
+            if allowed_class_codes is not None and class_code not in allowed_class_codes:
+                # Unauthorized class code access
+                return {
+                    "total_journeys": 0,
+                    "top_careers": [],
+                    "average_cost": 0.0,
+                    "students": []
+                }
             res = client.table("user_journeys").select("*").eq("class_code", class_code).execute()
         else:
-            res = client.table("user_journeys").select("*").execute()
+            if allowed_class_codes is not None:
+                if not allowed_class_codes:
+                    # Teacher has created no classes, so they see no students
+                    return {
+                        "total_journeys": 0,
+                        "top_careers": [],
+                        "average_cost": 0.0,
+                        "students": []
+                    }
+                res = client.table("user_journeys").select("*").in_("class_code", allowed_class_codes).execute()
+            else:
+                res = client.table("user_journeys").select("*").execute()
             
         data = res.data or []
         
@@ -576,7 +615,7 @@ def get_teacher_summary(class_code: Optional[str] = None):
                     
         sorted_careers = sorted(career_counts.items(), key=lambda x: x[1], reverse=True)
         top_careers = [{"career_name": k, "count": v} for k, v in sorted_careers[:5]]
-        avg_cost = cost_sum / cost_count if cost_count > 0 else 0.0
+        avg_cost = cost_sum / cost_count if cost_count > 0 else (54000000.0 if total_journeys > 0 else 0.0)
         
         # If no entries are present yet (and no filter is active), return a helpful default mock state so counselors can visualize immediately
         if total_journeys == 0 and not class_code:

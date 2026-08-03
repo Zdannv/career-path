@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import Navbar from "@/components/Navbar";
+import PostHogClient from "@/components/PostHogClient";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -19,16 +21,22 @@ export const metadata: Metadata = {
 
 export default function RootLayout({
   children,
-  }: Readonly<{
-    children: React.ReactNode;
-  }>) {
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
   return (
     <html
       lang="id"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
       suppressHydrationWarning
     >
-      <body className="min-h-full flex flex-col" suppressHydrationWarning>{children}</body>
+      <body className="min-h-full flex flex-col bg-slate-50" suppressHydrationWarning>
+        <PostHogClient />
+        <Navbar />
+        <main className="flex-1 w-full flex flex-col">
+          {children}
+        </main>
+      </body>
     </html>
   );
 }

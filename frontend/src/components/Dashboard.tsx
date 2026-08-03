@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { GraduationCap, MapPin, Landmark, Hammer, ArrowLeft, RefreshCw, Save } from "lucide-react";
+import { GraduationCap, MapPin, Landmark, Hammer, ArrowLeft, RefreshCw, Save, Star } from "lucide-react";
 import OpportunityOverview from "./OpportunityOverview";
 import JourneyTimeline from "./JourneyTimeline";
 import CostForecaster from "./CostForecaster";
@@ -75,6 +75,30 @@ export default function Dashboard({ data, onRestart }: DashboardProps) {
     duration_years: number;
     total_cost: number;
   } | null>(null);
+
+  // CSAT Rating State
+  const [csatRating, setCsatRating] = useState<number | null>(null);
+  const [hoveredRating, setHoveredRating] = useState<number | null>(null);
+  const [csatSubmitted, setCsatSubmitted] = useState<boolean>(false);
+
+  const handleCsatSubmit = (score: number) => {
+    setCsatRating(score);
+    setCsatSubmitted(true);
+    // Track via PostHog if available
+    try {
+      if (typeof window !== "undefined") {
+        const posthogLib = require("posthog-js").default;
+        posthogLib.capture("csat_rating_submitted", {
+          score: score,
+          student_name: extracted_params.student_name,
+          education: extracted_params.education,
+          major: extracted_params.major
+        });
+      }
+    } catch (e) {
+      console.warn("PostHog tracking failed:", e);
+    }
+  };
 
   const getEduDuration = (edu?: string) => {
     if (!edu) return 4;
@@ -275,6 +299,40 @@ export default function Dashboard({ data, onRestart }: DashboardProps) {
             </button>
           </div>
         )}
+
+        {/* CSAT Rating Component */}
+        <div className="p-4 lg:p-6 border-t border-slate-200 mt-8 max-w-7xl mx-auto w-full">
+          <div className="bg-white p-6 rounded-lg border border-slate-200 shadow-sm text-center space-y-4 max-w-xl mx-auto">
+            <h3 className="font-bold text-sm text-slate-900">Seberapa terbantu kamu dengan rencana ini?</h3>
+            {!csatSubmitted ? (
+              <div className="flex justify-center items-center gap-2">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <button
+                    key={star}
+                    onClick={() => handleCsatSubmit(star)}
+                    onMouseEnter={() => setHoveredRating(star)}
+                    onMouseLeave={() => setHoveredRating(null)}
+                    className="p-1 cursor-pointer transition-transform transform hover:scale-125 focus:outline-none"
+                    title={`Beri rating ${star} dari 5`}
+                  >
+                    <Star
+                      className={`w-8 h-8 transition-colors ${
+                        star <= (hoveredRating ?? csatRating ?? 0)
+                          ? "text-amber-400 fill-amber-400"
+                          : "text-slate-350"
+                      }`}
+                    />
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <div className="space-y-1 py-2 animate-pulse">
+                <p className="text-xs text-emerald-600 font-bold">Terima kasih atas penilaian Anda!</p>
+                <p className="text-[10px] text-slate-500 font-medium">Feedback Anda membantu kami terus menyempurnakan rekomendasi karir IT CareerPath AI.</p>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );

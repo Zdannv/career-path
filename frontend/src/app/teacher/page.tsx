@@ -2,8 +2,9 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { 
-  GraduationCap, 
+import { useRouter } from "next/navigation";
+import { supabase } from "@/lib/supabaseClient";
+import {  GraduationCap, 
   Users, 
   Wallet, 
   BookOpen, 
@@ -64,17 +65,44 @@ export default function TeacherDashboard() {
   const [createdClassCode, setCreatedClassCode] = useState<string | null>(null);
   const [copiedCodeIndex, setCopiedCodeIndex] = useState<number | null>(null);
 
-  // Fetch Analytics & Classes on Mount
-  useEffect(() => {
-    fetchAnalytics();
-    fetchClasses();
-  }, []);
+  const router = useRouter();
+  const [checkingAuth, setCheckingAuth] = useState<boolean>(true);
+  const [teacherId, setTeacherId] = useState<string | null>(null);
 
-  const fetchClasses = async () => {
+  // Fetch Analytics & Classes on Mount after checking auth
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session) {
+        router.push("/teacher/login");
+      } else {
+        setTeacherId(session.user.id);
+        setCheckingAuth(false);
+        fetchAnalytics(undefined, session.user.id);
+        fetchClasses(session.user.id);
+      }
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!session) {
+        router.push("/teacher/login");
+      } else {
+        setTeacherId(session?.user?.id ?? null);
+        setCheckingAuth(false);
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [router]);
+
+  async function fetchClasses(tId?: string) {
     setLoadingClasses(true);
     setClassesWarning(null);
     try {
-      const res = await fetch("http://localhost:8000/api/teacher/classes");
+      const targetId = tId || teacherId;
+      const queryParam = targetId ? `?teacher_id=${targetId}` : "";
+      const res = await fetch(`http://localhost:8000/api/teacher/classes${queryParam}`);
       if (!res.ok) {
         throw new Error("Gagal mengambil daftar kelas.");
       }
@@ -88,7 +116,7 @@ export default function TeacherDashboard() {
     } finally {
       setLoadingClasses(false);
     }
-  };
+  }
 
   const handleCreateClass = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -100,7 +128,7 @@ export default function TeacherDashboard() {
       const res = await fetch("http://localhost:8000/api/teacher/classes", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ class_name: newClassName })
+        body: JSON.stringify({ class_name: newClassName, teacher_id: teacherId })
       });
       if (!res.ok) {
         const errorData = await res.json();
@@ -117,12 +145,17 @@ export default function TeacherDashboard() {
     }
   };
 
-  const fetchAnalytics = async (code?: string) => {
+  async function fetchAnalytics(code?: string, tId?: string) {
     setLoadingAnalytics(true);
     setAnalyticsError(null);
     try {
-      const queryParam = code ? `?class_code=${encodeURIComponent(code)}` : "";
-      const res = await fetch(`http://localhost:8000/api/teacher/summary${queryParam}`);
+      const targetId = tId || teacherId;
+      const params = [];
+      if (code) params.push(`class_code=${encodeURIComponent(code)}`);
+      if (targetId) params.push(`teacher_id=${targetId}`);
+      const queryStr = params.length > 0 ? `?${params.join("&")}` : "";
+      
+      const res = await fetch(`http://localhost:8000/api/teacher/summary${queryStr}`);
       if (!res.ok) {
         throw new Error("Gagal mengambil data ringkasan siswa.");
       }
@@ -133,7 +166,7 @@ export default function TeacherDashboard() {
     } finally {
       setLoadingAnalytics(false);
     }
-  };
+  }
 
   const handleFilterSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -213,6 +246,15 @@ export default function TeacherDashboard() {
       maximumFractionDigits: 0
     }).format(num);
   };
+
+  if (checkingAuth) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center space-y-3">
+        <Loader2 className="w-8 h-8 animate-spin text-slate-500" />
+        <p className="text-xs text-slate-500 font-bold">Memverifikasi sesi Guru BK...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 font-sans p-4 md:p-8 w-full flex justify-center">
