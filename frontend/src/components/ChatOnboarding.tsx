@@ -32,6 +32,22 @@ export default function ChatOnboarding({ onComplete }: ChatOnboardingProps) {
   const [bannerValidating, setBannerValidating] = useState(false);
   const [bannerSubmitted, setBannerSubmitted] = useState(false);
 
+  const [extractedParams, setExtractedParams] = useState<ExtractedParams>({
+    student_name: null,
+    class_code: null,
+    education: null,
+    major: null,
+    city: null,
+    min_salary: 0,
+    skills: []
+  });
+
+  // Sync ref with extractedParams to avoid stale closures in setTimeout
+  const extractedParamsRef = useRef<ExtractedParams>(extractedParams);
+  useEffect(() => {
+    extractedParamsRef.current = extractedParams;
+  }, [extractedParams]);
+
   const handleBannerSubmit = async () => {
     if (!bannerName.trim() || !bannerCode.trim()) return;
     setBannerError("");
@@ -54,19 +70,26 @@ export default function ChatOnboarding({ onComplete }: ChatOnboardingProps) {
       setBannerValidating(false);
     }
 
-    // Lock name + class code into extractedParams
-    setExtractedParams(prev => ({
-      ...prev,
+    const freshParams = {
       student_name: bannerName.trim(),
       class_code: bannerCode.trim().toUpperCase(),
-    }));
+      education: null,
+      major: null,
+      city: null,
+      min_salary: 0,
+      skills: []
+    };
+
+    // Lock name + class code into extractedParams state & ref immediately
+    setExtractedParams(freshParams);
+    extractedParamsRef.current = freshParams;
 
     // Inject a natural opening into the chat so AI knows
     const joinMsg = `Nama saya ${bannerName.trim()} dan kode kelas saya adalah ${bannerCode.trim().toUpperCase()}`;
     const newMsg: Message = { role: "user", content: joinMsg };
     const updated = [...messages, newMsg];
     setMessages(updated);
-    sendMessageToBackend(updated);
+    sendMessageToBackend(updated, freshParams);
     setBannerSubmitted(true);
     setShowClassBanner(false);
   };
@@ -81,16 +104,6 @@ export default function ChatOnboarding({ onComplete }: ChatOnboardingProps) {
   const [inputText, setInputText] = useState<string>("");
   const [isWaiting, setIsWaiting] = useState<boolean>(false);
   const [currentStep, setCurrentStep] = useState<number>(0); // 0: Chatting, 1: Loading Logs
-  const [extractedParams, setExtractedParams] = useState<ExtractedParams>({
-    student_name: null,
-    class_code: null,
-    education: null,
-    major: null,
-    city: null,
-    min_salary: 0,
-    skills: []
-  });
-
   // Slider or inline widgets state
   const [salaryInput, setSalaryInput] = useState<number>(6000000);
   const [loadingLogs, setLoadingLogs] = useState<string[]>([]);
@@ -144,7 +157,7 @@ export default function ChatOnboarding({ onComplete }: ChatOnboardingProps) {
     }
   }, [currentStep]);
 
-  const sendMessageToBackend = async (nextMessages: Message[]) => {
+  const sendMessageToBackend = async (nextMessages: Message[], overrideParams?: ExtractedParams) => {
     setIsWaiting(true);
     try {
       const response = await fetch("http://localhost:8000/api/chat-journey", {
@@ -154,7 +167,7 @@ export default function ChatOnboarding({ onComplete }: ChatOnboardingProps) {
           messages: nextMessages
             .filter(m => !m.content.includes("Maaf, terjadi kesalahan:") && !m.content.includes("Gagal terhubung"))
             .map(m => ({ role: m.role, content: m.content })),
-          current_params: extractedParams
+          current_params: overrideParams || extractedParamsRef.current
         })
       });
 
@@ -219,15 +232,15 @@ export default function ChatOnboarding({ onComplete }: ChatOnboardingProps) {
           const finalData = {
             ...data,
             extracted_params: {
-              student_name: !isNullOrEmpty(data.extracted_params?.student_name) ? data.extracted_params.student_name : extractedParams.student_name,
-              class_code: !isNullOrEmpty(data.extracted_params?.class_code) ? data.extracted_params.class_code : extractedParams.class_code,
-              education: !isNullOrEmpty(data.extracted_params?.education) ? data.extracted_params.education : extractedParams.education,
-              major: !isNullOrEmpty(data.extracted_params?.major) ? data.extracted_params.major : extractedParams.major,
-              city: !isNullOrEmpty(data.extracted_params?.city) ? data.extracted_params.city : extractedParams.city,
-              min_salary: (data.extracted_params?.min_salary && data.extracted_params.min_salary > 0) ? data.extracted_params.min_salary : extractedParams.min_salary,
+              student_name: !isNullOrEmpty(data.extracted_params?.student_name) ? data.extracted_params.student_name : extractedParamsRef.current.student_name,
+              class_code: !isNullOrEmpty(data.extracted_params?.class_code) ? data.extracted_params.class_code : extractedParamsRef.current.class_code,
+              education: !isNullOrEmpty(data.extracted_params?.education) ? data.extracted_params.education : extractedParamsRef.current.education,
+              major: !isNullOrEmpty(data.extracted_params?.major) ? data.extracted_params.major : extractedParamsRef.current.major,
+              city: !isNullOrEmpty(data.extracted_params?.city) ? data.extracted_params.city : extractedParamsRef.current.city,
+              min_salary: (data.extracted_params?.min_salary && data.extracted_params.min_salary > 0) ? data.extracted_params.min_salary : extractedParamsRef.current.min_salary,
               skills: (data.extracted_params?.skills && data.extracted_params.skills.length > 0)
                 ? data.extracted_params.skills
-                : extractedParams.skills
+                : extractedParamsRef.current.skills
             }
           };
           onComplete(finalData);
