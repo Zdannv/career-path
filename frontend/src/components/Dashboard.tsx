@@ -57,6 +57,7 @@ interface DashboardProps {
       opportunity_overview: string;
       journey_plans: IndividualJourneyPlan[];
     };
+    pre_saved_id?: string | null;
   };
   onRestart: () => void;
   isReadOnly?: boolean;
@@ -68,8 +69,9 @@ export default function Dashboard({ data, onRestart, isReadOnly = false }: Dashb
   const defaultCareerId = recommendations.length > 0 ? recommendations[0].career_id : 0;
   const [selectedCareerId, setSelectedCareerId] = useState<number>(defaultCareerId);
    const [saving, setSaving] = useState<boolean>(false);
-  const [savedId, setSavedId] = useState<string | null>(null);
-  const [hasAutoSaved, setHasAutoSaved] = useState<boolean>(false);
+  // If ChatOnboarding already saved (pre_saved_id), initialize savedId to skip auto-save
+  const [savedId, setSavedId] = useState<string | null>(data.pre_saved_id || null);
+  const [hasAutoSaved, setHasAutoSaved] = useState<boolean>(!!data.pre_saved_id);
   const [toast, setToast] = useState<{ show: boolean; title: string; message: string; type: "success" | "error" } | null>(null);
   const [costForecast, setCostForecast] = useState<{
     tuition_annual: number;

@@ -234,7 +234,7 @@ export default function ChatOnboarding({ onComplete }: ChatOnboardingProps) {
           { role: "assistant", content: data.message || "Analisis lengkap. Memproses rekomendasi..." }
         ]);
         setCurrentStep(1);
-        setTimeout(() => {
+        setTimeout(async () => {
           const isNullOrEmpty = (val: any) => {
             if (val === null || val === undefined) return true;
             const s = String(val).trim().toLowerCase();
@@ -242,7 +242,6 @@ export default function ChatOnboarding({ onComplete }: ChatOnboardingProps) {
           };
 
           // bannerParamsRef always wins for student_name + class_code
-          // (never let LLM-extracted values overwrite the locked banner identity)
           const lockedName = bannerParamsRef.current.student_name
             || (!isNullOrEmpty(data.extracted_params?.student_name) ? data.extracted_params.student_name : null)
             || extractedParamsRef.current.student_name;
@@ -251,21 +250,59 @@ export default function ChatOnboarding({ onComplete }: ChatOnboardingProps) {
             || (!isNullOrEmpty(data.extracted_params?.class_code) ? data.extracted_params.class_code : null)
             || extractedParamsRef.current.class_code;
 
-          console.log("[finalData] student_name:", lockedName, "class_code:", lockedCode);
+          console.log("[ChatOnboarding] finalData student_name:", lockedName, "class_code:", lockedCode);
+
+          const finalExtracted = {
+            student_name: lockedName,
+            class_code: lockedCode,
+            education: !isNullOrEmpty(data.extracted_params?.education) ? data.extracted_params.education : extractedParamsRef.current.education,
+            major: !isNullOrEmpty(data.extracted_params?.major) ? data.extracted_params.major : extractedParamsRef.current.major,
+            city: !isNullOrEmpty(data.extracted_params?.city) ? data.extracted_params.city : extractedParamsRef.current.city,
+            min_salary: (data.extracted_params?.min_salary && data.extracted_params.min_salary > 0) ? data.extracted_params.min_salary : extractedParamsRef.current.min_salary,
+            skills: (data.extracted_params?.skills && data.extracted_params.skills.length > 0)
+              ? data.extracted_params.skills
+              : extractedParamsRef.current.skills
+          };
+
+          // ── Auto-save directly from ChatOnboarding when class code is present ──
+          // This bypasses the Dashboard auto-save to avoid stale state issues.
+          let preSavedId: string | null = null;
+          if (lockedCode && data.journey_plan?.journey_plans?.length > 0) {
+            const primaryPlan = data.journey_plan.journey_plans[0];
+            const savePayload = {
+              student_name: lockedName,
+              class_code: lockedCode,
+              education: finalExtracted.education,
+              major: finalExtracted.major,
+              city: finalExtracted.city,
+              min_salary: finalExtracted.min_salary,
+              skills: finalExtracted.skills,
+              opportunity_overview: data.journey_plan.opportunity_overview || "",
+              journey_plan: primaryPlan,
+            };
+            console.log("[ChatOnboarding] Saving with payload:", JSON.stringify(savePayload).slice(0, 300));
+            try {
+              const saveRes = await fetch("http://localhost:8000/api/save-journey", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(savePayload)
+              });
+              if (saveRes.ok) {
+                const saveData = await saveRes.json();
+                preSavedId = saveData.inserted_id ? String(saveData.inserted_id) : null;
+                console.log("[ChatOnboarding] Pre-save SUCCESS, id:", preSavedId);
+              } else {
+                console.error("[ChatOnboarding] Pre-save FAILED status:", saveRes.status);
+              }
+            } catch (saveErr) {
+              console.error("[ChatOnboarding] Pre-save ERROR:", saveErr);
+            }
+          }
           
           const finalData = {
             ...data,
-            extracted_params: {
-              student_name: lockedName,
-              class_code: lockedCode,
-              education: !isNullOrEmpty(data.extracted_params?.education) ? data.extracted_params.education : extractedParamsRef.current.education,
-              major: !isNullOrEmpty(data.extracted_params?.major) ? data.extracted_params.major : extractedParamsRef.current.major,
-              city: !isNullOrEmpty(data.extracted_params?.city) ? data.extracted_params.city : extractedParamsRef.current.city,
-              min_salary: (data.extracted_params?.min_salary && data.extracted_params.min_salary > 0) ? data.extracted_params.min_salary : extractedParamsRef.current.min_salary,
-              skills: (data.extracted_params?.skills && data.extracted_params.skills.length > 0)
-                ? data.extracted_params.skills
-                : extractedParamsRef.current.skills
-            }
+            pre_saved_id: preSavedId,
+            extracted_params: finalExtracted
           };
           onComplete(finalData);
         }, 3600);
