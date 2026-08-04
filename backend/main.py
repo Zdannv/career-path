@@ -657,11 +657,19 @@ def get_teacher_summary(class_code: Optional[str] = None, teacher_id: Optional[s
             plan = item.get("journey_plan") or {}
             cname = plan.get("career_name") or "Belum Ditentukan"
             
-            # Add to student table info
+            # Add to student table info with complete parameter mapping
             students_list.append({
+                "id": str(item.get("id")),
                 "student_name": sname,
                 "career_name": cname,
-                "class_code": item.get("class_code") or "-"
+                "class_code": item.get("class_code") or "-",
+                "education": item.get("education") or "-",
+                "major": item.get("major") or "-",
+                "city": item.get("city") or "-",
+                "min_salary": float(item.get("min_salary") or 0.0),
+                "skills": item.get("skills") or [],
+                "csat_rating": item.get("csat_rating"),
+                "created_at": item.get("created_at")
             })
             
             # Aggregate matched careers
@@ -705,9 +713,45 @@ def get_teacher_summary(class_code: Optional[str] = None, teacher_id: Optional[s
                 "average_cost": 54000000.0,
                 "average_csat": 4.8,
                 "students": [
-                    {"student_name": "Budi", "career_name": "Frontend Developer", "class_code": "SMK-BISA-26"},
-                    {"student_name": "Siti", "career_name": "DevOps Engineer", "class_code": "SMK-BISA-26"},
-                    {"student_name": "Andi", "career_name": "Data Analyst", "class_code": "SMK-BISA-26"}
+                    {
+                        "id": "mock-id-1",
+                        "student_name": "Budi",
+                        "career_name": "Frontend Developer",
+                        "class_code": "SMK-BISA-26",
+                        "education": "SMK Sederajat",
+                        "major": "Rekayasa Perangkat Lunak (RPL)",
+                        "city": "Jakarta",
+                        "min_salary": 6000000.0,
+                        "skills": ["HTML", "CSS", "React.js"],
+                        "csat_rating": 5,
+                        "created_at": "2026-08-04T12:00:00Z"
+                    },
+                    {
+                        "id": "mock-id-2",
+                        "student_name": "Siti",
+                        "career_name": "DevOps Engineer",
+                        "class_code": "SMK-BISA-26",
+                        "education": "SMA Sederajat",
+                        "major": "IPA",
+                        "city": "Bandung",
+                        "min_salary": 7000000.0,
+                        "skills": ["Docker", "Kubernetes", "Linux"],
+                        "csat_rating": 4,
+                        "created_at": "2026-08-04T13:00:00Z"
+                    },
+                    {
+                        "id": "mock-id-3",
+                        "student_name": "Andi",
+                        "career_name": "Data Analyst",
+                        "class_code": "SMK-BISA-26",
+                        "education": "Sarjana (S1)",
+                        "major": "Teknik Informatika",
+                        "city": "Surabaya",
+                        "min_salary": 5500000.0,
+                        "skills": ["SQL", "Python", "Tableau"],
+                        "csat_rating": 5,
+                        "created_at": "2026-08-04T14:00:00Z"
+                    }
                 ]
             }
             
@@ -731,9 +775,45 @@ def get_teacher_summary(class_code: Optional[str] = None, teacher_id: Optional[s
             "average_cost": 54000000.0,
             "average_csat": 4.8,
             "students": [
-                {"student_name": "Budi (Mock)", "career_name": "Frontend Developer", "class_code": "SMK-BISA-26"},
-                {"student_name": "Siti (Mock)", "career_name": "DevOps Engineer", "class_code": "SMK-BISA-26"},
-                {"student_name": "Andi (Mock)", "career_name": "Data Analyst", "class_code": "SMK-BISA-26"}
+                {
+                    "id": "mock-id-1",
+                    "student_name": "Budi (Mock)",
+                    "career_name": "Frontend Developer",
+                    "class_code": "SMK-BISA-26",
+                    "education": "SMK Sederajat",
+                    "major": "Rekayasa Perangkat Lunak (RPL)",
+                    "city": "Jakarta",
+                    "min_salary": 6000000.0,
+                    "skills": ["HTML", "CSS", "React.js"],
+                    "csat_rating": 5,
+                    "created_at": "2026-08-04T12:00:00Z"
+                },
+                {
+                    "id": "mock-id-2",
+                    "student_name": "Siti (Mock)",
+                    "career_name": "DevOps Engineer",
+                    "class_code": "SMK-BISA-26",
+                    "education": "SMA Sederajat",
+                    "major": "IPA",
+                    "city": "Bandung",
+                    "min_salary": 7000000.0,
+                    "skills": ["Docker", "Kubernetes", "Linux"],
+                    "csat_rating": 4,
+                    "created_at": "2026-08-04T13:00:00Z"
+                },
+                {
+                    "id": "mock-id-3",
+                    "student_name": "Andi (Mock)",
+                    "career_name": "Data Analyst",
+                    "class_code": "SMK-BISA-26",
+                    "education": "Sarjana (S1)",
+                    "major": "Teknik Informatika",
+                    "city": "Surabaya",
+                    "min_salary": 5500000.0,
+                    "skills": ["SQL", "Python", "Tableau"],
+                    "csat_rating": 5,
+                    "created_at": "2026-08-04T14:00:00Z"
+                }
             ]
         }
 

@@ -26,9 +26,17 @@ interface TopCareer {
 }
 
 interface StudentItem {
+  id?: string;
   student_name: string;
   career_name: string;
   class_code: string;
+  education?: string;
+  major?: string;
+  city?: string;
+  min_salary?: number;
+  skills?: string[];
+  csat_rating?: number;
+  created_at?: string;
 }
 
 interface AnalyticsData {
@@ -184,11 +192,22 @@ export default function TeacherDashboard() {
 
   const handleExportCSV = () => {
     if (!analytics?.students || analytics.students.length === 0) return;
-    const headers = ["Nama Siswa", "Rencana Karir IT", "Kode Kelas"];
+    const headers = [
+      "Nama Siswa", "Kode Kelas", "Rencana Karir IT", "Pendidikan", 
+      "Jurusan/Peminatan", "Kota Tujuan", "Ekspektasi Gaji", "Keahlian", 
+      "Rating CSAT", "Tanggal Asesmen"
+    ];
     const rows = analytics.students.map((student: any) => [
       student.student_name || "Anonim",
+      student.class_code || "-",
       student.career_name || "Belum Ditentukan",
-      student.class_code || "-"
+      student.education || "-",
+      student.major || "-",
+      student.city || "-",
+      student.min_salary ? `Rp ${student.min_salary.toLocaleString("id-ID")}` : "Rp 0",
+      student.skills && student.skills.length > 0 ? student.skills.join("; ") : "Tidak ada",
+      student.csat_rating !== undefined && student.csat_rating !== null ? `${student.csat_rating} Bintang` : "Belum Dinilai",
+      student.created_at ? new Date(student.created_at).toLocaleString("id-ID") : "-"
     ]);
     
     // Construct CSV content string
@@ -197,7 +216,7 @@ export default function TeacherDashboard() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.setAttribute("href", url);
-    const fileName = `Laporan_Siswa_Karir_${activeClassCode || "Semua"}_${new Date().toISOString().slice(0, 10)}.csv`;
+    const fileName = `Laporan_Lengkap_Siswa_Karir_${activeClassCode || "Semua"}_${new Date().toISOString().slice(0, 10)}.csv`;
     link.setAttribute("download", fileName);
     document.body.appendChild(link);
     link.click();
@@ -500,7 +519,8 @@ export default function TeacherDashboard() {
                         <tr className="bg-slate-50 border-b border-slate-200 font-bold text-slate-650">
                           <th className="p-3">Nama Siswa</th>
                           <th className="p-3">Rencana Karir IT</th>
-                          <th className="p-3 text-right">Kode Kelas</th>
+                          <th className="p-3">Kode Kelas</th>
+                          <th className="p-3 text-right">Aksi</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100 font-semibold text-slate-800">
@@ -509,12 +529,26 @@ export default function TeacherDashboard() {
                             <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
                               <td className="p-3 font-bold text-slate-900">{student.student_name}</td>
                               <td className="p-3">{student.career_name}</td>
-                              <td className="p-3 text-right text-slate-500 font-bold">{student.class_code}</td>
+                              <td className="p-3 text-slate-500 font-bold">{student.class_code}</td>
+                              <td className="p-3 text-right">
+                                {student.id && !student.id.startsWith("mock") ? (
+                                  <a
+                                    href={`/student/journey/${student.id}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 hover:text-slate-900 rounded font-bold text-[10px] inline-flex items-center gap-1 transition-all shadow-sm cursor-pointer"
+                                  >
+                                    Lihat Detail →
+                                  </a>
+                                ) : (
+                                  <span className="text-[10px] text-slate-400 italic">Mock Data</span>
+                                )}
+                              </td>
                             </tr>
                           ))
                         ) : (
                           <tr>
-                            <td colSpan={3} className="p-6 text-center text-slate-400 italic">Belum ada siswa yang terdaftar untuk kelas ini.</td>
+                            <td colSpan={4} className="p-6 text-center text-slate-400 italic">Belum ada siswa yang terdaftar untuk kelas ini.</td>
                           </tr>
                         )}
                       </tbody>
