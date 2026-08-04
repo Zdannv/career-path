@@ -115,15 +115,17 @@ export default function ChatOnboarding({ onComplete }: ChatOnboardingProps) {
       const data = await response.json();
       
       if (data.extracted_params) {
-        setExtractedParams({
-          student_name: data.extracted_params.student_name,
-          class_code: data.extracted_params.class_code,
-          education: data.extracted_params.education,
-          major: data.extracted_params.major,
-          city: data.extracted_params.city,
-          min_salary: data.extracted_params.min_salary,
-          skills: data.extracted_params.skills || []
-        });
+        setExtractedParams(prev => ({
+          student_name: data.extracted_params.student_name || prev.student_name,
+          class_code: data.extracted_params.class_code || prev.class_code,
+          education: data.extracted_params.education || prev.education,
+          major: data.extracted_params.major || prev.major,
+          city: data.extracted_params.city || prev.city,
+          min_salary: data.extracted_params.min_salary || prev.min_salary,
+          skills: data.extracted_params.skills && data.extracted_params.skills.length > 0
+            ? data.extracted_params.skills
+            : prev.skills
+        }));
       }
 
       if (data.suggested_skills) {
@@ -144,7 +146,21 @@ export default function ChatOnboarding({ onComplete }: ChatOnboardingProps) {
         ]);
         setCurrentStep(1);
         setTimeout(() => {
-          onComplete(data);
+          const finalData = {
+            ...data,
+            extracted_params: {
+              student_name: data.extracted_params?.student_name || extractedParams.student_name,
+              class_code: data.extracted_params?.class_code || extractedParams.class_code,
+              education: data.extracted_params?.education || extractedParams.education,
+              major: data.extracted_params?.major || extractedParams.major,
+              city: data.extracted_params?.city || extractedParams.city,
+              min_salary: data.extracted_params?.min_salary || extractedParams.min_salary,
+              skills: (data.extracted_params?.skills && data.extracted_params.skills.length > 0)
+                ? data.extracted_params.skills
+                : extractedParams.skills
+            }
+          };
+          onComplete(finalData);
         }, 3600);
       } else {
         // Chat is ongoing, show follow up question
