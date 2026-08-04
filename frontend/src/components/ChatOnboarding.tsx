@@ -32,6 +32,12 @@ export default function ChatOnboarding({ onComplete }: ChatOnboardingProps) {
   const [bannerValidating, setBannerValidating] = useState(false);
   const [bannerSubmitted, setBannerSubmitted] = useState(false);
 
+  // Permanent ref for banner-locked identity — never overwritten by LLM
+  const bannerParamsRef = useRef<{ student_name: string | null; class_code: string | null }>({
+    student_name: null,
+    class_code: null
+  });
+
   const [extractedParams, setExtractedParams] = useState<ExtractedParams>({
     student_name: null,
     class_code: null,
@@ -80,7 +86,13 @@ export default function ChatOnboarding({ onComplete }: ChatOnboardingProps) {
       skills: []
     };
 
-    // Lock name + class code into extractedParams state & ref immediately
+    // Lock name + class code permanently — also into bannerParamsRef (never overwritten by LLM)
+    bannerParamsRef.current = {
+      student_name: bannerName.trim(),
+      class_code: bannerCode.trim().toUpperCase()
+    };
+
+    // Lock into extractedParams state & ref immediately
     setExtractedParams(freshParams);
     extractedParamsRef.current = freshParams;
 
@@ -228,12 +240,24 @@ export default function ChatOnboarding({ onComplete }: ChatOnboardingProps) {
             const s = String(val).trim().toLowerCase();
             return s === "" || s === "null" || s === "none" || s === "tidak ada" || s === "undefined";
           };
+
+          // bannerParamsRef always wins for student_name + class_code
+          // (never let LLM-extracted values overwrite the locked banner identity)
+          const lockedName = bannerParamsRef.current.student_name
+            || (!isNullOrEmpty(data.extracted_params?.student_name) ? data.extracted_params.student_name : null)
+            || extractedParamsRef.current.student_name;
+
+          const lockedCode = bannerParamsRef.current.class_code
+            || (!isNullOrEmpty(data.extracted_params?.class_code) ? data.extracted_params.class_code : null)
+            || extractedParamsRef.current.class_code;
+
+          console.log("[finalData] student_name:", lockedName, "class_code:", lockedCode);
           
           const finalData = {
             ...data,
             extracted_params: {
-              student_name: !isNullOrEmpty(data.extracted_params?.student_name) ? data.extracted_params.student_name : extractedParamsRef.current.student_name,
-              class_code: !isNullOrEmpty(data.extracted_params?.class_code) ? data.extracted_params.class_code : extractedParamsRef.current.class_code,
+              student_name: lockedName,
+              class_code: lockedCode,
               education: !isNullOrEmpty(data.extracted_params?.education) ? data.extracted_params.education : extractedParamsRef.current.education,
               major: !isNullOrEmpty(data.extracted_params?.major) ? data.extracted_params.major : extractedParamsRef.current.major,
               city: !isNullOrEmpty(data.extracted_params?.city) ? data.extracted_params.city : extractedParamsRef.current.city,
