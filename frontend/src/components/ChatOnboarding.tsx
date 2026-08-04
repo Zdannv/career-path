@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { Send, Sparkles, Brain, Check, User, ArrowRight, RefreshCw, MapPin, Landmark, GraduationCap } from "lucide-react";
+import PreChatForm from "./PreChatForm";
 
 interface Message {
   role: "assistant" | "user";
@@ -24,6 +25,33 @@ interface ChatOnboardingProps {
 }
 
 export default function ChatOnboarding({ onComplete }: ChatOnboardingProps) {
+  // ── Pre-chat form gate ──────────────────────────────────────────────────
+  const [preChatDone, setPreChatDone] = useState(false);
+
+  const handlePreChatComplete = (params: {
+    student_name: string;
+    class_code: string | null;
+    education: string;
+    major: string;
+    skills: string[];
+  }) => {
+    // Pre-fill extracted params from the form
+    setExtractedParams({
+      student_name: params.student_name,
+      class_code: params.class_code,
+      education: params.education,
+      major: params.major,
+      city: null,
+      min_salary: 0,
+      skills: params.skills,
+    });
+    // Build a natural opening message using the student's name
+    const greeting = `Halo ${params.student_name}! Saya CareerPath AI. Saya sudah mencatat latar belakang pendidikan dan minat skill Anda. Sekarang, di kota mana Anda ingin berkarier? (Jakarta, Bandung, atau Surabaya)`;
+    setMessages([{ role: "assistant", content: greeting }]);
+    setActiveState("city");
+    setPreChatDone(true);
+  };
+
   const [messages, setMessages] = useState<Message[]>([
     {
       role: "assistant",
@@ -48,6 +76,7 @@ export default function ChatOnboarding({ onComplete }: ChatOnboardingProps) {
   const [salaryInput, setSalaryInput] = useState<number>(6000000);
   const [loadingLogs, setLoadingLogs] = useState<string[]>([]);
   const [suggestedSkills, setSuggestedSkills] = useState<string[]>([]);
+
   const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
   const [customSkill, setCustomSkill] = useState<string>("");
   const [activeState, setActiveState] = useState<string>("name_code");
@@ -115,17 +144,25 @@ export default function ChatOnboarding({ onComplete }: ChatOnboardingProps) {
       const data = await response.json();
       
       if (data.extracted_params) {
-        setExtractedParams(prev => ({
-          student_name: data.extracted_params.student_name || prev.student_name,
-          class_code: data.extracted_params.class_code || prev.class_code,
-          education: data.extracted_params.education || prev.education,
-          major: data.extracted_params.major || prev.major,
-          city: data.extracted_params.city || prev.city,
-          min_salary: data.extracted_params.min_salary || prev.min_salary,
-          skills: data.extracted_params.skills && data.extracted_params.skills.length > 0
-            ? data.extracted_params.skills
-            : prev.skills
-        }));
+        setExtractedParams(prev => {
+          const isNullOrEmpty = (val: any) => {
+            if (val === null || val === undefined) return true;
+            const s = String(val).trim().toLowerCase();
+            return s === "" || s === "null" || s === "none" || s === "tidak ada" || s === "undefined";
+          };
+          
+          return {
+            student_name: !isNullOrEmpty(data.extracted_params.student_name) ? data.extracted_params.student_name : prev.student_name,
+            class_code: !isNullOrEmpty(data.extracted_params.class_code) ? data.extracted_params.class_code : prev.class_code,
+            education: !isNullOrEmpty(data.extracted_params.education) ? data.extracted_params.education : prev.education,
+            major: !isNullOrEmpty(data.extracted_params.major) ? data.extracted_params.major : prev.major,
+            city: !isNullOrEmpty(data.extracted_params.city) ? data.extracted_params.city : prev.city,
+            min_salary: (data.extracted_params.min_salary && data.extracted_params.min_salary > 0) ? data.extracted_params.min_salary : prev.min_salary,
+            skills: data.extracted_params.skills && data.extracted_params.skills.length > 0
+              ? data.extracted_params.skills
+              : prev.skills
+          };
+        });
       }
 
       if (data.suggested_skills) {
@@ -146,15 +183,21 @@ export default function ChatOnboarding({ onComplete }: ChatOnboardingProps) {
         ]);
         setCurrentStep(1);
         setTimeout(() => {
+          const isNullOrEmpty = (val: any) => {
+            if (val === null || val === undefined) return true;
+            const s = String(val).trim().toLowerCase();
+            return s === "" || s === "null" || s === "none" || s === "tidak ada" || s === "undefined";
+          };
+          
           const finalData = {
             ...data,
             extracted_params: {
-              student_name: data.extracted_params?.student_name || extractedParams.student_name,
-              class_code: data.extracted_params?.class_code || extractedParams.class_code,
-              education: data.extracted_params?.education || extractedParams.education,
-              major: data.extracted_params?.major || extractedParams.major,
-              city: data.extracted_params?.city || extractedParams.city,
-              min_salary: data.extracted_params?.min_salary || extractedParams.min_salary,
+              student_name: !isNullOrEmpty(data.extracted_params?.student_name) ? data.extracted_params.student_name : extractedParams.student_name,
+              class_code: !isNullOrEmpty(data.extracted_params?.class_code) ? data.extracted_params.class_code : extractedParams.class_code,
+              education: !isNullOrEmpty(data.extracted_params?.education) ? data.extracted_params.education : extractedParams.education,
+              major: !isNullOrEmpty(data.extracted_params?.major) ? data.extracted_params.major : extractedParams.major,
+              city: !isNullOrEmpty(data.extracted_params?.city) ? data.extracted_params.city : extractedParams.city,
+              min_salary: (data.extracted_params?.min_salary && data.extracted_params.min_salary > 0) ? data.extracted_params.min_salary : extractedParams.min_salary,
               skills: (data.extracted_params?.skills && data.extracted_params.skills.length > 0)
                 ? data.extracted_params.skills
                 : extractedParams.skills
@@ -477,6 +520,11 @@ export default function ChatOnboarding({ onComplete }: ChatOnboardingProps) {
   };
 
   const progressPct = getProgressPct();
+
+  // If pre-chat form not done yet, show it instead of the chat
+  if (!preChatDone) {
+    return <PreChatForm onComplete={handlePreChatComplete} />;
+  }
 
   return (
     <div className="flex-1 flex bg-white h-full overflow-hidden w-full">

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { GraduationCap, MapPin, Landmark, Hammer, ArrowLeft, RefreshCw, Save, Star, Printer } from "lucide-react";
+import { GraduationCap, MapPin, Landmark, Hammer, ArrowLeft, RefreshCw, Save, Star, Printer, Copy } from "lucide-react";
 import OpportunityOverview from "./OpportunityOverview";
 import JourneyTimeline from "./JourneyTimeline";
 import CostForecaster from "./CostForecaster";
@@ -67,8 +67,9 @@ export default function Dashboard({ data, onRestart, isReadOnly = false }: Dashb
   
   const defaultCareerId = recommendations.length > 0 ? recommendations[0].career_id : 0;
   const [selectedCareerId, setSelectedCareerId] = useState<number>(defaultCareerId);
-  const [saving, setSaving] = useState<boolean>(false);
+   const [saving, setSaving] = useState<boolean>(false);
   const [savedId, setSavedId] = useState<string | null>(null);
+  const [hasAutoSaved, setHasAutoSaved] = useState<boolean>(false);
   const [toast, setToast] = useState<{ show: boolean; title: string; message: string; type: "success" | "error" } | null>(null);
   const [costForecast, setCostForecast] = useState<{
     tuition_annual: number;
@@ -140,10 +141,30 @@ export default function Dashboard({ data, onRestart, isReadOnly = false }: Dashb
     }
   }, [toast]);
 
+  // Auto-save journey plan to database on dashboard mount ONLY if student has entered a class code
+  useEffect(() => {
+    const hasClassCode = extracted_params?.class_code && 
+      String(extracted_params.class_code).trim().toLowerCase() !== "null" &&
+      String(extracted_params.class_code).trim() !== "";
+
+    if (!isReadOnly && !savedId && activePlan && !hasAutoSaved && !saving && hasClassCode) {
+      setHasAutoSaved(true);
+      handleSaveJourney();
+    }
+  }, [isReadOnly, savedId, activePlan, hasAutoSaved, saving, extracted_params?.class_code]);
+
   const handleSaveJourney = async () => {
     if (!activePlan) return;
     setSaving(true);
     setToast(null);
+
+    const defaultCostForecast = costForecast || {
+      tuition_annual: 12000000,
+      housing_monthly: 1000000,
+      living_monthly: 1500000,
+      duration_years: activePlan.timeline?.length || 4,
+      total_cost: (12000000 + (1000000 * 12) + (1500000 * 12)) * (activePlan.timeline?.length || 4)
+    };
 
     const payload = {
       student_name: extracted_params.student_name,
@@ -155,7 +176,7 @@ export default function Dashboard({ data, onRestart, isReadOnly = false }: Dashb
       skills: extracted_params.skills,
       opportunity_overview: journey_plan.opportunity_overview,
       journey_plan: activePlan,
-      cost_forecast: costForecast,
+      cost_forecast: defaultCostForecast,
       csat_rating: csatRating
     };
 
@@ -235,12 +256,24 @@ export default function Dashboard({ data, onRestart, isReadOnly = false }: Dashb
           <div className="flex items-center gap-2">
             {activePlan && !isReadOnly && (
               <button
-                onClick={handleSaveJourney}
+                onClick={savedId ? () => {
+                  navigator.clipboard.writeText(`${window.location.origin}/student/journey/${savedId}`);
+                  setToast({ show: true, title: "Link Disalin!", message: "Link perjalanan karier berhasil disalin ke clipboard.", type: "success" });
+                } : handleSaveJourney}
                 disabled={saving}
                 className="px-3 py-1.5 rounded border border-slate-900 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs flex items-center gap-1 transition-colors shadow-sm disabled:opacity-50 cursor-pointer"
               >
-                <Save className="w-3.5 h-3.5" />
-                {saving ? "Menyimpan..." : "Simpan & Bagikan"}
+                {savedId ? (
+                  <>
+                    <Copy className="w-3.5 h-3.5" />
+                    {"Bagikan Link"}
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-3.5 h-3.5" />
+                    {saving ? "Menyimpan otomatis..." : "Simpan & Bagikan"}
+                  </>
+                )}
               </button>
             )}
             <button

@@ -146,17 +146,23 @@ async def generate_chat_journey(request: ChatJourneyRequest):
         
     # Merge with current_params from frontend to prevent LLM from forgetting earlier extracted details
     if request.current_params:
-        if not extracted.get("student_name") and request.current_params.student_name:
+        def is_empty(val):
+            if val is None:
+                return True
+            s = str(val).strip().lower()
+            return s in ["", "null", "none", "tidak ada", "undefined"]
+
+        if is_empty(extracted.get("student_name")) and not is_empty(request.current_params.student_name):
             extracted["student_name"] = request.current_params.student_name
-        if not extracted.get("class_code") and request.current_params.class_code:
+        if is_empty(extracted.get("class_code")) and not is_empty(request.current_params.class_code):
             extracted["class_code"] = request.current_params.class_code
-        if not extracted.get("education") and request.current_params.education:
+        if is_empty(extracted.get("education")) and not is_empty(request.current_params.education):
             extracted["education"] = request.current_params.education
-        if not extracted.get("major") and request.current_params.major:
+        if is_empty(extracted.get("major")) and not is_empty(request.current_params.major):
             extracted["major"] = request.current_params.major
-        if not extracted.get("city") and request.current_params.city:
+        if is_empty(extracted.get("city")) and not is_empty(request.current_params.city):
             extracted["city"] = request.current_params.city
-        if (not extracted.get("min_salary") or extracted.get("min_salary") <= 0) and request.current_params.min_salary > 0:
+        if (is_empty(extracted.get("min_salary")) or float(extracted.get("min_salary") or 0.0) <= 0) and request.current_params.min_salary > 0:
             extracted["min_salary"] = request.current_params.min_salary
         if request.current_params.skills:
             combined_skills = list(set(extracted.get("skills", []) + request.current_params.skills))
@@ -507,6 +513,25 @@ def get_journey(journey_id: str):
 class CreateClassRequest(BaseModel):
     class_name: str
     teacher_id: Optional[str] = None
+
+@app.get("/api/classes/validate")
+def validate_class_code(code: str):
+    """
+    Check whether a class code exists in the 'classes' table.
+    Returns { valid: true/false }. Used by the PreChatForm for instant validation.
+    """
+    if not code or len(code.strip()) < 3:
+        return {"valid": False}
+    client = get_supabase_client()
+    if not client:
+        # If we can't reach the DB, don't block the user — just say valid
+        return {"valid": True}
+    try:
+        res = client.table("classes").select("id").eq("class_code", code.strip().upper()).execute()
+        return {"valid": len(res.data) > 0}
+    except Exception:
+        return {"valid": True}
+
 
 @app.post("/api/teacher/classes")
 def create_class(request: CreateClassRequest):
