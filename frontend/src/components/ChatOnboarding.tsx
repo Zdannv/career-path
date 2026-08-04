@@ -95,6 +95,7 @@ export default function ChatOnboarding({ onComplete }: ChatOnboardingProps) {
   const [salaryInput, setSalaryInput] = useState<number>(6000000);
   const [loadingLogs, setLoadingLogs] = useState<string[]>([]);
   const [suggestedSkills, setSuggestedSkills] = useState<string[]>([]);
+  const [suggestedOptions, setSuggestedOptions] = useState<string[]>([]);
 
 
   const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
@@ -189,6 +190,12 @@ export default function ChatOnboarding({ onComplete }: ChatOnboardingProps) {
         setSuggestedSkills(data.suggested_skills);
       } else {
         setSuggestedSkills([]);
+      }
+
+      if (data.suggested_options) {
+        setSuggestedOptions(data.suggested_options);
+      } else {
+        setSuggestedOptions([]);
       }
 
       if (data.state) {
@@ -296,9 +303,10 @@ export default function ChatOnboarding({ onComplete }: ChatOnboardingProps) {
     }
 
     if (activeState === "education") {
+      const options = suggestedOptions.length > 0 ? suggestedOptions : ["SMA/SMK Sederajat", "Diploma 3 (D3)", "Sarjana (S1)", "Magister (S2)", "Doktor (S3)"];
       return (
         <div className="flex flex-wrap gap-2 p-3 bg-slate-50 border-t border-slate-200">
-          {["SMA/SMK Sederajat", "Diploma 3 (D3)", "Sarjana (S1)", "Magister (S2)", "Doktor (S3)"].map((edu) => (
+          {options.map((edu) => (
             <button
               key={edu}
               onClick={() => handleSendText(edu)}
@@ -312,12 +320,13 @@ export default function ChatOnboarding({ onComplete }: ChatOnboardingProps) {
     }
 
     if (activeState === "major") {
+      const options = suggestedOptions.length > 0 ? suggestedOptions : ["Teknik Informatika", "Sistem Informasi", "Rekayasa Perangkat Lunak (RPL)", "Multimedia", "Teknik Elektro", "Sistem Komputer"];
       return (
         <div className="flex flex-wrap gap-2 p-3 bg-slate-50 border-t border-slate-200">
-          {["Teknik Informatika", "Sistem Informasi", "Rekayasa Perangkat Lunak (RPL)", "Multimedia", "Teknik Elektro", "Sistem Komputer"].map((maj) => (
+          {options.map((maj) => (
             <button
               key={maj}
-              onClick={() => handleSendText(`Jurusan saya ${maj}`)}
+              onClick={() => handleSendText(maj)}
               className="px-3 py-1.5 rounded-full border border-slate-350 bg-white hover:border-slate-800 text-xs font-semibold text-slate-800 transition-colors cursor-pointer"
             >
               {maj}
@@ -328,9 +337,10 @@ export default function ChatOnboarding({ onComplete }: ChatOnboardingProps) {
     }
 
     if (activeState === "city") {
+      const options = suggestedOptions.length > 0 ? suggestedOptions : ["Jakarta", "Bandung", "Surabaya"];
       return (
         <div className="flex flex-wrap gap-2 p-3 bg-slate-50 border-t border-slate-200">
-          {["Jakarta", "Bandung", "Surabaya"].map((c) => (
+          {options.map((c) => (
             <button
               key={c}
               onClick={() => handleSendText(c)}

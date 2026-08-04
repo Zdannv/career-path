@@ -80,6 +80,7 @@ class ChatJourneyResponse(BaseModel):
     state: str
     message: Optional[str] = None
     suggested_skills: Optional[List[str]] = []
+    suggested_options: Optional[List[str]] = []
     extracted_params: Optional[ExtractedParams] = None
     recommendations: Optional[List[CareerRecommendation]] = None
     journey_plan: Optional[JourneyPlanResponse] = None
@@ -291,6 +292,63 @@ async def generate_chat_journey(request: ChatJourneyRequest):
         if not extracted.get("skills") and corrected_state == "confirmation":
             corrected_state = "skills"
 
+    # Calculate suggested options based on active state
+    suggested_options = []
+    if not is_complete:
+        if corrected_state == "education":
+            suggested_options = ["SMA/SMK Sederajat", "Diploma 3 (D3)", "Sarjana (S1/D4)", "Magister (S2)", "Doktor (S3)"]
+        elif corrected_state == "major":
+            edu = extracted.get("education") or ""
+            match_level = None
+            if any(k in edu.lower() for k in ["sma", "smk", "sederajat"]):
+                match_level = "SMA/SMK Sederajat"
+            elif any(k in edu.lower() for k in ["d3", "diploma 3"]):
+                match_level = "Diploma 3 (D3)"
+            elif any(k in edu.lower() for k in ["s1", "sarjana", "d4", "diploma 4"]):
+                match_level = "Sarjana (S1/D4)"
+            elif any(k in edu.lower() for k in ["s2", "magister"]):
+                match_level = "Magister (S2)"
+            elif any(k in edu.lower() for k in ["s3", "doktor", "phd"]):
+                match_level = "Doktor (S3)"
+                
+            if match_level:
+                client = get_supabase_client()
+                if client:
+                    try:
+                        res = client.table("education_majors").select("major_name").eq("education_level", match_level).execute()
+                        suggested_options = [r["major_name"] for r in res.data]
+                    except Exception:
+                        pass
+                
+                # Fallback if no database options found
+                if not suggested_options:
+                    if match_level == "SMA/SMK Sederajat":
+                        suggested_options = [
+                            "SMA - MIPA (IPA)", "SMA - IPS", 
+                            "SMK - Rekayasa Perangkat Lunak (RPL)", 
+                            "SMK - Teknik Komputer & Jaringan (TKJ)",
+                            "SMK - Sistem Informatika, Jaringan & Aplikasi (SIJA)",
+                            "SMK - Multimedia / Desain Komunikasi Visual (DKV)"
+                        ]
+                    elif match_level == "Diploma 3 (D3)":
+                        suggested_options = ["D3 - Teknik Informatika", "D3 - Sistem Informasi", "D3 - Teknik Komputer"]
+                    else:
+                        suggested_options = ["S1 - Teknik Informatika", "S1 - Ilmu Komputer", "S1 - Sistem Informasi", "S1 - Sains Data / Data Science", "S1 - Kecerdasan Buatan / AI"]
+        elif corrected_state == "city":
+            suggested_options = ["Jakarta", "Bandung", "Surabaya"]
+        elif corrected_state == "skills":
+            user_major = extracted.get("major")
+            if user_major:
+                client = get_supabase_client()
+                if client:
+                    try:
+                        res = client.table("education_majors").select("suggested_skills").eq("major_name", user_major).execute()
+                        if res.data:
+                            db_skills = res.data[0].get("suggested_skills") or []
+                            combined_suggested = list(set(combined_suggested + db_skills))
+                    except Exception:
+                        pass
+
     # If parameters are not fully gathered or the interviewer is still active-probing
     if not is_complete:
         return ChatJourneyResponse(
@@ -298,6 +356,7 @@ async def generate_chat_journey(request: ChatJourneyRequest):
             state=corrected_state,
             message=raw_message,
             suggested_skills=combined_suggested,
+            suggested_options=suggested_options,
             extracted_params=ExtractedParams(
                 student_name=extracted.get("student_name"),
                 class_code=extracted.get("class_code"),
@@ -388,6 +447,7 @@ async def generate_chat_journey(request: ChatJourneyRequest):
         state="complete",
         message="Analisis selesai. Berikut adalah rekomendasi karier Anda!",
         suggested_skills=[],
+        suggested_options=[],
         extracted_params=ExtractedParams(
             student_name=extracted.get("student_name"),
             class_code=extracted.get("class_code"),
