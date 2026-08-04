@@ -59,14 +59,16 @@ interface DashboardProps {
     };
   };
   onRestart: () => void;
+  isReadOnly?: boolean;
 }
 
-export default function Dashboard({ data, onRestart }: DashboardProps) {
+export default function Dashboard({ data, onRestart, isReadOnly = false }: DashboardProps) {
   const { extracted_params, recommendations, journey_plan } = data;
   
   const defaultCareerId = recommendations.length > 0 ? recommendations[0].career_id : 0;
   const [selectedCareerId, setSelectedCareerId] = useState<number>(defaultCareerId);
   const [saving, setSaving] = useState<boolean>(false);
+  const [savedId, setSavedId] = useState<string | null>(null);
   const [toast, setToast] = useState<{ show: boolean; title: string; message: string; type: "success" | "error" } | null>(null);
   const [costForecast, setCostForecast] = useState<{
     tuition_annual: number;
@@ -156,10 +158,13 @@ export default function Dashboard({ data, onRestart }: DashboardProps) {
         throw new Error(errorData.detail || "Gagal menyimpan rencana karier ke database.");
       }
 
+      const data = await response.json();
+      setSavedId(data.inserted_id);
+
       setToast({
         show: true,
-        title: "Berhasil!",
-        message: "Rencana Karier Anda telah tersimpan di sistem.",
+        title: "Berhasil Disimpan!",
+        message: "Rencana Karier Anda telah tersimpan. Gunakan link bagikan di atas dasbor.",
         type: "success"
       });
     } catch (error: any) {
@@ -215,14 +220,14 @@ export default function Dashboard({ data, onRestart }: DashboardProps) {
             <p className="text-[10px] text-slate-500 font-semibold">Hasil Pencocokan & Peta Jalan Karier Multi-Tahun</p>
           </div>
           <div className="flex items-center gap-2">
-            {activePlan && (
+            {activePlan && !isReadOnly && (
               <button
                 onClick={handleSaveJourney}
                 disabled={saving}
                 className="px-3 py-1.5 rounded border border-slate-900 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs flex items-center gap-1 transition-colors shadow-sm disabled:opacity-50 cursor-pointer"
               >
                 <Save className="w-3.5 h-3.5" />
-                {saving ? "Menyimpan..." : "Simpan Rencana Karier"}
+                {saving ? "Menyimpan..." : "Simpan & Bagikan"}
               </button>
             )}
             <button
@@ -258,6 +263,34 @@ export default function Dashboard({ data, onRestart }: DashboardProps) {
           </div>
         </div>
       </div>
+
+      {/* Shareable Link Banner if saved */}
+      {savedId && (
+        <div className="bg-emerald-50 border-b border-emerald-250 py-2.5 px-4 animate-pulse">
+          <div className="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2.5 text-xs">
+            <div className="font-bold text-emerald-800">
+              🎉 Rencana karier tersimpan! Gunakan link ini untuk membagikan atau membuka kembali:
+            </div>
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <input
+                type="text"
+                readOnly
+                value={`${window.location.origin}/student/journey/${savedId}`}
+                className="bg-white border border-emerald-200 rounded px-2.5 py-1 font-mono text-[10px] text-slate-700 flex-1 sm:w-80 select-all focus:outline-none"
+              />
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(`${window.location.origin}/student/journey/${savedId}`);
+                  alert("Link berhasil disalin ke clipboard!");
+                }}
+                className="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded cursor-pointer transition-colors shadow-sm text-[10px]"
+              >
+                Salin Link
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Responsive Grid layout for Dashboard Content */}
       <div className="flex-1 max-w-7xl mx-auto w-full">

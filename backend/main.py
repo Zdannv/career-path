@@ -441,6 +441,29 @@ async def save_journey(request: SaveJourneyRequest):
             detail=f"Terjadi kesalahan koneksi saat menyimpan rencana karier: {str(e)}"
         )
 
+@app.get("/api/journey/{journey_id}")
+def get_journey(journey_id: str):
+    """
+    Retrieves a single saved student journey by its database UUID.
+    """
+    client = get_supabase_client()
+    if not client:
+        raise HTTPException(
+            status_code=503,
+            detail="Koneksi database Supabase tidak tersedia."
+        )
+        
+    try:
+        res = client.table("user_journeys").select("*").eq("id", journey_id).execute()
+        if not res.data:
+            raise HTTPException(status_code=404, detail="Rencana karier tidak ditemukan.")
+        return res.data[0]
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Terjadi kesalahan saat memuat rencana karier: {str(e)}"
+        )
+
 class CreateClassRequest(BaseModel):
     class_name: str
     teacher_id: Optional[str] = None
