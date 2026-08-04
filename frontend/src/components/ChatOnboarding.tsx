@@ -1,8 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { Send, Sparkles, Brain, Check, User, ArrowRight, RefreshCw, MapPin, Landmark, GraduationCap } from "lucide-react";
-import PreChatForm from "./PreChatForm";
+import { Send, Sparkles, Brain, Check, User, ArrowRight, RefreshCw, MapPin, Landmark, GraduationCap, Hash, X, CheckCircle2 } from "lucide-react";
 
 interface Message {
   role: "assistant" | "user";
@@ -25,37 +24,57 @@ interface ChatOnboardingProps {
 }
 
 export default function ChatOnboarding({ onComplete }: ChatOnboardingProps) {
-  // ── Pre-chat form gate ──────────────────────────────────────────────────
-  const [preChatDone, setPreChatDone] = useState(false);
+  // ── Class-code quick-fill banner state ─────────────────────────────────
+  const [showClassBanner, setShowClassBanner] = useState(false);
+  const [bannerName, setBannerName] = useState("");
+  const [bannerCode, setBannerCode] = useState("");
+  const [bannerError, setBannerError] = useState("");
+  const [bannerValidating, setBannerValidating] = useState(false);
+  const [bannerSubmitted, setBannerSubmitted] = useState(false);
 
-  const handlePreChatComplete = (params: {
-    student_name: string;
-    class_code: string | null;
-    education: string;
-    major: string;
-    skills: string[];
-  }) => {
-    // Pre-fill extracted params from the form
-    setExtractedParams({
-      student_name: params.student_name,
-      class_code: params.class_code,
-      education: params.education,
-      major: params.major,
-      city: null,
-      min_salary: 0,
-      skills: params.skills,
-    });
-    // Build a natural opening message using the student's name
-    const greeting = `Halo ${params.student_name}! Saya CareerPath AI. Saya sudah mencatat latar belakang pendidikan dan minat skill Anda. Sekarang, di kota mana Anda ingin berkarier? (Jakarta, Bandung, atau Surabaya)`;
-    setMessages([{ role: "assistant", content: greeting }]);
-    setActiveState("city");
-    setPreChatDone(true);
+  const handleBannerSubmit = async () => {
+    if (!bannerName.trim() || !bannerCode.trim()) return;
+    setBannerError("");
+    setBannerValidating(true);
+    try {
+      const res = await fetch(
+        `http://localhost:8000/api/classes/validate?code=${encodeURIComponent(bannerCode.trim().toUpperCase())}`
+      );
+      if (res.ok) {
+        const json = await res.json();
+        if (!json.valid) {
+          setBannerError("Kode kelas tidak ditemukan. Periksa kembali kode dari Guru BK Anda.");
+          setBannerValidating(false);
+          return;
+        }
+      }
+    } catch {
+      // Network error — allow continue without blocking
+    } finally {
+      setBannerValidating(false);
+    }
+
+    // Lock name + class code into extractedParams
+    setExtractedParams(prev => ({
+      ...prev,
+      student_name: bannerName.trim(),
+      class_code: bannerCode.trim().toUpperCase(),
+    }));
+
+    // Inject a natural opening into the chat so AI knows
+    const joinMsg = `Nama saya ${bannerName.trim()} dan kode kelas saya adalah ${bannerCode.trim().toUpperCase()}`;
+    const newMsg: Message = { role: "user", content: joinMsg };
+    const updated = [...messages, newMsg];
+    setMessages(updated);
+    sendMessageToBackend(updated);
+    setBannerSubmitted(true);
+    setShowClassBanner(false);
   };
 
   const [messages, setMessages] = useState<Message[]>([
     {
       role: "assistant",
-      content: "Halo! Saya adalah CareerPath AI. Sebelum kita mulai memetakan karir IT, boleh saya tahu siapa nama panggilan Anda? Dan jika ada, silakan masukkan kode kelas dari Guru BK Anda."
+      content: "Halo! Saya adalah CareerPath AI 👋 Saya akan membantu memetakan karir IT terbaik untuk Anda.\n\nJika Anda memiliki kode kelas dari Guru BK, klik tombol **\"Punya Kode Kelas\"** di atas. Jika tidak, langsung ceritakan saja nama panggilan Anda!"
     }
   ]);
 
@@ -76,6 +95,7 @@ export default function ChatOnboarding({ onComplete }: ChatOnboardingProps) {
   const [salaryInput, setSalaryInput] = useState<number>(6000000);
   const [loadingLogs, setLoadingLogs] = useState<string[]>([]);
   const [suggestedSkills, setSuggestedSkills] = useState<string[]>([]);
+
 
   const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
   const [customSkill, setCustomSkill] = useState<string>("");
@@ -521,10 +541,6 @@ export default function ChatOnboarding({ onComplete }: ChatOnboardingProps) {
 
   const progressPct = getProgressPct();
 
-  // If pre-chat form not done yet, show it instead of the chat
-  if (!preChatDone) {
-    return <PreChatForm onComplete={handlePreChatComplete} />;
-  }
 
   return (
     <div className="flex-1 flex bg-white h-full overflow-hidden w-full">
@@ -545,6 +561,69 @@ export default function ChatOnboarding({ onComplete }: ChatOnboardingProps) {
             <Brain className="w-3 h-3 text-slate-500" /> Active Interviewer
           </div>
         </header>
+
+        {/* Class Code Quick-Fill Banner */}
+        {!bannerSubmitted && (
+          <div className="border-b border-slate-100 bg-gradient-to-r from-slate-50 to-white">
+            {!showClassBanner ? (
+              <div className="flex items-center justify-between px-4 py-2">
+                <p className="text-[10px] text-slate-500 font-medium">
+                  Siswa kelas Guru BK?
+                </p>
+                <button
+                  onClick={() => setShowClassBanner(true)}
+                  className="flex items-center gap-1.5 px-2.5 py-1 bg-slate-900 hover:bg-slate-800 text-white rounded text-[10px] font-bold transition-all cursor-pointer shadow-sm"
+                >
+                  <Hash className="w-3 h-3" />
+                  Punya Kode Kelas
+                </button>
+              </div>
+            ) : (
+              <div className="px-4 py-3 space-y-2">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-bold text-slate-700">Masukkan nama & kode kelas Anda</p>
+                  <button onClick={() => { setShowClassBanner(false); setBannerError(""); }} className="text-slate-400 hover:text-slate-600 cursor-pointer">
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={bannerName}
+                    onChange={e => setBannerName(e.target.value)}
+                    placeholder="Nama panggilan"
+                    className="flex-1 border border-slate-200 rounded px-2.5 py-1.5 text-xs font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900 transition-all"
+                  />
+                  <input
+                    type="text"
+                    value={bannerCode}
+                    onChange={e => { setBannerCode(e.target.value.toUpperCase()); setBannerError(""); }}
+                    placeholder="Kode kelas (mis. XII-A-6-XXXX)"
+                    className="flex-1 border border-slate-200 rounded px-2.5 py-1.5 text-xs font-bold text-slate-900 placeholder:text-slate-400 placeholder:font-normal focus:outline-none focus:ring-2 focus:ring-slate-900 transition-all tracking-widest uppercase"
+                  />
+                  <button
+                    onClick={handleBannerSubmit}
+                    disabled={!bannerName.trim() || !bannerCode.trim() || bannerValidating}
+                    className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded text-[10px] font-bold disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer whitespace-nowrap"
+                  >
+                    {bannerValidating ? "Memvalidasi..." : "Konfirmasi"}
+                  </button>
+                </div>
+                {bannerError && (
+                  <p className="text-[10px] text-rose-600 font-semibold flex items-center gap-1">⚠️ {bannerError}</p>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+        {bannerSubmitted && (
+          <div className="flex items-center gap-2 px-4 py-2 bg-emerald-50 border-b border-emerald-100">
+            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+            <p className="text-[10px] font-bold text-emerald-700">
+              Kelas terdaftar! Data Anda akan otomatis tersimpan ke dashboard Guru BK.
+            </p>
+          </div>
+        )}
 
         {/* Chat Messages Area */}
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
