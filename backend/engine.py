@@ -582,7 +582,10 @@ def run_hybrid_engine(
     print(f"[engine] User edu rank: {user_edu_rank}, mapped skills: {mapped_skill_ids}")
 
     # ── 1. Knowledge-Based Filtering ────────────────────────────────────────
-    kbf_mask = df_careers["min_education_rank"].astype(int) <= user_edu_rank
+    # Relax education filter: treat SMA/SMK/Diploma students (rank <= 3) as S1-equivalent (rank 4) 
+    # to allow them to discover and plan roadmaps for D3/S1 level careers.
+    effective_edu_rank = max(user_edu_rank, 4)
+    kbf_mask = df_careers["min_education_rank"].astype(int) <= effective_edu_rank
     kbf_mask = kbf_mask & (df_careers["salary_max"].astype(float) >= user_min_salary)
 
     if user_city:
