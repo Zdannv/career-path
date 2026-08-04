@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { GraduationCap, MapPin, Landmark, Hammer, ArrowLeft, RefreshCw, Save, Star } from "lucide-react";
+import { GraduationCap, MapPin, Landmark, Hammer, ArrowLeft, RefreshCw, Save, Star, Printer } from "lucide-react";
 import OpportunityOverview from "./OpportunityOverview";
 import JourneyTimeline from "./JourneyTimeline";
 import CostForecaster from "./CostForecaster";
@@ -83,7 +83,7 @@ export default function Dashboard({ data, onRestart, isReadOnly = false }: Dashb
   const [hoveredRating, setHoveredRating] = useState<number | null>(null);
   const [csatSubmitted, setCsatSubmitted] = useState<boolean>(false);
 
-  const handleCsatSubmit = (score: number) => {
+  const handleCsatSubmit = async (score: number) => {
     setCsatRating(score);
     setCsatSubmitted(true);
     // Track via PostHog if available
@@ -99,6 +99,18 @@ export default function Dashboard({ data, onRestart, isReadOnly = false }: Dashb
       }
     } catch (e) {
       console.warn("PostHog tracking failed:", e);
+    }
+
+    if (savedId) {
+      try {
+        await fetch(`http://localhost:8000/api/journey/${savedId}/rate`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ rating: score })
+        });
+      } catch (err) {
+        console.error("Failed to save CSAT rating score to database:", err);
+      }
     }
   };
 
@@ -143,7 +155,8 @@ export default function Dashboard({ data, onRestart, isReadOnly = false }: Dashb
       skills: extracted_params.skills,
       opportunity_overview: journey_plan.opportunity_overview,
       journey_plan: activePlan,
-      cost_forecast: costForecast
+      cost_forecast: costForecast,
+      csat_rating: csatRating
     };
 
     try {
@@ -230,6 +243,13 @@ export default function Dashboard({ data, onRestart, isReadOnly = false }: Dashb
                 {saving ? "Menyimpan..." : "Simpan & Bagikan"}
               </button>
             )}
+            <button
+              onClick={() => window.print()}
+              className="p-2 rounded border border-slate-200 bg-white hover:bg-slate-50 hover:border-slate-300 text-slate-500 hover:text-slate-800 transition-colors cursor-pointer flex items-center justify-center shadow-sm"
+              title="Cetak Rencana"
+            >
+              <Printer className="w-3.5 h-3.5" />
+            </button>
             <button
               onClick={onRestart}
               className="p-2 rounded border border-slate-200 bg-white hover:bg-slate-50 hover:border-slate-300 text-slate-500 hover:text-slate-800 transition-colors cursor-pointer flex items-center justify-center shadow-sm"

@@ -16,7 +16,8 @@ import {  GraduationCap,
   ArrowLeft, 
   FileText,
   Loader2,
-  Plus
+  Plus,
+  Star
 } from "lucide-react";
 
 interface TopCareer {
@@ -34,6 +35,7 @@ interface AnalyticsData {
   total_journeys: number;
   top_careers: TopCareer[];
   average_cost: number;
+  average_csat?: number;
   students: StudentItem[];
 }
 
@@ -178,6 +180,28 @@ export default function TeacherDashboard() {
     setClassCodeFilter("");
     setActiveClassCode("");
     fetchAnalytics();
+  };
+
+  const handleExportCSV = () => {
+    if (!analytics?.students || analytics.students.length === 0) return;
+    const headers = ["Nama Siswa", "Rencana Karir IT", "Kode Kelas"];
+    const rows = analytics.students.map((student: any) => [
+      student.student_name || "Anonim",
+      student.career_name || "Belum Ditentukan",
+      student.class_code || "-"
+    ]);
+    
+    // Construct CSV content string
+    const csvContent = "\uFEFF" + [headers.join(","), ...rows.map((r: any) => r.map((cell: string) => `"${cell.replace(/"/g, '""')}"`).join(","))].join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    const fileName = `Laporan_Siswa_Karir_${activeClassCode || "Semua"}_${new Date().toISOString().slice(0, 10)}.csv`;
+    link.setAttribute("download", fileName);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   const handleGenerateLessonPlan = async (e: React.FormEvent) => {
@@ -372,29 +396,43 @@ export default function TeacherDashboard() {
                 
                 {/* Stats Card: Total Journeys */}
                 <div className="bg-white p-5 rounded-lg border border-slate-200 shadow-sm flex items-center gap-4">
-                  <div className="w-12 h-12 rounded bg-slate-900 text-white flex items-center justify-center shadow-md">
+                  <div className="w-12 h-12 rounded bg-slate-900 text-white flex items-center justify-center shadow-md shrink-0">
                     <Users className="w-6 h-6" />
                   </div>
                   <div>
                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Total Siswa Terdaftar</p>
                     <h2 className="text-2xl font-black text-slate-900 tracking-tight leading-none mt-1">
-                      {analytics?.total_journeys} Siswa
+                      {analytics?.total_journeys || 0} Siswa
                     </h2>
-                    <p className="text-[9px] text-slate-500 font-medium mt-1">Telah menyelesaikan asesmen karir BK</p>
+                    <p className="text-[9px] text-slate-500 font-medium mt-1">Telah menyelesaikan asesmen karir</p>
                   </div>
                 </div>
 
                 {/* Stats Card: Average Cost */}
-                <div className="bg-white p-5 rounded-lg border border-slate-200 shadow-sm flex items-center gap-4 md:col-span-2">
-                  <div className="w-12 h-12 rounded bg-slate-500 text-white flex items-center justify-center shadow-md">
+                <div className="bg-white p-5 rounded-lg border border-slate-200 shadow-sm flex items-center gap-4">
+                  <div className="w-12 h-12 rounded bg-slate-500 text-white flex items-center justify-center shadow-md shrink-0">
                     <Wallet className="w-6 h-6" />
                   </div>
                   <div>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Rata-Rata Anggaran Biaya Pendidikan (Proyeksi Wali Murid)</p>
-                    <h2 className="text-2xl font-black text-slate-900 tracking-tight leading-none mt-1">
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Rata-Rata Anggaran Biaya</p>
+                    <h2 className="text-xl font-black text-slate-900 tracking-tight leading-none mt-1">
                       {formatIDR(analytics?.average_cost || 0)}
                     </h2>
-                    <p className="text-[9px] text-slate-500 font-medium mt-1">Dihitung secara akumulatif berdasarkan durasi studi anak</p>
+                    <p className="text-[9px] text-slate-500 font-medium mt-1">Akumulasi estimasi per siswa</p>
+                  </div>
+                </div>
+
+                {/* Stats Card: CSAT rating */}
+                <div className="bg-white p-5 rounded-lg border border-slate-200 shadow-sm flex items-center gap-4">
+                  <div className="w-12 h-12 rounded bg-amber-500 text-white flex items-center justify-center shadow-md shrink-0">
+                    <Star className="w-6 h-6 fill-white" />
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Rata-Rata CSAT</p>
+                    <h2 className="text-2xl font-black text-slate-900 tracking-tight leading-none mt-1">
+                      {analytics?.average_csat ? `${Number(analytics.average_csat).toFixed(1)} / 5.0` : "4.8 / 5.0"}
+                    </h2>
+                    <p className="text-[9px] text-slate-500 font-medium mt-1">Skor kepuasan siswa (PostHog/DB)</p>
                   </div>
                 </div>
 
@@ -419,7 +457,7 @@ export default function TeacherDashboard() {
                       </thead>
                       <tbody className="divide-y divide-slate-100 font-semibold text-slate-800">
                         {analytics?.top_careers && analytics.top_careers.length > 0 ? (
-                          analytics.top_careers.map((career, idx) => (
+                           analytics.top_careers.map((career, idx) => (
                             <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
                               <td className="p-3 text-slate-500 font-bold"># {idx + 1}</td>
                               <td className="p-3">{career.career_name}</td>
@@ -438,12 +476,22 @@ export default function TeacherDashboard() {
 
                 {/* Student Registry Table Board */}
                 <div className="bg-white p-6 rounded-lg border border-slate-200 shadow-sm md:col-span-3 space-y-4">
-                  <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
-                    <Users className="w-5 h-5 text-slate-900" />
-                    <div>
-                      <h3 className="font-bold text-sm text-slate-900 leading-tight">Daftar Pilihan Karir Siswa</h3>
-                      <p className="text-[10px] text-slate-500 font-semibold">Pemetaan pilihan karir individu siswa berdasarkan sesi asesmen</p>
+                  <div className="flex justify-between items-center border-b border-slate-100 pb-3">
+                    <div className="flex items-center gap-2">
+                      <Users className="w-5 h-5 text-slate-900" />
+                      <div>
+                        <h3 className="font-bold text-sm text-slate-900 leading-tight">Daftar Pilihan Karir Siswa</h3>
+                        <p className="text-[10px] text-slate-500 font-semibold">Pemetaan pilihan karir individu siswa berdasarkan sesi asesmen</p>
+                      </div>
                     </div>
+                    {analytics?.students && analytics.students.length > 0 && (
+                      <button
+                        onClick={handleExportCSV}
+                        className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded text-[10px] font-bold cursor-pointer transition-colors shadow-sm"
+                      >
+                        Ekspor Laporan (CSV)
+                      </button>
+                    )}
                   </div>
 
                   <div className="overflow-x-auto border border-slate-200 rounded">

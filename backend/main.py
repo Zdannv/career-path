@@ -95,6 +95,7 @@ class SaveJourneyRequest(BaseModel):
     opportunity_overview: str
     journey_plan: Dict[str, Any]
     cost_forecast: Optional[Dict[str, Any]] = None
+    csat_rating: Optional[int] = None
 
 @app.get("/api/health")
 def health_check():
@@ -176,6 +177,20 @@ async def generate_chat_journey(request: ChatJourneyRequest):
             is_complete = True
             
     raw_message = extracted.get("message", "Bisa tolong ceritakan lebih lanjut?")
+    
+    # Programmatic Class Code validation and warning injection
+    if extracted.get("class_code"):
+        client = get_supabase_client()
+        if client:
+            try:
+                code_check = client.table("classes").select("class_code").eq("class_code", extracted["class_code"]).execute()
+                if not code_check.data:
+                    warning_text = f"⚠️ Kode kelas '{extracted['class_code']}' tidak terdaftar di sistem. (Rencana karirmu tetap dapat disimpan, namun tidak akan terhubung ke dasbor Guru BK sekolah).\n\n"
+                    if warning_text not in raw_message:
+                        raw_message = warning_text + raw_message
+            except Exception as e:
+                logger.warning(f"Error validating class code: {e}")
+
     corrected_state = validate_and_correct_state(raw_message, extracted.get("state", "skills"))
     
     # Programmatic Standardized Skills injection
@@ -416,13 +431,18 @@ async def save_journey(request: SaveJourneyRequest):
             record["major"] = request.major
         if request.cost_forecast:
             record["cost_forecast"] = request.cost_forecast
+        if request.csat_rating is not None:
+            record["csat_rating"] = request.csat_rating
             
         try:
             res = client.table("user_journeys").insert(record).execute()
+            if not res.data:
+                raise HTTPException(status_code=500, detail="Gagal menyimpan rencana karier ke database.")
+            return {"status": "success", "inserted_id": res.data[0].get("id")}
         except Exception as db_err:
             # Fallback in case columns do not exist yet on Supabase table schema
             fallback_record = record.copy()
-            for col in ["student_name", "class_code", "cost_forecast", "major"]:
+            for col in ["student_name", "class_code", "cost_forecast", "major", "csat_rating"]:
                 if col in fallback_record:
                     del fallback_record[col]
             try:
@@ -440,6 +460,26 @@ async def save_journey(request: SaveJourneyRequest):
             status_code=500,
             detail=f"Terjadi kesalahan koneksi saat menyimpan rencana karier: {str(e)}"
         )
+
+class RateJourneyRequest(BaseModel):
+    rating: int
+
+@app.post("/api/journey/{journey_id}/rate")
+def rate_journey(journey_id: str, request: RateJourneyRequest):
+    """
+    Updates the CSAT rating score of a saved student journey.
+    """
+    client = get_supabase_client()
+    if not client:
+        raise HTTPException(status_code=503, detail="Koneksi database Supabase tidak tersedia.")
+        
+    try:
+        res = client.table("user_journeys").update({"csat_rating": request.rating}).eq("id", journey_id).execute()
+        if not res.data:
+            raise HTTPException(status_code=404, detail="Rencana karier tidak ditemukan.")
+        return {"status": "success", "data": res.data[0]}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Gagal menyimpan penilaian kepuasan: {str(e)}")
 
 @app.get("/api/journey/{journey_id}")
 def get_journey(journey_id: str):
@@ -608,6 +648,8 @@ def get_teacher_summary(class_code: Optional[str] = None, teacher_id: Optional[s
         career_counts = {}
         cost_sum = 0.0
         cost_count = 0
+        csat_sum = 0.0
+        csat_count = 0
         students_list = []
         
         for item in data:
@@ -635,10 +677,20 @@ def get_teacher_summary(class_code: Optional[str] = None, teacher_id: Optional[s
                     cost_count += 1
                 except (ValueError, TypeError):
                     pass
+
+            # Aggregate CSAT
+            csat = item.get("csat_rating")
+            if csat is not None:
+                try:
+                    csat_sum += float(csat)
+                    csat_count += 1
+                except (ValueError, TypeError):
+                    pass
                     
         sorted_careers = sorted(career_counts.items(), key=lambda x: x[1], reverse=True)
         top_careers = [{"career_name": k, "count": v} for k, v in sorted_careers[:5]]
         avg_cost = cost_sum / cost_count if cost_count > 0 else (54000000.0 if total_journeys > 0 else 0.0)
+        avg_csat = csat_sum / csat_count if csat_count > 0 else 0.0
         
         # If no entries are present yet (and no filter is active), return a helpful default mock state so counselors can visualize immediately
         if total_journeys == 0 and not class_code:
@@ -651,6 +703,7 @@ def get_teacher_summary(class_code: Optional[str] = None, teacher_id: Optional[s
                     {"career_name": "Mobile Developer", "count": 2}
                 ],
                 "average_cost": 54000000.0,
+                "average_csat": 4.8,
                 "students": [
                     {"student_name": "Budi", "career_name": "Frontend Developer", "class_code": "SMK-BISA-26"},
                     {"student_name": "Siti", "career_name": "DevOps Engineer", "class_code": "SMK-BISA-26"},
@@ -662,6 +715,7 @@ def get_teacher_summary(class_code: Optional[str] = None, teacher_id: Optional[s
             "total_journeys": total_journeys,
             "top_careers": top_careers,
             "average_cost": avg_cost,
+            "average_csat": avg_csat,
             "students": students_list
         }
     except Exception as e:
@@ -675,6 +729,7 @@ def get_teacher_summary(class_code: Optional[str] = None, teacher_id: Optional[s
                 {"career_name": "Mobile Developer (Mock)", "count": 2}
             ],
             "average_cost": 54000000.0,
+            "average_csat": 4.8,
             "students": [
                 {"student_name": "Budi (Mock)", "career_name": "Frontend Developer", "class_code": "SMK-BISA-26"},
                 {"student_name": "Siti (Mock)", "career_name": "DevOps Engineer", "class_code": "SMK-BISA-26"},
