@@ -506,16 +506,22 @@ async def save_journey(request: SaveJourneyRequest):
                 raise HTTPException(status_code=500, detail="Gagal menyimpan rencana karier ke database.")
             return {"status": "success", "inserted_id": res.data[0].get("id")}
         except Exception as db_err:
-            # Fallback in case columns do not exist yet on Supabase table schema
             fallback_record = record.copy()
-            for col in ["student_name", "class_code", "cost_forecast", "major", "csat_rating"]:
+            # student_name and class_code columns exist, so we only remove potentially missing ones
+            for col in ["cost_forecast", "major", "csat_rating"]:
                 if col in fallback_record:
                     del fallback_record[col]
+                        
             try:
                 res = client.table("user_journeys").insert(fallback_record).execute()
             except Exception:
-                # Raise original error if all retries fail
-                raise db_err
+                # Absolute fallback: save only guaranteed baseline columns
+                baseline_cols = ["education", "city", "min_salary", "skills", "opportunity_overview", "journey_plan"]
+                absolute_fallback = {k: v for k, v in record.items() if k in baseline_cols}
+                try:
+                    res = client.table("user_journeys").insert(absolute_fallback).execute()
+                except Exception:
+                    raise db_err
         
         if not res.data:
             raise HTTPException(status_code=500, detail="Gagal menyimpan rencana karier ke database.")
