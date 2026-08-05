@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { GraduationCap, MapPin, Landmark, Hammer, ArrowLeft, RefreshCw, Save, Star, Printer, Copy } from "lucide-react";
+import { API_URL } from "@/config/api";
 import OpportunityOverview from "./OpportunityOverview";
 import JourneyTimeline from "./JourneyTimeline";
 import CostForecaster from "./CostForecaster";
@@ -106,7 +107,7 @@ export default function Dashboard({ data, onRestart, isReadOnly = false }: Dashb
 
     if (savedId) {
       try {
-        await fetch(`http://localhost:8000/api/journey/${savedId}/rate`, {
+        await fetch(`${API_URL}/api/journey/${savedId}/rate`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ rating: score })
@@ -183,7 +184,7 @@ export default function Dashboard({ data, onRestart, isReadOnly = false }: Dashb
     };
 
     try {
-      const response = await fetch("http://localhost:8000/api/save-journey", {
+      const response = await fetch(`${API_URL}/api/save-journey`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)

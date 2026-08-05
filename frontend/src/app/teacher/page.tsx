@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
+import { API_URL } from "@/config/api";
 import {  GraduationCap, 
   Users, 
   Wallet, 
@@ -112,7 +113,7 @@ export default function TeacherDashboard() {
     try {
       const targetId = tId || teacherId;
       const queryParam = targetId ? `?teacher_id=${targetId}` : "";
-      const res = await fetch(`http://localhost:8000/api/teacher/classes${queryParam}`);
+      const res = await fetch(`${API_URL}/api/teacher/classes${queryParam}`);
       if (!res.ok) {
         throw new Error("Gagal mengambil daftar kelas.");
       }
@@ -135,7 +136,7 @@ export default function TeacherDashboard() {
     setCreatingClass(true);
     setCreatedClassCode(null);
     try {
-      const res = await fetch("http://localhost:8000/api/teacher/classes", {
+      const res = await fetch(`${API_URL}/api/teacher/classes`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ class_name: newClassName, teacher_id: teacherId })
@@ -165,7 +166,7 @@ export default function TeacherDashboard() {
       if (targetId) params.push(`teacher_id=${targetId}`);
       const queryStr = params.length > 0 ? `?${params.join("&")}` : "";
       
-      const res = await fetch(`http://localhost:8000/api/teacher/summary${queryStr}`);
+      const res = await fetch(`${API_URL}/api/teacher/summary${queryStr}`);
       if (!res.ok) {
         throw new Error("Gagal mengambil data ringkasan siswa.");
       }
@@ -230,7 +231,7 @@ export default function TeacherDashboard() {
     setGeneratingPlan(true);
     setGeneratedPlan("");
     try {
-      const res = await fetch("http://localhost:8000/api/teacher/lesson-plan", {
+      const res = await fetch(`${API_URL}/api/teacher/lesson-plan`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ topic, grade_level: gradeLevel })

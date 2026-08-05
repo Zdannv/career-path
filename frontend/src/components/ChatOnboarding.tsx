@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { Send, Sparkles, Brain, Check, User, ArrowRight, RefreshCw, MapPin, Landmark, GraduationCap, Hash, X, CheckCircle2 } from "lucide-react";
+import { API_URL } from "@/config/api";
 
 interface Message {
   role: "assistant" | "user";
@@ -60,7 +61,7 @@ export default function ChatOnboarding({ onComplete }: ChatOnboardingProps) {
     setBannerValidating(true);
     try {
       const res = await fetch(
-        `http://localhost:8000/api/classes/validate?code=${encodeURIComponent(bannerCode.trim().toUpperCase())}`
+        `${API_URL}/api/classes/validate?code=${encodeURIComponent(bannerCode.trim().toUpperCase())}`
       );
       if (res.ok) {
         const json = await res.json();
@@ -172,7 +173,7 @@ export default function ChatOnboarding({ onComplete }: ChatOnboardingProps) {
   const sendMessageToBackend = async (nextMessages: Message[], overrideParams?: ExtractedParams) => {
     setIsWaiting(true);
     try {
-      const response = await fetch("http://localhost:8000/api/chat-journey", {
+      const response = await fetch(`${API_URL}/api/chat-journey`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -282,7 +283,7 @@ export default function ChatOnboarding({ onComplete }: ChatOnboardingProps) {
             };
             console.log("[ChatOnboarding] Saving with payload:", JSON.stringify(savePayload).slice(0, 300));
             try {
-              const saveRes = await fetch("http://localhost:8000/api/save-journey", {
+              const saveRes = await fetch(`${API_URL}/api/save-journey`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(savePayload)

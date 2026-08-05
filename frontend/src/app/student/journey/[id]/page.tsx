@@ -5,6 +5,8 @@ import { useParams, useRouter } from "next/navigation";
 import { Loader2, ArrowLeft, AlertCircle } from "lucide-react";
 import Dashboard from "@/components/Dashboard";
 
+import { API_URL } from "@/config/api";
+
 export default function SavedJourneyPage() {
   const params = useParams();
   const router = useRouter();
@@ -23,7 +25,7 @@ export default function SavedJourneyPage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`http://localhost:8000/api/journey/${id}`);
+      const res = await fetch(`${API_URL}/api/journey/${id}`);
       if (!res.ok) {
         if (res.status === 404) {
           throw new Error("Rencana perjalanan karier tidak ditemukan.");

@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { BookOpen, Users, GraduationCap, ChevronRight, ChevronLeft, CheckCircle, Hash, Sparkles } from "lucide-react";
+import { API_URL } from "@/config/api";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // DATA: Standardized education levels
@@ -586,7 +587,7 @@ export default function PreChatForm({ onComplete }: PreChatFormProps) {
       setValidatingCode(true);
       setClassCodeError("");
       try {
-        const res = await fetch(`http://localhost:8000/api/classes/validate?code=${encodeURIComponent(classCode.trim())}`);
+        const res = await fetch(`${API_URL}/api/classes/validate?code=${encodeURIComponent(classCode.trim())}`);
         if (res.ok) {
           const json = await res.json();
           if (!json.valid) {

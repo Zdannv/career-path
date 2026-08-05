@@ -14,6 +14,8 @@ import {
   Loader2
 } from "lucide-react";
 
+import { API_URL } from "@/config/api";
+
 interface JobItem {
   title: string;
   type: "Full-time" | "Gigs / Freelance";
@@ -42,7 +44,7 @@ export default function JobsGigsExplorer() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("http://localhost:8000/api/jobs/trends");
+      const res = await fetch(`${API_URL}/api/jobs/trends`);
       if (!res.ok) {
         throw new Error("Gagal memuat tren lowongan kerja IT.");
       }
