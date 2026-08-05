@@ -5,7 +5,11 @@
 export const getApiUrl = (): string => {
   // 1. If an environment variable is explicitly provided, always use it (Standard Production)
   if (process.env.NEXT_PUBLIC_API_URL) {
-    return process.env.NEXT_PUBLIC_API_URL.replace(/\/$/, ""); // Remove trailing slash if any
+    let url = process.env.NEXT_PUBLIC_API_URL.trim().replace(/\/$/, ""); // Remove trailing slash if any
+    if (!url.startsWith("http://") && !url.startsWith("https://")) {
+      url = `https://${url}`;
+    }
+    return url;
   }
 
   // 2. If running in a browser, determine the host dynamically
