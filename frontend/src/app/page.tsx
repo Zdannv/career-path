@@ -74,7 +74,9 @@ export default function LandingPage() {
     <div className="w-full bg-white text-slate-900">
       {/* Hero */}
       <section className="relative overflow-hidden bg-gradient-to-b from-indigo-50 via-purple-50/60 to-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20 lg:py-24 grid lg:grid-cols-2 gap-12 items-center">
+        <div className="absolute top-0 right-0 w-[36rem] h-[36rem] translate-x-1/4 -translate-y-1/4 rounded-full bg-gradient-to-br from-purple-300/50 via-indigo-300/40 to-transparent blur-3xl pointer-events-none" />
+
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20 lg:py-24 grid lg:grid-cols-2 gap-12 items-center">
           <div className="text-center lg:text-left">
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white text-indigo-600 text-xs font-bold shadow-sm border border-indigo-100">
               <Sparkles className="w-3.5 h-3.5" />
