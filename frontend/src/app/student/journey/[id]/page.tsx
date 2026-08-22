@@ -68,8 +68,8 @@ export default function SavedJourneyPage() {
       };
       
       setMappedData(reconstructed);
-    } catch (err: any) {
-      setError(err.message || "Gagal menghubungkan ke server.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Gagal menghubungkan ke server.");
     } finally {
       setLoading(false);
     }

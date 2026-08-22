@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { GraduationCap, MapPin, Landmark, Hammer, ArrowLeft, RefreshCw, Save, Star, Printer, Copy } from "lucide-react";
+import posthog from "posthog-js";
 import { API_URL } from "@/config/api";
 import OpportunityOverview from "./OpportunityOverview";
 import JourneyTimeline from "./JourneyTimeline";
@@ -93,8 +94,7 @@ export default function Dashboard({ data, onRestart, isReadOnly = false }: Dashb
     // Track via PostHog if available
     try {
       if (typeof window !== "undefined") {
-        const posthogLib = require("posthog-js").default;
-        posthogLib.capture("csat_rating_submitted", {
+        posthog.capture("csat_rating_submitted", {
           score: score,
           student_name: extracted_params.student_name,
           education: extracted_params.education,
@@ -204,11 +204,11 @@ export default function Dashboard({ data, onRestart, isReadOnly = false }: Dashb
         message: "Rencana Karier Anda telah tersimpan. Gunakan link bagikan di atas dasbor.",
         type: "success"
       });
-    } catch (error: any) {
+    } catch (error) {
       setToast({
         show: true,
         title: "Gagal Menyimpan",
-        message: error.message || "Koneksi database terputus. Rencana tidak dapat disimpan.",
+        message: error instanceof Error ? error.message : "Koneksi database terputus. Rencana tidak dapat disimpan.",
         type: "error"
       });
     } finally {
@@ -408,7 +408,7 @@ export default function Dashboard({ data, onRestart, isReadOnly = false }: Dashb
                       className={`w-8 h-8 transition-colors ${
                         star <= (hoveredRating ?? csatRating ?? 0)
                           ? "text-amber-400 fill-amber-400"
-                          : "text-slate-350"
+                          : "text-slate-300"
                       }`}
                     />
                   </button>

@@ -1,26 +1,46 @@
-from fastapi import FastAPI, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
-from typing import List, Dict, Any, Optional
+import logging
+import os
+from typing import Any, Dict, List, Optional
+
 import uvicorn
 from dotenv import load_dotenv
+from fastapi import Depends, FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 
-# Load env variables (e.g., GEMINI_API_KEY, OPENAI_API_KEY, SUPABASE_URL, SUPABASE_KEY)
 load_dotenv()
 
-from engine import run_hybrid_engine, get_supabase_client
-from llm_service import extract_profile_from_chat, generate_journey_plan, generate_lesson_plan
+logging.basicConfig(
+    level=os.getenv("LOG_LEVEL", "INFO").upper(),
+    format="%(asctime)s %(levelname)-8s %(name)s %(message)s",
+)
+logger = logging.getLogger("careerpath.api")
 
-app = FastAPI(title="CareerPath AI Core API Engine", version="1.0.0")
+from auth import AuthenticatedUser, optional_user, require_user  # noqa: E402
+from engine import get_supabase_client, run_hybrid_engine  # noqa: E402
+from llm_service import extract_profile_from_chat, generate_journey_plan  # noqa: E402
 
-# Enable CORS for Next.js frontend
+app = FastAPI(title="CareerPath Engine API", version="2.0.0")
+
+# Browser origins allowed to call this service. Never "*": that plus
+# credentials is what lets any site read a signed-in user's data.
+_origins = [
+    o.strip()
+    for o in os.getenv("CORS_ALLOWED_ORIGINS", "http://localhost:3000").split(",")
+    if o.strip()
+]
+if "*" in _origins:
+    logger.warning("CORS_ALLOWED_ORIGINS contains '*'. Set real origins before deploying.")
+logger.info("CORS allowed origins: %s", _origins)
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # For production, restrict this to the frontend domain
-    allow_credentials=False,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=_origins,
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type"],
 )
+
 
 class ChatMessage(BaseModel):
     role: str  # 'user' or 'assistant'
@@ -101,6 +121,12 @@ class SaveJourneyRequest(BaseModel):
 @app.get("/api/health")
 def health_check():
     return {"status": "healthy"}
+
+
+@app.get("/api/me")
+def whoami(user: AuthenticatedUser = Depends(require_user)):
+    """Echoes the verified caller. Use this to check that auth is wired up."""
+    return {"id": user.id, "email": user.email, "role": user.role}
 
 def validate_and_correct_state(message: str, current_state: str) -> str:
     import re
@@ -185,19 +211,6 @@ async def generate_chat_journey(request: ChatJourneyRequest):
             
     raw_message = extracted.get("message", "Bisa tolong ceritakan lebih lanjut?")
     
-    # Programmatic Class Code validation and warning injection
-    if extracted.get("class_code"):
-        client = get_supabase_client()
-        if client:
-            try:
-                code_check = client.table("classes").select("class_code").eq("class_code", extracted["class_code"]).execute()
-                if not code_check.data:
-                    warning_text = f"⚠️ Kode kelas '{extracted['class_code']}' tidak terdaftar di sistem. (Rencana karirmu tetap dapat disimpan, namun tidak akan terhubung ke dasbor Guru BK sekolah).\n\n"
-                    if warning_text not in raw_message:
-                        raw_message = warning_text + raw_message
-            except Exception as e:
-                logger.warning(f"Error validating class code: {e}")
-
     corrected_state = validate_and_correct_state(raw_message, extracted.get("state", "skills"))
     
     # Programmatic Standardized Skills injection
@@ -467,10 +480,18 @@ async def generate_chat_journey(request: ChatJourneyRequest):
     return formatted_response
 
 @app.post("/api/save-journey")
-async def save_journey(request: SaveJourneyRequest):
+async def save_journey(
+    request: SaveJourneyRequest,
+    user: Optional[AuthenticatedUser] = Depends(optional_user),
+):
     """
     Saves the active user parameters, opportunity overview, and journey plan timeline to Supabase user_journeys table.
     """
+    # TODO(fase-2): switch to `require_user` and stamp user_id on the row
+    # once student accounts exist. Anonymous saves are legacy behaviour.
+    if user is None:
+        logger.info("save-journey called anonymously (legacy flow)")
+
     client = get_supabase_client()
     if not client:
         raise HTTPException(
@@ -575,472 +596,6 @@ def get_journey(journey_id: str):
             status_code=500,
             detail=f"Terjadi kesalahan saat memuat rencana karier: {str(e)}"
         )
-
-class CreateClassRequest(BaseModel):
-    class_name: str
-    teacher_id: Optional[str] = None
-
-@app.get("/api/classes/validate")
-def validate_class_code(code: str):
-    """
-    Check whether a class code exists in the 'classes' table.
-    Returns { valid: true/false }. Used by the PreChatForm for instant validation.
-    """
-    if not code or len(code.strip()) < 3:
-        return {"valid": False}
-    client = get_supabase_client()
-    if not client:
-        # If we can't reach the DB, don't block the user — just say valid
-        return {"valid": True}
-    try:
-        res = client.table("classes").select("id").eq("class_code", code.strip().upper()).execute()
-        return {"valid": len(res.data) > 0}
-    except Exception:
-        return {"valid": True}
-
-
-@app.post("/api/teacher/classes")
-def create_class(request: CreateClassRequest):
-    """
-    Registers a new class name and generates/saves a unique class code in Supabase 'classes' table.
-    """
-    client = get_supabase_client()
-    if not client:
-        raise HTTPException(
-            status_code=553,
-            detail="Koneksi database Supabase tidak tersedia."
-        )
-    
-    import re
-    import random
-    import string
-    
-    class_name = request.class_name.strip()
-    if not class_name:
-        raise HTTPException(status_code=400, detail="Nama kelas tidak boleh kosong.")
-        
-    # Generate unique class code
-    cleaned = re.sub(r'[^a-zA-Z0-9\s-]', '', class_name).strip().upper()
-    slug = re.sub(r'[\s-]+', '-', cleaned)
-    rand = ''.join(random.choices(string.ascii_uppercase + string.digits, k=4))
-    class_code = f"{slug}-{rand}" if slug else f"CLASS-{rand}"
-    
-    try:
-        record = {
-            "class_name": class_name,
-            "class_code": class_code
-        }
-        if request.teacher_id:
-            record["teacher_id"] = request.teacher_id
-            
-        res = client.table("classes").insert(record).execute()
-        if not res.data:
-            raise HTTPException(status_code=500, detail="Gagal menyimpan data kelas ke database.")
-        return {"status": "success", "data": res.data[0]}
-    except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=(
-                "Gagal menyimpan kelas. Pastikan tabel 'classes' sudah dibuat di database Supabase. "
-                "Silakan jalankan file migration_classes_table.sql di SQL Editor Supabase Anda. "
-                f"Error detail: {str(e)}"
-            )
-        )
-
-@app.get("/api/teacher/classes")
-def get_classes(teacher_id: Optional[str] = None):
-    """
-    Returns list of all active registered classes from Supabase.
-    Can be filtered by teacher_id.
-    """
-    client = get_supabase_client()
-    if not client:
-        return {"classes": []}
-        
-    try:
-        query = client.table("classes").select("*")
-        if teacher_id:
-            try:
-                query = query.eq("teacher_id", teacher_id)
-            except Exception as col_err:
-                logger.warning(f"Failed to filter classes by teacher_id: {col_err}")
-        res = query.order("created_at", desc=True).execute()
-        return {"classes": res.data or []}
-    except Exception as e:
-        # Fallback to mock classes if database query fails (e.g. migration not run yet)
-        return {
-            "classes": [
-                {"class_name": "XII RPL 1 (Mock)", "class_code": "XII-RPL-1-MOCK", "created_at": "2026-08-01T12:00:00Z"},
-                {"class_name": "XII TKJ 2 (Mock)", "class_code": "XII-TKJ-2-MOCK", "created_at": "2026-08-01T12:00:00Z"}
-            ],
-            "warning": (
-                "Tabel database 'classes' belum terdeteksi. Silakan jalankan script migration_classes_table.sql "
-                "di SQL Editor Dashboard Supabase Anda."
-            )
-        }
-
-class LessonPlanRequest(BaseModel):
-    topic: str
-    grade_level: str
-
-@app.get("/api/teacher/summary")
-def get_teacher_summary(class_code: Optional[str] = None, teacher_id: Optional[str] = None):
-    """
-    Returns aggregated analytics for Guidance Counselors (Guru BK) based on saved user journeys.
-    Can be filtered by class_code, and restricted by teacher_id.
-    """
-    client = get_supabase_client()
-    if not client:
-        return {
-            "total_journeys": 0,
-            "top_careers": [],
-            "average_cost": 0.0,
-            "students": []
-        }
-        
-    try:
-        # Check teacher classes if teacher_id is provided
-        allowed_class_codes = None
-        if teacher_id:
-            try:
-                classes_res = client.table("classes").select("class_code").eq("teacher_id", teacher_id).execute()
-                allowed_class_codes = [c["class_code"] for c in (classes_res.data or [])]
-            except Exception as e:
-                logger.warning(f"Could not check teacher_id on classes table: {e}")
-                
-        # Fetch filtered or all records
-        if class_code:
-            if allowed_class_codes is not None and class_code not in allowed_class_codes:
-                # Unauthorized class code access
-                return {
-                    "total_journeys": 0,
-                    "top_careers": [],
-                    "average_cost": 0.0,
-                    "students": []
-                }
-            res = client.table("user_journeys").select("*").eq("class_code", class_code).execute()
-        else:
-            if allowed_class_codes is not None:
-                if not allowed_class_codes:
-                    # Teacher has created no classes, so they see no students
-                    return {
-                        "total_journeys": 0,
-                        "top_careers": [],
-                        "average_cost": 0.0,
-                        "students": []
-                    }
-                res = client.table("user_journeys").select("*").in_("class_code", allowed_class_codes).execute()
-            else:
-                res = client.table("user_journeys").select("*").execute()
-            
-        data = res.data or []
-        
-        total_journeys = len(data)
-        career_counts = {}
-        cost_sum = 0.0
-        cost_count = 0
-        csat_sum = 0.0
-        csat_count = 0
-        students_list = []
-        
-        for item in data:
-            sname = item.get("student_name") or "Anonim"
-            plan = item.get("journey_plan") or {}
-            cname = plan.get("career_name") or "Belum Ditentukan"
-            
-            # Add to student table info with complete parameter mapping
-            students_list.append({
-                "id": str(item.get("id")),
-                "student_name": sname,
-                "career_name": cname,
-                "class_code": item.get("class_code") or "-",
-                "education": item.get("education") or "-",
-                "major": item.get("major") or "-",
-                "city": item.get("city") or "-",
-                "min_salary": float(item.get("min_salary") or 0.0),
-                "skills": item.get("skills") or [],
-                "csat_rating": item.get("csat_rating"),
-                "created_at": item.get("created_at")
-            })
-            
-            # Aggregate matched careers
-            if cname and cname != "Belum Ditentukan":
-                career_counts[cname] = career_counts.get(cname, 0) + 1
-                
-            # Aggregate cost forecasts
-            cf = item.get("cost_forecast") or {}
-            total_cost = cf.get("total_cost")
-            if total_cost is not None:
-                try:
-                    cost_sum += float(total_cost)
-                    cost_count += 1
-                except (ValueError, TypeError):
-                    pass
-
-            # Aggregate CSAT
-            csat = item.get("csat_rating")
-            if csat is not None:
-                try:
-                    csat_sum += float(csat)
-                    csat_count += 1
-                except (ValueError, TypeError):
-                    pass
-                    
-        sorted_careers = sorted(career_counts.items(), key=lambda x: x[1], reverse=True)
-        top_careers = [{"career_name": k, "count": v} for k, v in sorted_careers[:5]]
-        avg_cost = cost_sum / cost_count if cost_count > 0 else (54000000.0 if total_journeys > 0 else 0.0)
-        avg_csat = csat_sum / csat_count if csat_count > 0 else 0.0
-        
-        # If no entries are present yet (and no filter is active), return a helpful default mock state so counselors can visualize immediately
-        if total_journeys == 0 and not class_code:
-            return {
-                "total_journeys": 15,
-                "top_careers": [
-                    {"career_name": "Frontend Developer", "count": 6},
-                    {"career_name": "DevOps Engineer", "count": 4},
-                    {"career_name": "Data Analyst", "count": 3},
-                    {"career_name": "Mobile Developer", "count": 2}
-                ],
-                "average_cost": 54000000.0,
-                "average_csat": 4.8,
-                "students": [
-                    {
-                        "id": "mock-id-1",
-                        "student_name": "Budi",
-                        "career_name": "Frontend Developer",
-                        "class_code": "SMK-BISA-26",
-                        "education": "SMK Sederajat",
-                        "major": "Rekayasa Perangkat Lunak (RPL)",
-                        "city": "Jakarta",
-                        "min_salary": 6000000.0,
-                        "skills": ["HTML", "CSS", "React.js"],
-                        "csat_rating": 5,
-                        "created_at": "2026-08-04T12:00:00Z"
-                    },
-                    {
-                        "id": "mock-id-2",
-                        "student_name": "Siti",
-                        "career_name": "DevOps Engineer",
-                        "class_code": "SMK-BISA-26",
-                        "education": "SMA Sederajat",
-                        "major": "IPA",
-                        "city": "Bandung",
-                        "min_salary": 7000000.0,
-                        "skills": ["Docker", "Kubernetes", "Linux"],
-                        "csat_rating": 4,
-                        "created_at": "2026-08-04T13:00:00Z"
-                    },
-                    {
-                        "id": "mock-id-3",
-                        "student_name": "Andi",
-                        "career_name": "Data Analyst",
-                        "class_code": "SMK-BISA-26",
-                        "education": "Sarjana (S1)",
-                        "major": "Teknik Informatika",
-                        "city": "Surabaya",
-                        "min_salary": 5500000.0,
-                        "skills": ["SQL", "Python", "Tableau"],
-                        "csat_rating": 5,
-                        "created_at": "2026-08-04T14:00:00Z"
-                    }
-                ]
-            }
-            
-        return {
-            "total_journeys": total_journeys,
-            "top_careers": top_careers,
-            "average_cost": avg_cost,
-            "average_csat": avg_csat,
-            "students": students_list
-        }
-    except Exception as e:
-        # Fallback to mock dashboard stats if Supabase request hits any connection or format error
-        return {
-            "total_journeys": 15,
-            "top_careers": [
-                {"career_name": "Frontend Developer (Mock)", "count": 6},
-                {"career_name": "DevOps Engineer (Mock)", "count": 4},
-                {"career_name": "Data Analyst (Mock)", "count": 3},
-                {"career_name": "Mobile Developer (Mock)", "count": 2}
-            ],
-            "average_cost": 54000000.0,
-            "average_csat": 4.8,
-            "students": [
-                {
-                    "id": "mock-id-1",
-                    "student_name": "Budi (Mock)",
-                    "career_name": "Frontend Developer",
-                    "class_code": "SMK-BISA-26",
-                    "education": "SMK Sederajat",
-                    "major": "Rekayasa Perangkat Lunak (RPL)",
-                    "city": "Jakarta",
-                    "min_salary": 6000000.0,
-                    "skills": ["HTML", "CSS", "React.js"],
-                    "csat_rating": 5,
-                    "created_at": "2026-08-04T12:00:00Z"
-                },
-                {
-                    "id": "mock-id-2",
-                    "student_name": "Siti (Mock)",
-                    "career_name": "DevOps Engineer",
-                    "class_code": "SMK-BISA-26",
-                    "education": "SMA Sederajat",
-                    "major": "IPA",
-                    "city": "Bandung",
-                    "min_salary": 7000000.0,
-                    "skills": ["Docker", "Kubernetes", "Linux"],
-                    "csat_rating": 4,
-                    "created_at": "2026-08-04T13:00:00Z"
-                },
-                {
-                    "id": "mock-id-3",
-                    "student_name": "Andi (Mock)",
-                    "career_name": "Data Analyst",
-                    "class_code": "SMK-BISA-26",
-                    "education": "Sarjana (S1)",
-                    "major": "Teknik Informatika",
-                    "city": "Surabaya",
-                    "min_salary": 5500000.0,
-                    "skills": ["SQL", "Python", "Tableau"],
-                    "csat_rating": 5,
-                    "created_at": "2026-08-04T14:00:00Z"
-                }
-            ]
-        }
-
-@app.post("/api/teacher/lesson-plan")
-def get_lesson_plan(request: LessonPlanRequest):
-    """
-    Generates a structured lesson plan for counselors using LLM orientation capabilities.
-    """
-    try:
-        plan = generate_lesson_plan(request.topic, request.grade_level)
-        return {"lesson_plan": plan}
-    except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Terjadi kesalahan saat memproses materi pembelajaran: {str(e)}"
-        )
-
-MOCK_GIGS = [
-    {
-        "title": "Freelance UI/UX Designer untuk Landing Page UMKM",
-        "type": "Gigs / Freelance",
-        "city": "Surabaya",
-        "salary_range": "Rp 2.000.000 - Rp 5.000.000 /proyek",
-        "skills": ["Figma", "Web Design", "Wireframing"]
-    },
-    {
-        "title": "Part-time React & Next.js Developer",
-        "type": "Gigs / Freelance",
-        "city": "Bandung",
-        "salary_range": "Rp 4.000.000 - Rp 7.000.000 /bulan",
-        "skills": ["React.js", "Next.js", "TypeScript"]
-    },
-    {
-        "title": "Jasa Migrasi Database PostgreSQL & Security Audit",
-        "type": "Gigs / Freelance",
-        "city": "Jakarta",
-        "salary_range": "Rp 5.000.000 - Rp 10.000.000 /proyek",
-        "skills": ["PostgreSQL", "Database Security", "SQL"]
-    },
-    {
-        "title": "Pembuatan Aplikasi Mobile Flutter (E-Commerce Lokal)",
-        "type": "Gigs / Freelance",
-        "city": "Yogyakarta",
-        "salary_range": "Rp 8.000.000 - Rp 15.000.000 /proyek",
-        "skills": ["Flutter", "Dart", "REST API Design"]
-    },
-    {
-        "title": "Setup Pipeline CI/CD Docker & AWS (Kontrak 2 Bulan)",
-        "type": "Gigs / Freelance",
-        "city": "Jakarta",
-        "salary_range": "Rp 6.000.000 - Rp 12.000.000 /bulan",
-        "skills": ["Docker", "AWS", "CI/CD (Jenkins, GitHub Actions, GitLab CI)"]
-    },
-    {
-        "title": "Freelance Penulis Konten & Edukasi IT BK",
-        "type": "Gigs / Freelance",
-        "city": "Malang",
-        "salary_range": "Rp 1.500.000 - Rp 3.000.000 /proyek",
-        "skills": ["Communication", "English Proficiency", "Agile / Scrum"]
-    }
-]
-
-@app.get("/api/jobs/trends")
-def get_jobs_trends():
-    """
-    Returns full-time career listings combined with mock freelance gig opportunities.
-    """
-    try:
-        from engine import fetch_data
-        df_edu, df_skills, df_careers, df_cs = fetch_data()
-        
-        jobs_list = []
-        for _, row in df_careers.iterrows():
-            career_id = int(row["id"])
-            cname = row["career_name"]
-            
-            # target_city or location_bias mapping
-            city = row.get("target_city") or row.get("location_bias") or "Jakarta"
-            
-            # clean city format (e.g. list or string)
-            if isinstance(city, str):
-                main_city = [c.strip() for c in city.split(",")][0]
-            else:
-                main_city = "Jakarta"
-                
-            salary_min = float(row.get("salary_min", 4000000.0))
-            salary_max = float(row.get("salary_max", 12000000.0))
-            
-            # Find related skills sorted by weight_pct
-            cs_filtered = df_cs[df_cs["career_id"] == career_id].sort_values(by="weight_pct", ascending=False)
-            top_skills = []
-            for _, cs_row in cs_filtered.head(3).iterrows():
-                sid = int(cs_row["skill_id"])
-                skill_matches = df_skills[df_skills["id"] == sid]
-                if not skill_matches.empty:
-                    top_skills.append(skill_matches.iloc[0]["skill_name"])
-                    
-            if not top_skills:
-                top_skills = ["Python", "JavaScript", "HTML/CSS"]
-                
-            jobs_list.append({
-                "title": cname,
-                "type": "Full-time",
-                "city": main_city,
-                "salary_min": salary_min,
-                "salary_max": salary_max,
-                "skills": top_skills
-            })
-            
-        return {
-            "full_time_jobs": jobs_list,
-            "freelance_gigs": MOCK_GIGS
-        }
-    except Exception as e:
-        logger.error(f"Error fetching jobs trends: {e}")
-        return {
-            "full_time_jobs": [
-                {
-                    "title": "Frontend Developer",
-                    "type": "Full-time",
-                    "city": "Jakarta",
-                    "salary_min": 5000000.0,
-                    "salary_max": 12000000.0,
-                    "skills": ["React.js", "TypeScript", "HTML/CSS"]
-                },
-                {
-                    "title": "Backend Developer",
-                    "type": "Full-time",
-                    "city": "Bandung",
-                    "salary_min": 6000000.0,
-                    "salary_max": 15000000.0,
-                    "skills": ["Node.js", "FastAPI", "PostgreSQL"]
-                }
-            ],
-            "freelance_gigs": MOCK_GIGS
-        }
 
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)

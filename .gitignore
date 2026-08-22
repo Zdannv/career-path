@@ -46,3 +46,5 @@ build/
 .idea/
 .DS_Store
 Thumbs.db
+# transport/scratch artifacts
+_to_delete/

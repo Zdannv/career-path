@@ -58,24 +58,9 @@ export default function ChatOnboarding({ onComplete }: ChatOnboardingProps) {
   const handleBannerSubmit = async () => {
     if (!bannerName.trim() || !bannerCode.trim()) return;
     setBannerError("");
-    setBannerValidating(true);
-    try {
-      const res = await fetch(
-        `${API_URL}/api/classes/validate?code=${encodeURIComponent(bannerCode.trim().toUpperCase())}`
-      );
-      if (res.ok) {
-        const json = await res.json();
-        if (!json.valid) {
-          setBannerError("Kode kelas tidak ditemukan. Periksa kembali kode dari Guru BK Anda.");
-          setBannerValidating(false);
-          return;
-        }
-      }
-    } catch {
-      // Network error — allow continue without blocking
-    } finally {
-      setBannerValidating(false);
-    }
+    // NOTE(fase-3): the class-code system is retired. The field is kept only so
+    // the legacy chat flow keeps working until form-based onboarding replaces it.
+    setBannerValidating(false);
 
     const freshParams = {
       student_name: bannerName.trim(),
@@ -364,7 +349,7 @@ export default function ChatOnboarding({ onComplete }: ChatOnboardingProps) {
     if (activeState === "name_code") {
       return (
         <div className="p-4 bg-slate-50 border-t border-slate-200 space-y-3">
-          <p className="text-xs text-slate-650 font-bold">Langkah Awal: Masukkan nama panggilan & kode kelas BK (jika ada) di kolom chat bawah.</p>
+          <p className="text-xs text-slate-600 font-bold">Langkah Awal: Masukkan nama panggilan & kode kelas BK (jika ada) di kolom chat bawah.</p>
           <div className="flex gap-2">
             <button
               onClick={() => handleSendText("Nama saya Budi. Lewati kode kelas.")}
@@ -385,7 +370,7 @@ export default function ChatOnboarding({ onComplete }: ChatOnboardingProps) {
             <button
               key={edu}
               onClick={() => handleSendText(edu)}
-              className="px-3 py-1.5 rounded-full border border-slate-350 bg-white hover:border-slate-800 text-xs font-semibold text-slate-800 transition-colors cursor-pointer"
+              className="px-3 py-1.5 rounded-full border border-slate-300 bg-white hover:border-slate-800 text-xs font-semibold text-slate-800 transition-colors cursor-pointer"
             >
               {edu}
             </button>
@@ -402,7 +387,7 @@ export default function ChatOnboarding({ onComplete }: ChatOnboardingProps) {
             <button
               key={maj}
               onClick={() => handleSendText(maj)}
-              className="px-3 py-1.5 rounded-full border border-slate-350 bg-white hover:border-slate-800 text-xs font-semibold text-slate-800 transition-colors cursor-pointer"
+              className="px-3 py-1.5 rounded-full border border-slate-300 bg-white hover:border-slate-800 text-xs font-semibold text-slate-800 transition-colors cursor-pointer"
             >
               {maj}
             </button>
@@ -419,7 +404,7 @@ export default function ChatOnboarding({ onComplete }: ChatOnboardingProps) {
             <button
               key={c}
               onClick={() => handleSendText(c)}
-              className="px-3 py-1.5 rounded-full border border-slate-350 bg-white hover:border-slate-800 text-xs font-semibold text-slate-800 transition-colors cursor-pointer"
+              className="px-3 py-1.5 rounded-full border border-slate-300 bg-white hover:border-slate-800 text-xs font-semibold text-slate-800 transition-colors cursor-pointer"
             >
               {c}
             </button>
@@ -482,7 +467,7 @@ export default function ChatOnboarding({ onComplete }: ChatOnboardingProps) {
             </button>
             <button
               onClick={() => handleSendText("Saya ingin menambahkan keahlian lain.")}
-              className="flex-1 py-2.5 rounded border border-slate-350 bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+              className="flex-1 py-2.5 rounded border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
             >
               Tambah Keahlian Lain
             </button>
@@ -590,7 +575,7 @@ export default function ChatOnboarding({ onComplete }: ChatOnboardingProps) {
           
           <button
             onClick={() => handleSendText("Sudah cukup, mulai analisis sekarang.")}
-            className="flex-1 py-2.5 rounded border border-slate-350 bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+            className="flex-1 py-2.5 rounded border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
             title="Selesai menyebutkan keahlian dan langsung mulai analisis"
           >
             Ya, Cukup & Mulai Analisis
@@ -810,7 +795,7 @@ export default function ChatOnboarding({ onComplete }: ChatOnboardingProps) {
 
           {/* Progress Bar */}
           <div className="space-y-1.5 bg-white p-3 rounded-lg border border-slate-200 shadow-sm">
-            <div className="flex justify-between items-center text-[10px] font-bold text-slate-650">
+            <div className="flex justify-between items-center text-[10px] font-bold text-slate-600">
               <span>Kelengkapan Asesmen</span>
               <span>{progressPct}%</span>
             </div>

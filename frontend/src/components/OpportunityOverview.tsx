@@ -82,7 +82,7 @@ export default function OpportunityOverview({
                     ? "bg-emerald-50 text-emerald-700 border-emerald-200" 
                     : rec.match_score >= 50
                     ? "bg-slate-100 text-slate-800 border-slate-200"
-                    : "bg-slate-55 text-slate-650 border-slate-200"
+                    : "bg-slate-50 text-slate-600 border-slate-200"
                 }`}>
                   {rec.match_score}% Cocok
                 </div>
@@ -107,7 +107,7 @@ export default function OpportunityOverview({
                   <span>Tingkat Kesiapan Keahlian:</span>
                   <span>{readinessPct}%</span>
                 </div>
-                <div className="w-full h-1.5 bg-slate-150 rounded overflow-hidden border border-slate-100">
+                <div className="w-full h-1.5 bg-slate-100 rounded overflow-hidden border border-slate-100">
                   <div 
                     className="h-full bg-slate-900 transition-all duration-300"
                     style={{ width: `${readinessPct}%` }}

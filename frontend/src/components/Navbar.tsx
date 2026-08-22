@@ -3,14 +3,18 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import type { User } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabaseClient";
-import { Sparkles, Brain, GraduationCap, Briefcase, LogOut, Menu, X } from "lucide-react";
+import { Sparkles, Brain, LogOut, Menu, X } from "lucide-react";
+import AuthModal from "@/components/AuthModal";
 
 export default function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);
+  const [authModalOpen, setAuthModalOpen] = useState<boolean>(false);
+  const [authModalInitialMode, setAuthModalInitialMode] = useState<"prompt" | "login" | "daftar">("prompt");
 
   useEffect(() => {
     // Get current session
@@ -23,8 +27,19 @@ export default function Navbar() {
       setUser(session?.user ?? null);
     });
 
+    // Listen for custom global event to open auth modal
+    const handleOpenAuth = (e: Event) => {
+      const customEvent = e as CustomEvent;
+      const initialMode = customEvent.detail?.mode || "prompt";
+      setAuthModalInitialMode(initialMode);
+      setAuthModalOpen(true);
+    };
+
+    window.addEventListener("open-auth-modal", handleOpenAuth);
+
     return () => {
       subscription.unsubscribe();
+      window.removeEventListener("open-auth-modal", handleOpenAuth);
     };
   }, []);
 
@@ -37,35 +52,56 @@ export default function Navbar() {
   const navLinks = [
     { name: "Home", href: "/", icon: Sparkles },
     { name: "Dashboard Siswa", href: "/student", icon: Brain },
-    { name: "Job & Gigs", href: "/jobs", icon: Briefcase },
-    { name: "Portal Guru BK", href: "/teacher", icon: GraduationCap },
   ];
 
   // The landing page ("/") ships its own marketing header (brand + Masuk/Daftar)
   // to match the Figma design, instead of the app's internal navigation.
   if (pathname === "/") {
     return (
-      <nav className="w-full bg-white border-b border-slate-100 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <nav className="w-full bg-[#fdfdfd] border-b border-slate-100/50 sticky top-0 z-50">
+        <div className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <Link href="/" className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-black text-sm shadow-sm">
+            <Link href="/" className="flex items-center gap-2 select-none">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#7033ff] to-[#a98df7] flex items-center justify-center text-white font-black text-sm shadow-xs">
                 N
               </div>
               <span className="font-black text-slate-900 text-base tracking-tight">Navika</span>
             </Link>
 
-            <div className="hidden sm:flex items-center gap-6">
-              <Link href="/login" className="text-sm font-semibold text-slate-500 hover:text-slate-900 transition-colors cursor-pointer">
-                Masuk
-              </Link>
-              <Link
-                href="/daftar"
-                className="px-5 py-2 rounded-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-sm font-semibold shadow-sm hover:shadow-md transition-all cursor-pointer"
-              >
-                Daftar
-              </Link>
-            </div>
+            {user ? (
+              <div className="hidden sm:flex items-center gap-6">
+                <Link href="/student" className="text-sm font-bold text-slate-600 hover:text-slate-900 transition-colors cursor-pointer">
+                  Dashboard Siswa
+                </Link>
+                <button
+                  onClick={handleLogout}
+                  className="px-5 py-2 rounded-full border border-slate-200 bg-white hover:bg-slate-50 text-slate-800 text-sm font-semibold transition-all cursor-pointer"
+                >
+                  Keluar
+                </button>
+              </div>
+            ) : (
+              <div className="hidden sm:flex items-center gap-6">
+                <button
+                  onClick={() => {
+                    setAuthModalInitialMode("login");
+                    setAuthModalOpen(true);
+                  }}
+                  className="text-sm font-semibold text-slate-500 hover:text-slate-900 transition-colors cursor-pointer bg-transparent border-0 outline-none"
+                >
+                  Masuk
+                </button>
+                <button
+                  onClick={() => {
+                    setAuthModalInitialMode("daftar");
+                    setAuthModalOpen(true);
+                  }}
+                  className="px-5 py-2 rounded-full bg-[#7033ff] hover:bg-[#5c25e6] active:bg-[#4b1ec5] text-white text-sm font-semibold shadow-xs hover:shadow-sm transition-all cursor-pointer border-0 outline-none"
+                >
+                  Daftar
+                </button>
+              </div>
+            )}
 
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -79,22 +115,57 @@ export default function Navbar() {
 
         {mobileMenuOpen && (
           <div className="sm:hidden border-t border-slate-100 bg-white px-4 py-3 space-y-2">
-            <Link
-              href="/login"
-              onClick={() => setMobileMenuOpen(false)}
-              className="block px-3 py-2 rounded-md text-sm font-semibold text-slate-600 hover:bg-slate-50 cursor-pointer"
-            >
-              Masuk
-            </Link>
-            <Link
-              href="/daftar"
-              onClick={() => setMobileMenuOpen(false)}
-              className="block px-3 py-2 rounded-md text-sm font-semibold text-center text-white bg-gradient-to-r from-indigo-600 to-purple-600 cursor-pointer"
-            >
-              Daftar
-            </Link>
+            {user ? (
+              <>
+                <Link
+                  href="/student"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="block px-3 py-2 rounded-md text-sm font-semibold text-slate-600 hover:bg-slate-50 cursor-pointer"
+                >
+                  Dashboard Siswa
+                </Link>
+                <button
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    handleLogout();
+                  }}
+                  className="block w-full text-center px-3 py-2 rounded-md text-sm font-semibold text-white bg-slate-800"
+                >
+                  Keluar
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    setAuthModalInitialMode("login");
+                    setAuthModalOpen(true);
+                  }}
+                  className="block w-full text-left px-3 py-2 rounded-md text-sm font-semibold text-slate-600 hover:bg-slate-50 cursor-pointer bg-transparent border-0"
+                >
+                  Masuk
+                </button>
+                <button
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    setAuthModalInitialMode("daftar");
+                    setAuthModalOpen(true);
+                  }}
+                  className="block w-full px-3 py-2 rounded-md text-sm font-semibold text-center text-white bg-[#7033ff] hover:bg-[#5c25e6] cursor-pointer border-0"
+                >
+                  Daftar
+                </button>
+              </>
+            )}
           </div>
         )}
+
+        <AuthModal
+          isOpen={authModalOpen}
+          onClose={() => setAuthModalOpen(false)}
+          initialMode={authModalInitialMode}
+        />
       </nav>
     );
   }
@@ -174,7 +245,7 @@ export default function Navbar() {
                 className={`w-full px-4 py-2.5 rounded-md text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
                   isActive 
                     ? "bg-slate-900 text-white shadow" 
-                    : "text-slate-650 hover:text-slate-900 hover:bg-slate-100"
+                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
                 }`}
               >
                 <Icon className="w-4 h-4" />

@@ -79,7 +79,7 @@ export default function CostForecaster({
         <div className="space-y-4">
           {/* Tuition Input */}
           <div className="space-y-1.5">
-            <label className="text-[11px] font-bold text-slate-750 flex items-center gap-1.5">
+            <label className="text-[11px] font-bold text-slate-700 flex items-center gap-1.5">
               <GraduationCap className="w-4 h-4 text-slate-500" />
               Biaya Pendidikan per Tahun (SPP/UKT)
             </label>
@@ -98,7 +98,7 @@ export default function CostForecaster({
 
           {/* Housing Input */}
           <div className="space-y-1.5">
-            <label className="text-[11px] font-bold text-slate-750 flex items-center gap-1.5">
+            <label className="text-[11px] font-bold text-slate-700 flex items-center gap-1.5">
               <Home className="w-4 h-4 text-slate-500" />
               Biaya Kost / Tempat Tinggal per Bulan
             </label>
@@ -117,7 +117,7 @@ export default function CostForecaster({
 
           {/* Living Input */}
           <div className="space-y-1.5">
-            <label className="text-[11px] font-bold text-slate-750 flex items-center gap-1.5">
+            <label className="text-[11px] font-bold text-slate-700 flex items-center gap-1.5">
               <Utensils className="w-4 h-4 text-slate-500" />
               Biaya Hidup (Makan & Trans) per Bulan
             </label>
@@ -136,7 +136,7 @@ export default function CostForecaster({
           {/* Duration Slider */}
           <div className="space-y-2 pt-2">
             <div className="flex justify-between items-center text-xs">
-              <span className="text-[11px] font-bold text-slate-750 flex items-center gap-1.5">
+              <span className="text-[11px] font-bold text-slate-700 flex items-center gap-1.5">
                 <Calendar className="w-4 h-4 text-slate-500" />
                 Durasi Masa Studi / Rencana Perjalanan
               </span>
@@ -198,7 +198,7 @@ export default function CostForecaster({
               {livingPct > 0 && (
                 <div
                   style={{ width: `${livingPct}%` }}
-                  className="bg-slate-350 h-full transition-all duration-300"
+                  className="bg-slate-300 h-full transition-all duration-300"
                   title={`Biaya Hidup: ${livingPct.toFixed(1)}%`}
                 />
               )}
@@ -222,7 +222,7 @@ export default function CostForecaster({
               </div>
               <div className="flex justify-between items-center">
                 <span className="flex items-center gap-1.5">
-                  <span className="w-2.5 h-2.5 rounded bg-slate-350 shrink-0" />
+                  <span className="w-2.5 h-2.5 rounded bg-slate-300 shrink-0" />
                   Total Hidup & Makan ({livingPct.toFixed(0)}%)
                 </span>
                 <span className="font-bold text-slate-900">{formatIDR(totalLiving)}</span>
