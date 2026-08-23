@@ -58,11 +58,11 @@ export default function Navbar() {
   // to match the Figma design, instead of the app's internal navigation.
   if (pathname === "/") {
     return (
-      <nav className="w-full bg-[#fdfdfd] border-b border-slate-100/50 sticky top-0 z-50">
-        <div className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8">
+      <nav className="w-full bg-white border-b border-slate-100 sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <Link href="/" className="flex items-center gap-2 select-none">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#7033ff] to-[#a98df7] flex items-center justify-center text-white font-black text-sm shadow-xs">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-black text-sm shadow-sm">
                 N
               </div>
               <span className="font-black text-slate-900 text-base tracking-tight">Navika</span>
@@ -96,7 +96,7 @@ export default function Navbar() {
                     setAuthModalInitialMode("daftar");
                     setAuthModalOpen(true);
                   }}
-                  className="px-5 py-2 rounded-full bg-[#7033ff] hover:bg-[#5c25e6] active:bg-[#4b1ec5] text-white text-sm font-semibold shadow-xs hover:shadow-sm transition-all cursor-pointer border-0 outline-none"
+                  className="px-5 py-2 rounded-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-sm font-semibold shadow-sm hover:shadow-md transition-all cursor-pointer border-0 outline-none"
                 >
                   Daftar
                 </button>
@@ -152,7 +152,7 @@ export default function Navbar() {
                     setAuthModalInitialMode("daftar");
                     setAuthModalOpen(true);
                   }}
-                  className="block w-full px-3 py-2 rounded-md text-sm font-semibold text-center text-white bg-[#7033ff] hover:bg-[#5c25e6] cursor-pointer border-0"
+                  className="block w-full px-3 py-2 rounded-md text-sm font-semibold text-center text-white bg-gradient-to-r from-indigo-600 to-purple-600 cursor-pointer border-0"
                 >
                   Daftar
                 </button>
