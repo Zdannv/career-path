@@ -56,7 +56,8 @@ export default function Navbar() {
 
   // The auth screens carry their own centered "Navika | Career path journey"
   // lockup, so the app navigation is hidden there entirely.
-  if (pathname === "/daftar" || pathname === "/login" || pathname === "/verifikasi") {
+  const AUTH_ROUTES = ["/daftar", "/login", "/verifikasi", "/lupa-sandi", "/reset-sandi"];
+  if (AUTH_ROUTES.includes(pathname)) {
     return null;
   }
 

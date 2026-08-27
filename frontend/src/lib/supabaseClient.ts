@@ -54,4 +54,59 @@ if (role && role !== "anon") {
   );
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+/**
+ * Where the "Ingatkan saya" choice itself is recorded. Not a secret — it only
+ * says which store the session belongs in.
+ */
+const REMEMBER_ME_KEY = "navika.remember-me";
+
+/** Call before signing in so the session lands in the right store. */
+export function setRememberMe(remember: boolean): void {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem(REMEMBER_ME_KEY, remember ? "true" : "false");
+}
+
+function shouldRemember(): boolean {
+  if (typeof window === "undefined") return true;
+  // Default to remembering, matching the checkbox's default state.
+  return window.localStorage.getItem(REMEMBER_ME_KEY) !== "false";
+}
+
+/**
+ * Session storage that honours "Ingatkan saya":
+ * - checked   → localStorage, so the session survives closing the browser
+ * - unchecked → sessionStorage, so it dies with the tab
+ *
+ * Reads check both stores because the choice can change between visits, and
+ * writes clear the other store so a session never lives in two places.
+ */
+const rememberMeStorage = {
+  getItem: (key: string): string | null => {
+    if (typeof window === "undefined") return null;
+    return window.sessionStorage.getItem(key) ?? window.localStorage.getItem(key);
+  },
+  setItem: (key: string, value: string): void => {
+    if (typeof window === "undefined") return;
+    if (shouldRemember()) {
+      window.localStorage.setItem(key, value);
+      window.sessionStorage.removeItem(key);
+    } else {
+      window.sessionStorage.setItem(key, value);
+      window.localStorage.removeItem(key);
+    }
+  },
+  removeItem: (key: string): void => {
+    if (typeof window === "undefined") return;
+    window.localStorage.removeItem(key);
+    window.sessionStorage.removeItem(key);
+  },
+};
+
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    storage: rememberMeStorage,
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true,
+  },
+});

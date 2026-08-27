@@ -5,7 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Mail, Lock, AlertCircle } from "lucide-react";
-import { supabase } from "@/lib/supabaseClient";
+import { supabase, setRememberMe } from "@/lib/supabaseClient";
 import AuthBrandHeader from "@/components/AuthBrandHeader";
 import AuthField from "@/components/AuthField";
 
@@ -32,9 +32,6 @@ export default function LoginPage() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  // Supabase already persists the session in localStorage, so this only reflects
-  // the designed control for now.
-  // TODO: wire to a non-persistent storage mode once session policy is decided.
   const [remember, setRemember] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
@@ -50,6 +47,10 @@ export default function LoginPage() {
 
     setSubmitting(true);
     try {
+      // Decides whether the session goes to localStorage or sessionStorage, so
+      // it must be set before the session is written.
+      setRememberMe(remember);
+
       const { error } = await supabase.auth.signInWithPassword({
         email: email.trim(),
         password,
