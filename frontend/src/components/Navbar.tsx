@@ -2,14 +2,16 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
+import type { User } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabaseClient";
-import { Sparkles, Brain, GraduationCap, Briefcase, LogOut, Menu, X } from "lucide-react";
+import { Sparkles, Brain, LogOut, Menu, X } from "lucide-react";
 
 export default function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);
 
   useEffect(() => {
@@ -37,9 +39,14 @@ export default function Navbar() {
   const navLinks = [
     { name: "Home", href: "/", icon: Sparkles },
     { name: "Dashboard Siswa", href: "/student", icon: Brain },
-    { name: "Job & Gigs", href: "/jobs", icon: Briefcase },
-    { name: "Portal Guru BK", href: "/teacher", icon: GraduationCap },
   ];
+
+  // The auth screens carry their own centered "Navika | Career path journey"
+  // lockup, so the app navigation is hidden there entirely.
+  const AUTH_ROUTES = ["/daftar", "/login", "/verifikasi", "/lupa-sandi", "/reset-sandi"];
+  if (AUTH_ROUTES.includes(pathname)) {
+    return null;
+  }
 
   // The landing page ("/") ships its own marketing header (brand + Masuk/Daftar)
   // to match the Figma design, instead of the app's internal navigation.
@@ -48,24 +55,45 @@ export default function Navbar() {
       <nav className="w-full bg-white border-b border-slate-100 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <Link href="/" className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-black text-sm shadow-sm">
-                N
-              </div>
-              <span className="font-black text-slate-900 text-base tracking-tight">Navika</span>
+            <Link href="/" className="select-none">
+              <Image
+                src="/navika-logo.png"
+                alt="Navika"
+                width={101}
+                height={32}
+                className="h-7 w-auto"
+                priority
+              />
             </Link>
 
-            <div className="hidden sm:flex items-center gap-6">
-              <Link href="/login" className="text-sm font-semibold text-slate-500 hover:text-slate-900 transition-colors cursor-pointer">
-                Masuk
-              </Link>
-              <Link
-                href="/daftar"
-                className="px-5 py-2 rounded-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-sm font-semibold shadow-sm hover:shadow-md transition-all cursor-pointer"
-              >
-                Daftar
-              </Link>
-            </div>
+            {user ? (
+              <div className="hidden sm:flex items-center gap-6">
+                <Link href="/student" className="text-sm font-bold text-slate-600 hover:text-slate-900 transition-colors cursor-pointer">
+                  Dashboard Siswa
+                </Link>
+                <button
+                  onClick={handleLogout}
+                  className="px-5 py-2 rounded-full border border-slate-200 bg-white hover:bg-slate-50 text-slate-800 text-sm font-semibold transition-all cursor-pointer"
+                >
+                  Keluar
+                </button>
+              </div>
+            ) : (
+              <div className="hidden sm:flex items-center gap-6">
+                <Link
+                  href="/login"
+                  className="text-sm font-semibold text-slate-500 hover:text-slate-900 transition-colors cursor-pointer"
+                >
+                  Masuk
+                </Link>
+                <Link
+                  href="/daftar"
+                  className="px-5 py-2 rounded-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-sm font-semibold shadow-sm hover:shadow-md transition-all cursor-pointer border-0 outline-none"
+                >
+                  Daftar
+                </Link>
+              </div>
+            )}
 
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -79,20 +107,43 @@ export default function Navbar() {
 
         {mobileMenuOpen && (
           <div className="sm:hidden border-t border-slate-100 bg-white px-4 py-3 space-y-2">
-            <Link
-              href="/login"
-              onClick={() => setMobileMenuOpen(false)}
-              className="block px-3 py-2 rounded-md text-sm font-semibold text-slate-600 hover:bg-slate-50 cursor-pointer"
-            >
-              Masuk
-            </Link>
-            <Link
-              href="/daftar"
-              onClick={() => setMobileMenuOpen(false)}
-              className="block px-3 py-2 rounded-md text-sm font-semibold text-center text-white bg-gradient-to-r from-indigo-600 to-purple-600 cursor-pointer"
-            >
-              Daftar
-            </Link>
+            {user ? (
+              <>
+                <Link
+                  href="/student"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="block px-3 py-2 rounded-md text-sm font-semibold text-slate-600 hover:bg-slate-50 cursor-pointer"
+                >
+                  Dashboard Siswa
+                </Link>
+                <button
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    handleLogout();
+                  }}
+                  className="block w-full text-center px-3 py-2 rounded-md text-sm font-semibold text-white bg-slate-800"
+                >
+                  Keluar
+                </button>
+              </>
+            ) : (
+              <>
+                <Link
+                  href="/login"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="block px-3 py-2 rounded-md text-sm font-semibold text-slate-600 hover:bg-slate-50 cursor-pointer"
+                >
+                  Masuk
+                </Link>
+                <Link
+                  href="/daftar"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="block w-full px-3 py-2 rounded-md text-sm font-semibold text-center text-white bg-gradient-to-r from-indigo-600 to-purple-600 cursor-pointer border-0"
+                >
+                  Daftar
+                </Link>
+              </>
+            )}
           </div>
         )}
       </nav>
@@ -174,7 +225,7 @@ export default function Navbar() {
                 className={`w-full px-4 py-2.5 rounded-md text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
                   isActive 
                     ? "bg-slate-900 text-white shadow" 
-                    : "text-slate-650 hover:text-slate-900 hover:bg-slate-100"
+                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
                 }`}
               >
                 <Icon className="w-4 h-4" />

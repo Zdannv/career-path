@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import {
@@ -15,6 +15,8 @@ import {
   Settings,
   Globe,
 } from "lucide-react";
+import { supabase } from "@/lib/supabaseClient";
+import type { User } from "@supabase/supabase-js";
 
 const TARGET_USERS = [
   {
@@ -70,6 +72,25 @@ const DASHBOARD_HIGHLIGHTS = [
 ];
 
 export default function LandingPage() {
+  const [user, setUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    // Get current session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  // Signed-out visitors are sent to the designed sign-up page; signed-in ones go
+  // straight to their dashboard.
+  const startJourneyHref = user ? "/student" : "/daftar";
+
   return (
     <div className="w-full bg-white text-slate-900">
       {/* Hero */}
@@ -83,7 +104,7 @@ export default function LandingPage() {
               AI-Powered Career Journey
             </div>
 
-            <h1 className="mt-5 text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight leading-[1.1] text-slate-900">
+            <h1 className="mt-5 text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight leading-none text-slate-900">
               Temukan Profesi Impianmu.
               <br />
               Jalani Langkahnya.
@@ -98,19 +119,19 @@ export default function LandingPage() {
 
             <div className="mt-6 flex items-center justify-center lg:justify-start gap-8">
               <div>
-                <div className="text-xl sm:text-2xl font-black text-slate-900">300++</div>
+                <div className="text-xl sm:text-2xl font-bold text-slate-900">300++</div>
                 <div className="text-xs text-slate-500 font-medium">Profesi</div>
               </div>
               <div>
-                <div className="text-xl sm:text-2xl font-black text-slate-900">5000++</div>
+                <div className="text-xl sm:text-2xl font-bold text-slate-900">5000++</div>
                 <div className="text-xs text-slate-500 font-medium">Skill &amp; Aktivitas</div>
               </div>
             </div>
 
             <div className="mt-7">
               <Link
-                href="/daftar"
-                className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-sm font-bold shadow-md hover:shadow-lg transition-all cursor-pointer"
+                href={startJourneyHref}
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-sm font-bold shadow-md hover:shadow-lg transition-all cursor-pointer border-0 outline-none"
               >
                 Mulai Career Journey Gratis
                 <ArrowRight className="w-4 h-4" />
@@ -135,7 +156,7 @@ export default function LandingPage() {
       <section className="bg-[#dde3f0] py-16 sm:py-20">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <div className="text-xs font-bold uppercase tracking-wide text-indigo-600">Target Users</div>
-          <h2 className="mt-2 text-2xl sm:text-3xl font-black text-slate-900">Siapa Pengguna Navika?</h2>
+          <h2 className="mt-2 text-2xl sm:text-3xl font-bold text-slate-900">Siapa Pengguna Navika?</h2>
           <p className="mt-3 text-sm text-slate-500 max-w-2xl mx-auto leading-relaxed">
             Setiap orang memiliki perjalanan karier yang berbeda. Kami membantu siswa menemukan
             arah, sekolah membimbing talenta, fresh graduate memasuki dunia kerja, dan profesional
@@ -162,7 +183,7 @@ export default function LandingPage() {
       <section className="bg-white py-16 sm:py-20">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <div className="text-xs font-bold uppercase tracking-wide text-indigo-600">Product Features</div>
-          <h2 className="mt-2 text-2xl sm:text-3xl font-black text-slate-900">
+          <h2 className="mt-2 text-2xl sm:text-3xl font-bold text-slate-900">
             Semua yang Kamu Butuhkan dalam Satu Platform
           </h2>
           <p className="mt-3 text-sm text-slate-500 max-w-2xl mx-auto leading-relaxed">
@@ -200,13 +221,13 @@ export default function LandingPage() {
       </section>
 
       {/* Dashboard CTA split */}
-      <section className="bg-gradient-to-br from-indigo-600 via-purple-600 to-violet-700 py-16 sm:py-20">
+      <section className="bg-gradient-to-br from-indigo-600 via-purple-600 to-violet-700 py-16 sm:py-20 text-white">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 grid lg:grid-cols-2 gap-12 items-center">
           <div className="text-center lg:text-left order-2 lg:order-1">
             <div className="inline-flex items-center px-3 py-1 rounded-full bg-white/15 text-white text-xs font-bold">
               Tampilan dashboard-mu
             </div>
-            <h2 className="mt-4 text-2xl sm:text-3xl font-black text-white leading-tight">
+            <h2 className="mt-4 text-2xl sm:text-3xl font-bold text-white leading-tight">
               Fokus pada Langkahmu,
               <br />
               Kami yang Bantu Arahkan
@@ -242,7 +263,7 @@ export default function LandingPage() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 grid lg:grid-cols-2 gap-12 items-center">
           <div className="text-center lg:text-left">
             <div className="text-xs font-bold uppercase tracking-wide text-indigo-600">Career Building</div>
-            <h2 className="mt-2 text-2xl sm:text-3xl font-black text-slate-900 leading-tight">
+            <h2 className="mt-2 text-2xl sm:text-3xl font-bold text-slate-900 leading-tight">
               Menggunakan Career
               <br className="hidden sm:block" /> Knowledge Graph
             </h2>
@@ -278,7 +299,7 @@ export default function LandingPage() {
           </div>
 
           <div className="relative flex-1 sm:pl-40 lg:pl-48">
-            <h2 className="text-xl sm:text-2xl font-black text-white leading-snug">
+            <h2 className="text-xl sm:text-2xl font-bold text-white leading-snug">
               Masa depan tidak dibangun dalam semalam,
               <br />
               tapi bisa dimulai dari hari ini.
@@ -289,11 +310,11 @@ export default function LandingPage() {
           </div>
 
           <Link
-            href="/daftar"
-            className="relative inline-flex items-center gap-2 px-6 py-3 rounded-full bg-white text-slate-900 text-sm font-bold shadow-md hover:shadow-lg transition-all shrink-0 cursor-pointer"
+            href={startJourneyHref}
+            className="relative inline-flex items-center gap-2 px-6 py-3 rounded-full bg-white text-slate-900 text-sm font-bold shadow-md hover:shadow-lg transition-all shrink-0 cursor-pointer border-0 outline-none"
           >
             Mulai Gratis
-            <ArrowRight className="w-4 h-4" />
+            <ArrowRight className="w-4 h-4 text-slate-900" />
           </Link>
         </div>
       </section>
@@ -301,12 +322,13 @@ export default function LandingPage() {
       {/* Footer */}
       <footer className="border-t border-slate-100 py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-md bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-black text-xs">
-              N
-            </div>
-            <span className="font-black text-slate-900 text-sm">Navika</span>
-          </div>
+          <Image
+            src="/navika-logo.png"
+            alt="Navika"
+            width={101}
+            height={32}
+            className="h-6 w-auto"
+          />
 
           <div className="flex items-center gap-4 text-slate-400">
             <Settings className="w-4 h-4" />

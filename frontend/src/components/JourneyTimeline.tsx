@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Compass, GraduationCap, MapPin, Award, BookOpen, AlertCircle, Sparkles } from "lucide-react";
+import { Compass, Award, BookOpen, Sparkles } from "lucide-react";
 
 interface TimelineItem {
   period: string;
@@ -97,7 +97,7 @@ export default function JourneyTimeline({ overviewText, plan }: JourneyTimelineP
                   <ul className="space-y-1.5">
                     {step.action_steps.map((action, aidx) => (
                       <li key={aidx} className="flex items-start gap-2 text-[11px] text-slate-600 leading-relaxed font-medium">
-                        <span className="w-3.5 h-3.5 rounded bg-slate-55 border border-slate-200 flex items-center justify-center text-[8px] text-slate-900 select-none shrink-0 mt-0.5 font-bold">
+                        <span className="w-3.5 h-3.5 rounded bg-slate-50 border border-slate-200 flex items-center justify-center text-[8px] text-slate-900 select-none shrink-0 mt-0.5 font-bold">
                           ✓
                         </span>
                         <span>{action}</span>
@@ -130,7 +130,7 @@ export default function JourneyTimeline({ overviewText, plan }: JourneyTimelineP
           <BookOpen className="w-4 h-4 text-slate-700" />
           <h3 className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Panduan Anggaran & Media Belajar</h3>
         </div>
-        <p className="text-[11px] text-slate-650 leading-relaxed font-sans font-semibold">
+        <p className="text-[11px] text-slate-600 leading-relaxed font-sans font-semibold">
           {plan.budget_investment_guideline}
         </p>
       </div>
