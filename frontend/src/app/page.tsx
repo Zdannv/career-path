@@ -87,15 +87,9 @@ export default function LandingPage() {
     return () => subscription.unsubscribe();
   }, []);
 
-  const handleStartJourney = (e: React.MouseEvent) => {
-    if (!user) {
-      e.preventDefault();
-      // Dispatch custom event to open auth modal
-      window.dispatchEvent(
-        new CustomEvent("open-auth-modal", { detail: { mode: "prompt" } })
-      );
-    }
-  };
+  // Signed-out visitors are sent to the designed sign-up page; signed-in ones go
+  // straight to their dashboard.
+  const startJourneyHref = user ? "/student" : "/daftar";
 
   return (
     <div className="w-full bg-white text-slate-900">
@@ -136,8 +130,7 @@ export default function LandingPage() {
 
             <div className="mt-7">
               <Link
-                href="/student"
-                onClick={handleStartJourney}
+                href={startJourneyHref}
                 className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-sm font-bold shadow-md hover:shadow-lg transition-all cursor-pointer border-0 outline-none"
               >
                 Mulai Career Journey Gratis
@@ -317,8 +310,7 @@ export default function LandingPage() {
           </div>
 
           <Link
-            href="/student"
-            onClick={handleStartJourney}
+            href={startJourneyHref}
             className="relative inline-flex items-center gap-2 px-6 py-3 rounded-full bg-white text-slate-900 text-sm font-bold shadow-md hover:shadow-lg transition-all shrink-0 cursor-pointer border-0 outline-none"
           >
             Mulai Gratis

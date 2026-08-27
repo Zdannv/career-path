@@ -54,6 +54,12 @@ export default function Navbar() {
     { name: "Dashboard Siswa", href: "/student", icon: Brain },
   ];
 
+  // The auth screens carry their own centered "Navika | Career path journey"
+  // lockup, so the app navigation is hidden there entirely.
+  if (pathname === "/daftar" || pathname === "/login" || pathname === "/verifikasi") {
+    return null;
+  }
+
   // The landing page ("/") ships its own marketing header (brand + Masuk/Daftar)
   // to match the Figma design, instead of the app's internal navigation.
   if (pathname === "/") {
@@ -82,24 +88,18 @@ export default function Navbar() {
               </div>
             ) : (
               <div className="hidden sm:flex items-center gap-6">
-                <button
-                  onClick={() => {
-                    setAuthModalInitialMode("login");
-                    setAuthModalOpen(true);
-                  }}
-                  className="text-sm font-semibold text-slate-500 hover:text-slate-900 transition-colors cursor-pointer bg-transparent border-0 outline-none"
+                <Link
+                  href="/login"
+                  className="text-sm font-semibold text-slate-500 hover:text-slate-900 transition-colors cursor-pointer"
                 >
                   Masuk
-                </button>
-                <button
-                  onClick={() => {
-                    setAuthModalInitialMode("daftar");
-                    setAuthModalOpen(true);
-                  }}
+                </Link>
+                <Link
+                  href="/daftar"
                   className="px-5 py-2 rounded-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-sm font-semibold shadow-sm hover:shadow-md transition-all cursor-pointer border-0 outline-none"
                 >
                   Daftar
-                </button>
+                </Link>
               </div>
             )}
 
@@ -136,26 +136,20 @@ export default function Navbar() {
               </>
             ) : (
               <>
-                <button
-                  onClick={() => {
-                    setMobileMenuOpen(false);
-                    setAuthModalInitialMode("login");
-                    setAuthModalOpen(true);
-                  }}
-                  className="block w-full text-left px-3 py-2 rounded-md text-sm font-semibold text-slate-600 hover:bg-slate-50 cursor-pointer bg-transparent border-0"
+                <Link
+                  href="/login"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="block px-3 py-2 rounded-md text-sm font-semibold text-slate-600 hover:bg-slate-50 cursor-pointer"
                 >
                   Masuk
-                </button>
-                <button
-                  onClick={() => {
-                    setMobileMenuOpen(false);
-                    setAuthModalInitialMode("daftar");
-                    setAuthModalOpen(true);
-                  }}
+                </Link>
+                <Link
+                  href="/daftar"
+                  onClick={() => setMobileMenuOpen(false)}
                   className="block w-full px-3 py-2 rounded-md text-sm font-semibold text-center text-white bg-gradient-to-r from-indigo-600 to-purple-600 cursor-pointer border-0"
                 >
                   Daftar
-                </button>
+                </Link>
               </>
             )}
           </div>

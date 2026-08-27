@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { Loader2 } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import type { User } from "@supabase/supabase-js";
@@ -72,26 +73,18 @@ export default function StudentOnboarding() {
             Kamu perlu login ke akunmu untuk lanjut ke halaman berikutnya
           </p>
           <div className="w-full flex gap-3 mt-6">
-            <button
-              onClick={() =>
-                window.dispatchEvent(
-                  new CustomEvent("open-auth-modal", { detail: { mode: "daftar" } })
-                )
-              }
+            <Link
+              href="/daftar"
               className="flex-1 py-3 rounded-full border border-slate-200 bg-white hover:bg-slate-50 text-slate-800 text-xs font-bold transition-all shadow-xs cursor-pointer text-center"
             >
               Daftar
-            </button>
-            <button
-              onClick={() =>
-                window.dispatchEvent(
-                  new CustomEvent("open-auth-modal", { detail: { mode: "login" } })
-                )
-              }
+            </Link>
+            <Link
+              href="/login"
               className="flex-1 py-3 rounded-full bg-[#7033ff] hover:bg-[#5c25e6] active:bg-[#4b1ec5] text-white text-xs font-bold transition-all shadow-sm hover:shadow-md cursor-pointer text-center"
             >
               Masuk Akun
-            </button>
+            </Link>
           </div>
         </div>
       </div>
