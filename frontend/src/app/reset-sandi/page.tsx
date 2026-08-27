@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { Lock, X, AlertCircle, Loader2 } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import AuthBrandHeader from "@/components/AuthBrandHeader";
+import AuthPageShell from "@/components/AuthPageShell";
 import AuthField from "@/components/AuthField";
 import AuthDialog from "@/components/AuthDialog";
 
@@ -94,11 +95,11 @@ export default function ResetSandiPage() {
   };
 
   return (
-    <div className="flex-1 bg-white lg:bg-[#CBD5E1]">
+    <AuthPageShell cancelHref="/login">
       <AuthBrandHeader />
 
       <div className="mx-auto w-full max-w-[592px] px-5 sm:px-11 lg:px-0">
-        <div className="lg:rounded-3xl lg:bg-white lg:px-10 lg:py-10 lg:shadow-xl">
+        <div data-auth-card className="lg:rounded-3xl lg:bg-white lg:px-10 lg:py-10 lg:shadow-xl">
           {status === "checking" && (
             <div className="flex flex-col items-center gap-3 py-16">
               <Loader2 className="w-6 h-6 animate-spin text-[#7033FF]" />
@@ -215,6 +216,6 @@ export default function ResetSandiPage() {
           onClose={() => router.push("/login")}
         />
       )}
-    </div>
+    </AuthPageShell>
   );
 }

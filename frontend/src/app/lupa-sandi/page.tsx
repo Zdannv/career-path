@@ -6,6 +6,7 @@ import Image from "next/image";
 import { Mail, Undo2, AlertCircle } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import AuthBrandHeader from "@/components/AuthBrandHeader";
+import AuthPageShell from "@/components/AuthPageShell";
 import AuthField from "@/components/AuthField";
 import AuthDialog from "@/components/AuthDialog";
 
@@ -52,11 +53,11 @@ export default function LupaSandiPage() {
   };
 
   return (
-    <div className="flex-1 bg-white lg:bg-[#CBD5E1]">
+    <AuthPageShell cancelHref="/login">
       <AuthBrandHeader />
 
       <div className="mx-auto w-full max-w-[1014px] px-5 sm:px-11 lg:px-0">
-        <div className="lg:grid lg:grid-cols-[1.61fr_1fr] lg:items-center lg:overflow-hidden lg:rounded-3xl lg:bg-white lg:shadow-xl">
+        <div data-auth-card className="lg:grid lg:grid-cols-[1.61fr_1fr] lg:items-center lg:overflow-hidden lg:rounded-3xl lg:bg-white lg:shadow-xl">
           {/* Desktop: artwork fills the left column of the card. */}
           <div className="relative hidden lg:block min-h-[378px]">
             <Image
@@ -144,6 +145,6 @@ export default function LupaSandiPage() {
           onClose={() => setSent(false)}
         />
       )}
-    </div>
+    </AuthPageShell>
   );
 }

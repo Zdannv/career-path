@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { Mail, Lock, AlertCircle } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import AuthBrandHeader from "@/components/AuthBrandHeader";
+import AuthPageShell from "@/components/AuthPageShell";
 import AuthField from "@/components/AuthField";
 import {
   SignupIllustrationPanel,
@@ -93,11 +94,11 @@ export default function DaftarPage() {
   };
 
   return (
-    <div className="flex-1 bg-white lg:bg-[#CBD5E1]">
+    <AuthPageShell cancelHref="/">
       <AuthBrandHeader />
 
       <div className="mx-auto w-full max-w-[1013px] px-5 sm:px-11 lg:px-0">
-        <div className="lg:grid lg:grid-cols-[1.61fr_1fr] lg:overflow-hidden lg:rounded-3xl lg:bg-white lg:shadow-xl">
+        <div data-auth-card className="lg:grid lg:grid-cols-[1.61fr_1fr] lg:overflow-hidden lg:rounded-3xl lg:bg-white lg:shadow-xl">
           <SignupIllustrationPanel className="hidden lg:block min-h-[574px]" />
 
           <div className="lg:px-6 lg:py-8">
@@ -193,6 +194,6 @@ export default function DaftarPage() {
           .
         </p>
       </div>
-    </div>
+    </AuthPageShell>
   );
 }
