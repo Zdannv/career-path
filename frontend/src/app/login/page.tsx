@@ -86,7 +86,7 @@ export default function LoginPage() {
           <LoginIllustrationPanel className="hidden lg:block min-h-[520px]" />
 
           <div className="lg:px-6 lg:py-8">
-            <h1 className="text-2xl font-black tracking-tight text-slate-900">
+            <h1 className="text-2xl font-bold tracking-tight text-slate-900">
               Masuk Akun Kamu
             </h1>
             <p className="mt-1.5 text-sm text-[#525252] leading-relaxed">

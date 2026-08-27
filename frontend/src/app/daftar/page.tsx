@@ -101,7 +101,7 @@ export default function DaftarPage() {
           <SignupIllustrationPanel className="hidden lg:block min-h-[574px]" />
 
           <div className="lg:px-6 lg:py-8">
-            <h1 className="text-2xl font-black tracking-tight text-slate-900">
+            <h1 className="text-2xl font-bold tracking-tight text-slate-900">
               Buat Akun Kamu
             </h1>
             <p className="mt-1.5 text-sm text-[#525252] leading-relaxed">

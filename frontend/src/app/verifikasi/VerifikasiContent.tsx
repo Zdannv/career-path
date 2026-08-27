@@ -80,7 +80,7 @@ export default function VerifikasiContent({ email }: { email: string }) {
             </div>
           </div>
 
-          <h1 className="mt-4 text-center text-2xl font-black tracking-tight text-slate-900">
+          <h1 className="mt-4 text-center text-2xl font-bold tracking-tight text-slate-900">
             Verifikasi Email Kamu
           </h1>
           <p className="mt-1.5 text-center text-sm text-[#525252] leading-relaxed">

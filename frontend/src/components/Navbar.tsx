@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabaseClient";
@@ -68,11 +69,15 @@ export default function Navbar() {
       <nav className="w-full bg-white border-b border-slate-100 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <Link href="/" className="flex items-center gap-2 select-none">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-black text-sm shadow-sm">
-                N
-              </div>
-              <span className="font-black text-slate-900 text-base tracking-tight">Navika</span>
+            <Link href="/" className="select-none">
+              <Image
+                src="/navika-logo.png"
+                alt="Navika"
+                width={101}
+                height={32}
+                className="h-7 w-auto"
+                priority
+              />
             </Link>
 
             {user ? (

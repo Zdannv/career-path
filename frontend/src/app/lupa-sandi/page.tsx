@@ -80,7 +80,7 @@ export default function LupaSandiPage() {
           />
 
           <div className="mt-6 lg:mt-0 lg:pr-10 lg:py-10">
-            <h1 className="text-2xl font-black tracking-tight text-slate-900">
+            <h1 className="text-2xl font-bold tracking-tight text-slate-900">
               Lupa Kata Sandi?
             </h1>
             <p className="mt-1.5 text-sm text-[#525252] leading-relaxed">

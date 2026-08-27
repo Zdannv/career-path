@@ -108,7 +108,7 @@ export default function ResetSandiPage() {
 
           {status === "invalid" && (
             <div className="py-12 text-center">
-              <h1 className="text-2xl font-black tracking-tight text-slate-900">
+              <h1 className="text-2xl font-bold tracking-tight text-slate-900">
                 Link Tidak Berlaku
               </h1>
               <p className="mt-2 text-sm text-[#525252] leading-relaxed">
@@ -137,7 +137,7 @@ export default function ResetSandiPage() {
                 />
               </div>
 
-              <h1 className="mt-3 text-center text-2xl font-black tracking-tight text-slate-900">
+              <h1 className="mt-3 text-center text-2xl font-bold tracking-tight text-slate-900">
                 Buat Kata Sandi Baru
               </h1>
               <p className="mt-1.5 text-center text-sm text-[#525252] leading-relaxed">
