@@ -1,4 +1,4 @@
-import { createClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 /**
  * Supabase browser client.
@@ -6,6 +6,12 @@ import { createClient } from "@supabase/supabase-js";
  * Both values MUST come from the environment. There are deliberately no
  * fallbacks: a hardcoded fallback key ships to every visitor's browser and
  * ends up committed to git.
+ *
+ * The client is created on first use rather than at import time. Navbar sits in
+ * the root layout, so importing this module eagerly meant a missing env var
+ * failed the prerender of every static page — including /_not-found — and took
+ * the whole build down. Auth only ever runs in the browser, so nothing needs a
+ * client while pages are being generated.
  */
 
 function readEnv(name: string, value: string | undefined): string {
@@ -31,27 +37,6 @@ function readKeyRole(key: string): string | null {
   } catch {
     return null;
   }
-}
-
-const supabaseUrl = readEnv(
-  "NEXT_PUBLIC_SUPABASE_URL",
-  process.env.NEXT_PUBLIC_SUPABASE_URL
-)
-  .replace(/\/rest\/v1\/?$/, "")
-  .replace(/\/$/, "");
-
-const supabaseAnonKey = readEnv(
-  "NEXT_PUBLIC_SUPABASE_ANON_KEY",
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-);
-
-const role = readKeyRole(supabaseAnonKey);
-if (role && role !== "anon") {
-  console.error(
-    `[supabase] SECURITY WARNING: NEXT_PUBLIC_SUPABASE_ANON_KEY carries role="${role}". ` +
-      `Anything prefixed NEXT_PUBLIC_ is shipped to the browser, and a ` +
-      `service_role key bypasses every RLS policy. Use the anon/publishable key.`
-  );
 }
 
 /**
@@ -102,11 +87,51 @@ const rememberMeStorage = {
   },
 };
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    storage: rememberMeStorage,
-    persistSession: true,
-    autoRefreshToken: true,
-    detectSessionInUrl: true,
+let client: SupabaseClient | null = null;
+
+function getClient(): SupabaseClient {
+  if (client) return client;
+
+  const supabaseUrl = readEnv(
+    "NEXT_PUBLIC_SUPABASE_URL",
+    process.env.NEXT_PUBLIC_SUPABASE_URL
+  )
+    .replace(/\/rest\/v1\/?$/, "")
+    .replace(/\/$/, "");
+
+  const supabaseAnonKey = readEnv(
+    "NEXT_PUBLIC_SUPABASE_ANON_KEY",
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  );
+
+  const role = readKeyRole(supabaseAnonKey);
+  if (role && role !== "anon") {
+    console.error(
+      `[supabase] SECURITY WARNING: NEXT_PUBLIC_SUPABASE_ANON_KEY carries role="${role}". ` +
+        `Anything prefixed NEXT_PUBLIC_ is shipped to the browser, and a ` +
+        `service_role key bypasses every RLS policy. Use the anon/publishable key.`
+    );
+  }
+
+  client = createClient(supabaseUrl, supabaseAnonKey, {
+    auth: {
+      storage: rememberMeStorage,
+      persistSession: true,
+      autoRefreshToken: true,
+      detectSessionInUrl: true,
+    },
+  });
+  return client;
+}
+
+/**
+ * Behaves like a normal Supabase client, but defers construction (and the env
+ * var check) to the first property access. Missing config still throws loudly —
+ * just when auth is actually used, not while pages are being built.
+ */
+export const supabase = new Proxy({} as SupabaseClient, {
+  get(_target, prop) {
+    const value = Reflect.get(getClient() as object, prop);
+    return typeof value === "function" ? value.bind(getClient()) : value;
   },
 });
