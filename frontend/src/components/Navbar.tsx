@@ -7,15 +7,12 @@ import { usePathname, useRouter } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabaseClient";
 import { Sparkles, Brain, LogOut, Menu, X } from "lucide-react";
-import AuthModal from "@/components/AuthModal";
 
 export default function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);
-  const [authModalOpen, setAuthModalOpen] = useState<boolean>(false);
-  const [authModalInitialMode, setAuthModalInitialMode] = useState<"prompt" | "login" | "daftar">("prompt");
 
   useEffect(() => {
     // Get current session
@@ -28,19 +25,8 @@ export default function Navbar() {
       setUser(session?.user ?? null);
     });
 
-    // Listen for custom global event to open auth modal
-    const handleOpenAuth = (e: Event) => {
-      const customEvent = e as CustomEvent;
-      const initialMode = customEvent.detail?.mode || "prompt";
-      setAuthModalInitialMode(initialMode);
-      setAuthModalOpen(true);
-    };
-
-    window.addEventListener("open-auth-modal", handleOpenAuth);
-
     return () => {
       subscription.unsubscribe();
-      window.removeEventListener("open-auth-modal", handleOpenAuth);
     };
   }, []);
 
@@ -160,12 +146,6 @@ export default function Navbar() {
             )}
           </div>
         )}
-
-        <AuthModal
-          isOpen={authModalOpen}
-          onClose={() => setAuthModalOpen(false)}
-          initialMode={authModalInitialMode}
-        />
       </nav>
     );
   }
