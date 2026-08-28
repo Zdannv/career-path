@@ -1,48 +1,39 @@
 "use client";
 
 import React from "react";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { X } from "lucide-react";
 
 type AuthPageShellProps = {
   children: React.ReactNode;
-  /** Where a backdrop click sends the user. */
+  /** Where the close button sends the user. */
   cancelHref?: string;
   className?: string;
 };
 
 /**
- * Wraps an auth screen and treats the area around the card like a modal
- * backdrop: clicking it leaves the flow.
+ * Chrome around an auth card: the page background plus the way out of the flow.
  *
- * Only active from `lg` up. Below that breakpoint the screen is a full-bleed
- * white page with no backdrop at all, so a tap on blank space would navigate
- * away with nothing on screen to suggest it would.
+ * Leaving is an explicit close button rather than a click on the backdrop. The
+ * backdrop only exists from `lg` up, so dismissing that way would work on
+ * desktop and silently not exist on phones; it is also invisible, and these
+ * cards hold half-typed credentials that a stray click should not discard.
  */
 export default function AuthPageShell({
   children,
   cancelHref = "/",
   className = "",
 }: AuthPageShellProps) {
-  const router = useRouter();
-
-  const handleBackdropClick = (event: React.MouseEvent<HTMLDivElement>) => {
-    const target = event.target as HTMLElement | null;
-    if (!target) return;
-
-    // The card, any open dialog, and every control keep their own behaviour.
-    if (target.closest("[data-auth-card]")) return;
-    if (target.closest("a, button, input, label, select, textarea, [role='dialog']")) return;
-
-    if (!window.matchMedia("(min-width: 1024px)").matches) return;
-
-    router.push(cancelHref);
-  };
-
   return (
-    <div
-      onClick={handleBackdropClick}
-      className={`flex-1 bg-white lg:bg-[#CBD5E1] ${className}`}
-    >
+    <div className={`relative flex-1 bg-white lg:bg-[#CBD5E1] ${className}`}>
+      <Link
+        href={cancelHref}
+        aria-label="Tutup"
+        className="absolute right-4 top-4 sm:right-6 sm:top-6 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-white/80 text-slate-500 shadow-sm ring-1 ring-slate-200 transition-colors hover:bg-white hover:text-slate-900 cursor-pointer"
+      >
+        <X className="h-4 w-4" />
+      </Link>
+
       {children}
     </div>
   );

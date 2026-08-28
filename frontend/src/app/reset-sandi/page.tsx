@@ -99,7 +99,7 @@ export default function ResetSandiPage() {
       <AuthBrandHeader />
 
       <div className="mx-auto w-full max-w-[592px] px-5 sm:px-11 lg:px-0">
-        <div data-auth-card className="lg:rounded-3xl lg:bg-white lg:px-10 lg:py-10 lg:shadow-xl">
+        <div className="lg:rounded-3xl lg:bg-white lg:px-10 lg:py-10 lg:shadow-xl">
           {status === "checking" && (
             <div className="flex flex-col items-center gap-3 py-16">
               <Loader2 className="w-6 h-6 animate-spin text-[#7033FF]" />

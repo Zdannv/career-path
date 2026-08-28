@@ -98,7 +98,7 @@ export default function DaftarPage() {
       <AuthBrandHeader />
 
       <div className="mx-auto w-full max-w-[1013px] px-5 sm:px-11 lg:px-0">
-        <div data-auth-card className="lg:grid lg:grid-cols-[1.61fr_1fr] lg:overflow-hidden lg:rounded-3xl lg:bg-white lg:shadow-xl">
+        <div className="lg:grid lg:grid-cols-[1.61fr_1fr] lg:overflow-hidden lg:rounded-3xl lg:bg-white lg:shadow-xl">
           <SignupIllustrationPanel className="hidden lg:block min-h-[574px]" />
 
           <div className="lg:px-6 lg:py-8">

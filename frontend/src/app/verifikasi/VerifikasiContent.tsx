@@ -66,7 +66,7 @@ export default function VerifikasiContent({ email }: { email: string }) {
   return (
     <AuthPageShell cancelHref="/" className="lg:py-14">
       <div className="mx-auto w-full max-w-[800px] px-5 sm:px-10 lg:px-0">
-        <div data-auth-card className="lg:rounded-3xl lg:bg-white lg:px-10 lg:py-12 lg:shadow-xl">
+        <div className="lg:rounded-3xl lg:bg-white lg:px-10 lg:py-12 lg:shadow-xl">
           {/* Illustration */}
           <div className="flex justify-center pt-10 lg:pt-0">
             <div className="rounded-3xl bg-gradient-to-b from-indigo-50/70 to-transparent p-4">

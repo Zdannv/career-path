@@ -57,7 +57,7 @@ export default function LupaSandiPage() {
       <AuthBrandHeader />
 
       <div className="mx-auto w-full max-w-[1014px] px-5 sm:px-11 lg:px-0">
-        <div data-auth-card className="lg:grid lg:grid-cols-[1.61fr_1fr] lg:items-center lg:overflow-hidden lg:rounded-3xl lg:bg-white lg:shadow-xl">
+        <div className="lg:grid lg:grid-cols-[1.61fr_1fr] lg:items-center lg:overflow-hidden lg:rounded-3xl lg:bg-white lg:shadow-xl">
           {/* Desktop: artwork fills the left column of the card. */}
           <div className="relative hidden lg:block min-h-[378px]">
             <Image
