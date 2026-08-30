@@ -770,3 +770,27 @@ kalau tidak Supabase mengabaikannya dan diam-diam memakai **Site URL**.
 - 311 terjemahan IWA masih `is_verified = false`.
 - Pemetaan ke SKKNI/BNSP belum diselidiki; itu yang akan membuat kalimat capaian
   dan jalur sertifikasi punya dasar resmi Indonesia, bukan terjemahan O*NET.
+
+### Koreksi: jalur upgrade tidak ikut teruji
+
+Slug di atas diuji hanya dari database kosong, dan itu melewatkan justru jalur
+yang dipakai orang: instalasi yang sudah menjalankan 0006 versi lama.
+`create table if not exists` diam saja kalau tabelnya sudah ada, jadi kolom
+`slug` tidak pernah ditambahkan dan seluruh migrasi gagal dengan
+`column "slug" does not exist`.
+
+Perbaikannya: `alter table ... add column if not exists slug text` terpisah,
+plus blok yang menukar foreign key satu kolom di `user_roadmap_activities`
+dengan yang menyertakan `user_id` — dua-duanya hal yang CREATE TABLE lewati
+di tabel yang sudah ada.
+
+Menguji jalur itu memunculkan bug kedua yang lebih serius, dan sudah ada sejak
+versi pertama: `user_roadmaps.template_id` memakai ON DELETE SET NULL, jadi
+begitu template terhapus, roadmap pengguna kehilangan tautannya dan tampil
+kosong **selamanya** — tidak ada yang menyambungkannya kembali. Sekarang 0007
+menyambung ulang di bagian 4b; aman karena `roadmap_templates` unik per profesi.
+
+Sekali upgrade ini, centang yang sudah ada tetap hilang: baris lama tidak punya
+slug, jadi semuanya dibangun ulang. Setelah itu generate ulang mempertahankan
+id — diverifikasi dengan mencentang tiga aktivitas, menjalankan ulang 0007, dan
+memastikan id serta XP-nya tidak berubah.

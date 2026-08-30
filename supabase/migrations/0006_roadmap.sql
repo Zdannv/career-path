@@ -176,6 +176,14 @@ create table if not exists public.roadmap_activities (
 -- dua baris sesaat memegang nomor yang sama. Ditunda sampai commit, keadaan
 -- akhirnya yang diperiksa.
 -- ---------------------------------------------------------------------------
+-- `create table if not exists` di atas DIAM SAJA kalau tabelnya sudah ada —
+-- termasuk kalau tabel itu dibuat oleh versi 0006 yang belum mengenal slug.
+-- Jadi kolomnya harus ditambahkan terpisah, kalau tidak seluruh blok di bawah
+-- gagal dengan `column "slug" does not exist` di instalasi yang meng-upgrade.
+alter table public.roadmap_stages     add column if not exists slug text;
+alter table public.roadmap_milestones add column if not exists slug text;
+alter table public.roadmap_activities add column if not exists slug text;
+
 do $$
 begin
   -- Instalasi yang sudah terlanjur punya isi tanpa slug: kosongkan sekali.
@@ -297,6 +305,38 @@ create table if not exists public.user_roadmap_activities (
     foreign key (user_roadmap_id, user_id)
     references public.user_roadmaps (id, user_id) on delete cascade
 );
+
+-- Alasan yang sama seperti slug: tabel yang sudah ada tidak ikut mendapat
+-- constraint baru dari CREATE TABLE. Instalasi lama masih memakai foreign key
+-- satu kolom ke user_roadmaps(id), yang membiarkan pengguna menulis progres ke
+-- roadmap orang lain. Ditukar di sini supaya upgrade benar-benar tertutup.
+do $$
+declare
+  con text;
+begin
+  for con in
+    select c.conname
+    from pg_constraint c
+    where c.conrelid = 'public.user_roadmap_activities'::regclass
+      and c.contype = 'f'
+      and c.confrelid = 'public.user_roadmaps'::regclass
+      and array_length(c.conkey, 1) = 1
+  loop
+    execute format('alter table public.user_roadmap_activities drop constraint %I', con);
+    raise notice 'foreign key satu kolom % dilepas, diganti yang menyertakan user_id', con;
+  end loop;
+
+  if not exists (
+    select 1 from pg_constraint
+    where conrelid = 'public.user_roadmap_activities'::regclass
+      and conname = 'fk_ura_roadmap_owner'
+  ) then
+    alter table public.user_roadmap_activities
+      add constraint fk_ura_roadmap_owner
+      foreign key (user_roadmap_id, user_id)
+      references public.user_roadmaps (id, user_id) on delete cascade;
+  end if;
+end $$;
 
 create index if not exists idx_ura_user on public.user_roadmap_activities (user_id, user_roadmap_id);
 

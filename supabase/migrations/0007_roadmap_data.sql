@@ -1395,6 +1395,22 @@ delete from public.roadmap_stages g
 delete from public.roadmap_templates t
   where not exists (select 1 from _rm_seen_tpl s where s.id = t.id);
 
+-- ---------------------------------------------------------------------------
+-- 4b. Sambungkan ulang roadmap pengguna ke templatenya
+--
+-- `user_roadmaps.template_id` memakai ON DELETE SET NULL, jadi begitu sebuah
+-- template terhapus — entah karena versi lama file ini menghapus semuanya,
+-- atau karena pembersihan di bagian 4 — roadmap pengguna kehilangan tautannya
+-- dan tampil kosong selamanya. Tidak ada yang menyambungkannya kembali sendiri.
+--
+-- Tautannya bisa dipulihkan tanpa ambiguitas karena `roadmap_templates` unik
+-- per profesi: satu profesi, satu template.
+update public.user_roadmaps ur
+set template_id = t.id
+from public.roadmap_templates t
+where t.career_id = ur.career_id
+  and ur.template_id is distinct from t.id;
+
 drop function if exists _rm_generate();
 drop function if exists _rm_stage(bigint, integer, text, text, text, text, integer, integer);
 drop function if exists _rm_milestone(bigint, integer, text, text, text, text, numeric);
