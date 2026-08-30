@@ -216,3 +216,492 @@ Idempotensi dijaga indeks parsial `uq_careers_onet_soc on careers(soc_code) wher
 - **`career_description` masih bahasa Inggris** untuk 533 profesi baru — diambil apa adanya dari O*NET. Ini terlihat oleh user di halaman Career Detail dan perlu diterjemahkan.
 - Data gaji dan demand Indonesia belum ada (lihat di atas).
 - Bobot skill per profesi baru belum ada — `career_skills` masih hanya untuk 35 profesi IT. O*NET punya Essential Skills (10) + Transferable Skills (25) + Software Skills (8.753 tools) yang bisa diimpor untuk menutup ini.
+
+---
+
+## Fase 1c — Career DNA (selesai)
+
+Mengikuti spesifikasi baru di `Career path.xlsx` (sheet **Career DNA** dan
+**Arsitektur Data Profesi**): 54 atribut dalam 5 layer.
+
+| Layer | Atribut | Dipilih user | Peran |
+|---|---:|---:|---|
+| Interest DNA | 10 | 3 | main |
+| Activity DNA | 12 | 4 | main |
+| Skill DNA | 16 | 5 | supporting |
+| Environment DNA | 8 | 3 | supporting |
+| Work Style DNA | 8 | 2 | supporting |
+
+### Perbedaan penting dari spesifikasi
+
+Spesifikasi menyebut skor DNA per profesi berasal dari **"AI Mapping"**.
+Implementasi ini **tidak memakai AI sama sekali** — seluruh 54 atribut diturunkan
+secara deterministik dari elemen O*NET yang bisa ditunjuk satu per satu:
+
+| Layer | Sumber O*NET |
+|---|---|
+| Interest | Specific Interest Areas (41 area) |
+| Activity | Work Activities (41 GWA) |
+| Skill | Essential Skills + Transferable Skills + Abilities + Work Styles |
+| Environment | Work Context + Work Activities + Essential Skills |
+| Work Style | Work Styles (21 elemen) |
+
+Pemetaan tiap atribut tersimpan di kolom `dna_attributes.onet_mapping`, jadi setiap
+angka bisa ditelusuri asalnya. Hasilnya bisa direproduksi kapan saja:
+`python3 supabase/dna/derive_dna.py`. Ini jauh lebih bisa dipertahankan daripada
+tagging AI — tidak ada yang perlu dipercaya begitu saja.
+
+### Keputusan metodologis
+
+**Agregasi berbeda per layer, dan ini disengaja.**
+- **MAX** untuk Interest & Activity — komponennya adalah *jalur alternatif* menuju
+  atribut yang sama. Software developer "membangun" lewat komputer, teknisi lewat
+  mesin; keduanya sah. Awalnya dirata-rata dan hasilnya salah: Software Developer
+  keluar dengan aktivitas dominan "Operasional & Administrasi".
+- **MEAN** untuk Skill, Work Style, Environment — komponennya adalah *faset* dari
+  satu konstruk. Komunikasi menuntut bicara DAN mendengar DAN menulis.
+  Environment juga: satu sinyal yang kebetulan tinggi (semua profesi banyak rapat)
+  tidak boleh cukup untuk menyimpulkan lingkungan kerja. Sempat dipakai MAX dan
+  hasilnya rusak — dokter keluar "Sekolah", welder keluar "Laboratorium".
+
+**Normalisasi per atribut lintas okupasi.** Tanpa ini, atribut dengan sedikit
+komponen selalu unggul atas atribut dengan banyak komponen yang saling menetralkan.
+Gejalanya nyata: Perawat sempat keluar dengan minat dominan "Pendidikan" mengalahkan
+"Kesehatan", karena INT_PENDIDIKAN hanya punya 1 area sedangkan INT_KESEHATAN punya 3.
+
+**Dua pengecualian yang ditandai jujur di `dna_source`:**
+- `rule` — ENV_REMOTE dan ENV_HYBRID. O*NET tidak punya data kerja remote sama
+  sekali (datanya mendahului pola kerja pascapandemi), jadi dihitung dari aturan:
+  tinggi di "Working with Computers" + "E-Mail", rendah di "Physical Proximity" dan
+  aktivitas fisik.
+- `inherited:<soc>` — 38 okupasi baru yang belum disurvei O*NET mewarisi sebagian
+  layer dari profesi terkait terdekat. Termasuk **UI/UX Designer** (15-1255.00),
+  yang di O*NET hanya punya Interest dan Work Style; Activity dan Environment
+  diwarisi dari Web Developers.
+
+### File
+
+| File | Isi |
+|---|---|
+| `supabase/migrations/0004_career_dna.sql` | Skema, 5 layer, 54 atribut, view `career_dna`, fungsi `career_match_scores()` dan `similar_careers()`, tabel bobot, RLS |
+| `supabase/migrations/0004b_onet_dna_data.sql` | 28.044 baris skor DNA untuk 555 okupasi. **Besar (1,5 MB) — jalankan lewat `supabase db push` atau psql, bukan editor SQL di browser** |
+| `supabase/dna/derive_dna.py` | Skrip derivasi, bisa dijalankan ulang |
+| `supabase/dna/dna_map.py` | Pemetaan 54 atribut → elemen O*NET. **Ubah di sini, bukan di SQL** |
+| `supabase/dna/career_dna_raw.csv` | Hasil derivasi lengkap 923 okupasi |
+
+### Verifikasi
+
+Seluruh migration `0000` → `0004b` dijalankan berurutan di PostgreSQL 16 dari
+database kosong. 535 profesi aktif punya DNA, **0 profesi aktif tanpa DNA**,
+dijalankan dua kali tidak menduplikasi.
+
+Uji tiga persona lewat `career_match_scores()`:
+
+| Persona | Hasil teratas |
+|---|---|
+| Kreativitas + Teknologi, hybrid | Art Director, Game Developer, **UI/UX Designer** |
+| Kesehatan + Sosial, klinis | Dokter Spesialis Jiwa, Dokter Spesialis Anak, Perawat, Bidan |
+| Teknologi + lapangan, pabrik | Insinyur Pertambangan, Manajer QA/QC, Teknisi Perawatan Pesawat |
+
+`similar_careers()` untuk UI/UX Designer: Video Editor 94%, Animator/VFX 82%,
+Frontend Developer 82%. Untuk Perawat: Bidan 94%, Perawat Vokasi 94%.
+
+Cocok dengan contoh di spreadsheet: Dokter → Kesehatan/Riset/Sosial ✅,
+UI/UX Designer → Kreativitas/Teknologi ✅.
+
+### Celah taksonomi yang ditemukan — perlu keputusan tim
+
+1. **Tidak ada Interest DNA untuk kerja teknik/manual/konstruksi.** Padahal
+   Manufaktur & Otomotif adalah sektor terbesar (115 profesi aktif) dan paling
+   banyak jalurnya untuk siswa SMK. Area O*NET `Construction/Woodwork`,
+   `Transportation/Machine Operation`, dan `Physical/Manual Labor` terpaksa
+   dimasukkan ke "Teknologi" — yang deskripsinya "Software, AI, komputer".
+   **Saran: tambah Interest DNA ke-11, mis. "Teknik & Industri".**
+2. **Tidak ada Activity DNA untuk kerja fisik.** Tiga GWA (`Handling and Moving
+   Objects`, `Performing General Physical Activities`, `Operating Vehicles`)
+   sengaja tidak dipetakan; kalau dipaksa masuk "Membangun & Mengembangkan",
+   profesi knowledge work justru tenggelam.
+3. **Environment DNA mencampur dua dimensi.** Kantor/Lab/RS/Sekolah/Pabrik adalah
+   *tempat*; Remote/Hybrid/Onsite adalah *pengaturan kerja*. Keduanya ortogonal —
+   perawat bekerja di RS *dan* onsite. Sekarang user memilih 3 dari campuran itu.
+   **Saran: pisah jadi dua dimensi.**
+4. **Skill DNA punya pasangan yang nyaris kembar:** "Logika & Analisa" vs
+   "Critical Thinking", "Perencanaan & Organisasi" vs "Manajemen Waktu".
+   Keduanya hampir selalu naik-turun bersama, jadi memakan jatah pilihan user
+   tanpa menambah informasi.
+5. **Sheet "Career Matching Score" masih kosong** — rumusnya belum ditentukan.
+   Sementara dipakai rata-rata tertimbang per layer (Interest 30%, Activity 30%,
+   Skill 20%, Environment 10%, Work Style 10%), disimpan di tabel
+   `dna_layer_weights` supaya bisa disetel tanpa ubah kode.
+
+---
+
+## Fase 1d — data pendidikan Indonesia (selesai)
+
+Menyesuaikan knowledge base dengan desain onboarding 3-langkah dari tim desain.
+Tiga hal membuat desain itu sebelumnya **tidak bisa dibangun**:
+
+1. **`education_levels` menggabung SMA dengan SMK.** Seluruh percabangan desain
+   bergantung persis pada bedanya — SMK punya Jurusan, SMA tidak. D1/D2 juga
+   digabung, D4 menempel ke S1, dan SMP belum ada padahal itu baris pertama
+   di matriks percabangan.
+2. **Daftar jurusan SMK tidak ada.** Mockup menampilkan "(Broadcasting) Produksi
+   dan Siaran Program Televisi" — data yang ada (14 baris IT) tidak menjangkau itu.
+3. **Tabel `profiles` belum pernah dibuat.** Onboarding tidak punya tempat menyimpan.
+
+### Yang dibuat — `0005_education_indonesia.sql`
+
+| Tabel | Baris | Sumber |
+|---|---:|---|
+| `education_levels` | 10 | SMP, SMA, SMK, D1–D4, S1–S3 (dari 6) |
+| `smk_expertise_programs` | 50 | **smk.kemendikdasmen.go.id/spektrum-keahlian** |
+| `smk_concentrations` | 128 | sumber yang sama |
+| `study_rumpun` | 12 | daftar rumpun dari tim |
+| `study_programs` | 243 | daftar jurusan dari tim |
+| `study_program_rumpun` | 244 | relasi many-to-many |
+| `education_step_rules` | 20 | matriks percabangan tim desain |
+| `profiles` | — | baru |
+
+`order_rank` boleh sama untuk jenjang setara: SMA dan SMK sama-sama 2, D4 dan S1
+sama-sama 6. Yang membedakan adalah `code`, bukan peringkatnya.
+
+**Jurusan SMK adalah data Tier 1** — dari situs resmi Kemendikdasmen, bukan kurasi.
+
+**Program studi kuliah kini dari daftar tim** (Agustus 2026), menggantikan kurasi
+158 nama sebelumnya: 12 rumpun, 244 entri, 243 nama unik. Statusnya naik dari
+"kurasi Claude" jadi "daftar tim", tapi `is_verified` tetap `false` karena belum
+dicocokkan ke PDDikti.
+
+Rumpun dibuat **many-to-many**, bukan satu kolom: "Ilmu Keolahragaan" memang
+terdaftar di Ilmu Kesehatan *dan* Ilmu Olahraga. Kalau dipaksa satu kolom, salah
+satunya harus dibuang atau namanya diduplikasi.
+
+PDDikti (~29.000 prodi per kampus) tidak realistis jadi dropdown, jadi user tetap
+boleh mengetik sendiri; isian bebasnya masuk `profiles.study_program_custom` untuk
+ditinjau dan dipromosikan admin.
+
+**Tujuh koreksi saat transkripsi daftar tim** — semuanya perlu kamu konfirmasi:
+
+| Di sumber | Dipakai | Alasan |
+|---|---|---|
+| Teknik Rasiodiagnostik dan Radioterapi | Teknik **Radio**diagnostik dan Radioterapi | salah ketik |
+| Bioentrepeneurship | Bioentre**p**reneurship | salah ketik |
+| Silvikulutur | Silvikul**t**ur | salah ketik |
+| Industrial RoboticsDesign | Industrial Robotics Design | spasi hilang |
+| Rekayasa hayati | Rekayasa Hayati | kapitalisasi |
+| Fakultas Akuntansi | Akuntansi | sumber menulis nama fakultas, bukan prodi |
+| Rekayasa Pertanian (muncul 2x di Ilmu Pertanian) | dihapus satu | duplikat |
+
+Karena itu Ilmu Pertanian berisi 31, bukan 32 seperti di daftar asli.
+
+### Aturan percabangan disimpan sebagai data
+
+`education_step_rules` memuat 20 kombinasi (10 jenjang × 2 status). Frontend
+membacanya lewat `ruleFor()`, tidak menghardcode. Kalau desainnya berubah, cukup
+ubah satu baris tabel.
+
+### CHECK constraint menegakkan matriks di level database
+
+Frontend boleh punya bug; data yang mustahil tetap tidak akan masuk. Sudah diuji —
+enam kombinasi salah **ditolak**, empat kombinasi benar **diterima**:
+
+| Ditolak | Diterima |
+|---|---|
+| SMA punya jurusan SMK | SMK sedang studi + jurusan + kelas 11 |
+| SMA punya program studi | S1 sedang studi + prodi + semester 5 |
+| Sudah lulus tapi punya kelas | S1 lulus + prodi ketikan bebas |
+| Siswa SMK punya semester | SMP sedang studi + kelas 8 |
+| Mahasiswa punya kelas | |
+| Prodi dipilih **dan** diketik | |
+
+Trigger `handle_new_user()` membuat baris profil otomatis saat user mendaftar,
+jadi onboarding tinggal UPDATE dan tidak perlu menangani kasus "baris belum ada".
+
+### Efek samping yang ditangani
+
+**477 profesi dipetakan ulang `min_education_rank`-nya** dari skala 6 ke skala 8.
+Nilainya berasal dari Job Zone O*NET jadi pemetaannya deterministik, bukan tebakan.
+Blok migrasinya dijaga agar hanya berjalan sekali — kalau diulang, rank akan
+bergeser dua kali. Sudah diuji: menjalankan `0005` dua kali tidak menggeser apa pun.
+
+**`backend/engine.py` ikut diperbaiki.** `map_user_education_rank()` masih memakai
+skala 6 lama; kalau dibiarkan, filter KBF akan menyaring profesi yang salah untuk
+setiap user. Sekarang mengenali kode jenjang baru dan urutan kata kuncinya
+diperbaiki supaya "diploma 3" tidak tertangkap oleh "diploma". 13 kasus uji lolos.
+
+### File frontend
+
+`frontend/src/lib/education.ts` — `getEducationLevels`, `getStepRules`, `ruleFor`,
+`getSmkPrograms`, `searchStudyPrograms`, `saveEducation`, `getEducationSummary`.
+`tsc` dan `eslint` bersih.
+
+### Masih terbuka
+
+- 243 nama program studi belum dicocokkan ke PDDikti (`is_verified = false`).
+- Tujuh koreksi transkripsi di atas perlu dikonfirmasi tim.
+- `education_majors` (60 baris, IT-only) sekarang tumpang tindih dengan tabel baru
+  dan mengacu ke nama jenjang lama. Belum dibuang karena masih dipakai alur chat
+  legacy — bereskan saat alur itu diganti.
+- Target tahun lulus belum dihitung otomatis dari jenjang + kelas/semester.
+
+---
+
+## Fase 2a — layar Onboarding (selesai)
+
+Rute `/onboarding`, mengikuti desain tim untuk **mobile, tablet, dan desktop**.
+
+### Struktur
+
+| File | Isi |
+|---|---|
+| `app/onboarding/page.tsx` | Orkestrator: Start → Step 1 → 2 → 3 → Done |
+| `components/onboarding/StartScreen.tsx` | Layar pembuka A-01 |
+| `components/onboarding/StepSidebar.tsx` | Panel kiri desktop: ilustrasi + stepper 3 langkah |
+| `components/onboarding/ProgressHeader.tsx` | Pill STEP n/3 + judul + progress bar |
+| `components/onboarding/ChipGroup.tsx` | Pilihan pill, satu jawaban |
+| `components/onboarding/StudyProgramCombobox.tsx` | Pemilih prodi: popover (≥sm) / bottom sheet (mobile) |
+| `components/onboarding/ReviewCard.tsx` | Kartu ringkasan Step 3 |
+| `components/onboarding/StepFooter.tsx` | Footer aksi |
+| `components/onboarding/TipCallout.tsx` | Kotak tips |
+| `components/onboarding/OnboardingIllustration.tsx` | Ilustrasi + fallback |
+
+### Keputusan yang perlu diketahui
+
+**Percabangan dibaca dari `education_step_rules`**, tidak dihardcode. SMK memunculkan
+Jurusan, SMA tidak; siswa dapat Kelas, mahasiswa dapat Semester — semuanya mengikuti
+tabel. Ganti jenjang membersihkan jawaban turunannya, karena CHECK constraint di
+database menolak kombinasi seperti "SMA punya jurusan SMK"; tanpa pembersihan itu user
+melihat error simpan yang tidak nyambung dengan apa yang baru dia klik.
+
+**Layout beda per breakpoint, sesuai desain.** Mobile dan tablet satu kolom penuh di
+latar putih; dari `lg` jadi kartu melayang di latar abu-abu dengan panel kiri berisi
+ilustrasi dan stepper. Stepper hanya muncul di desktop — di mobile kartu progres sudah
+menyampaikan hal yang sama, menampilkan keduanya cuma mengulang.
+
+**`ChipGroup` dibangun dari radio, bukan tombol.** Keyboard bisa berpindah pakai panah
+seperti radio group biasa dan pembaca layar mengumumkan "1 dari 10" — perilaku yang
+harus ditulis manual kalau memakai `<button>`.
+
+**Baris ReviewCard menumpuk di mobile, dua kolom dari `lg`** — mengikuti desain, karena
+kartunya jauh lebih lebar di desktop.
+
+**Daftar "Terpopuler" di combobox masih konstanta di kode**, bukan dari data pemakaian.
+Begitu ada cukup user, ganti dengan hitungan dari `profiles.study_program_id`.
+
+**`/onboarding` masuk daftar rute chromeless di `Navbar.tsx`** — desainnya tidak punya
+navigasi aplikasi, dan ini alur yang harus diselesaikan, bukan halaman yang boleh
+ditinggalkan lewat menu.
+
+### Verifikasi
+
+`tsc`, `eslint`, dan `next build` bersih. Dirender sungguhan dengan Playwright di
+390 / 834 / 1440 px, seluruh alur Start → Step 3 dijalankan otomatis. Tiga bug ketemu
+dan diperbaiki lewat cara ini, bukan lewat pembacaan kode:
+
+1. Navbar lama "CareerPath AI" masih muncul di atas onboarding.
+2. Fallback ilustrasi tanpa `aspect-ratio` — dipanggil dengan `h-auto`, jadi tingginya
+   nol dan slot ilustrasi hilang begitu saja alih-alih terlihat kosong.
+3. Debounce pencarian prodi memicu `setState` langsung di dalam efek.
+
+### Aset yang masih dibutuhkan
+
+Lima ilustrasi ke `public/onboarding/`: `start.png`, `step-1.png`, `step-2.png`,
+`step-3.png`, `done.png`. Selama belum ada, slotnya tampil sebagai kotak ungu pucat —
+onboarding tetap bisa dipakai dan dites.
+
+### Terbuka
+
+- Tombol terakhir mengarah ke `/dashboard` yang belum ada.
+- Nama langkah 3 dikonfirmasi tim: **"Review dan selesai!"** (varian "Memilih profesi
+  impian" di `STEP01-02A` diabaikan).
+- Layar Start belum menyimpan apa pun; kalau user menutup tab di tengah jalan,
+  progresnya hilang. Baru tersimpan saat menekan Simpan di Step 3.
+
+### Tambahan setelah desain desktop & tablet masuk
+
+Layar **Start (A-01)** ditambahkan — sebelumnya tidak ada di paket mobile. Panel kiri
+desktop berisi ilustrasi + stepper 3 langkah dengan tiga keadaan: centang hijau untuk
+selesai, bulatan ungu untuk aktif, nomor bergaris untuk berikutnya.
+
+Pemilih program studi diganti dari autocomplete inline menjadi **combobox** sesuai
+desain: pemicu + panel berisi pencarian, grup "Terpopuler", dan hasil dikelompokkan per
+rumpun. Muncul sebagai popover dari `sm` ke atas, bottom sheet berlatar gelap di mobile.
+
+Dua perilaku yang baru ketahuan dari `STEP03-01B`, dan sebelumnya saya salah:
+
+1. **Baris review selalu ditampilkan, tidak dihilangkan saat kosong.** SMA menampilkan
+   "Jurusan / Program Studi: Umum", lulusan menampilkan "Kelas saat ini: -". Versi
+   sebelumnya menghapus barisnya — itu membuat grid dua kolom di desktop jadi timpang
+   dan user tidak melihat semua yang tersimpan tentang dirinya.
+2. **Layar Done di desktop memakai kartu sempit terpusat**, sama seperti Start, bukan
+   kolom lebar seperti langkah 1-3.
+
+Label baris kedua kartu status mengikuti jenjang: "Kelas saat ini" untuk SMP/SMA/SMK,
+"Semester saat ini" untuk D1-S3.
+
+## Aset ilustrasi onboarding masuk (30 Agustus)
+
+Kelima ilustrasi dari tim desain sudah ada di `frontend/public/onboarding/`.
+Nama ekspornya diubah ke nama yang dipakai kode:
+
+| Nama ekspor        | Nama di repo | Ukuran asli | Dipakai di            |
+|--------------------|--------------|-------------|-----------------------|
+| `Image.png`        | `start.png`  | 283x360     | layar pembuka (A-01)  |
+| `left-top (1).png` | `step-1.png` | 472x237     | panel kiri langkah 1  |
+| `left-top (2).png` | `step-2.png` | 472x237     | panel kiri langkah 2  |
+| `left-top (3).png` | `step-3.png` | 472x237     | panel kiri langkah 3  |
+| `section.png`      | `done.png`   | 320x320     | layar selesai (C-01)  |
+
+### Rasio per aset, bukan satu angka seragam
+
+`OnboardingIllustration` sebelumnya mengirim `width={640} height={480}` untuk
+semua gambar. Angka itu cuma penampung waktu asetnya belum ada, tapi begitu file
+aslinya masuk ia jadi bug: semua pemanggil memakai `h-auto`, jadi tinggi elemen
+dihitung dari rasio `width/height` yang kita berikan — bukan dari isi file.
+Akibatnya `start.png` yang potret (283x360) ditarik jadi lanskap 4:3.
+
+Sekarang `ILLUSTRATIONS` menyimpan `{ src, width, height }` per aset dan
+placeholder-nya memakai `aspectRatio` yang sama, sehingga tata letak tidak
+bergeser kalau salah satu file hilang.
+
+### Penyesuaian ukuran mengikuti mockup
+
+Diukur ulang dari mockup, lalu dicocokkan:
+
+- **Panel kiri desktop 368px -> 420px.** Di `Desktop B-01` panel kiri 472 dari
+  kartu 1216 (38.8%); dengan kartu kita 1120, 420 memberi 37.5%.
+- **Padding panel kiri `p-6` -> `p-3` + `px-5` untuk daftar langkah.** Di mockup
+  ilustrasinya nyaris penuh selebar panel (sisa ~12px) sementara teksnya menjorok
+  ~36px. Satu padding seragam tidak bisa memenuhi keduanya.
+- **Ilustrasi pembuka `max-w-[420px]` -> `max-w-[300px]`.** Di `A-01` gambarnya
+  ~54% lebar isi kartu. Kalau selebar kartu, tingginya ~700px dan tombol
+  "Ayo Mulai!" terdorong ke bawah layar.
+- **Ilustrasi selesai `w-[280px]` -> `lg:w-[320px]`,** sesuai 322px di `C-01`.
+- **Tombol "Lanjut ke Dashboard" tidak lagi penuh di desktop.** `C-01` desktop
+  memakai pil ~328px terpusat, sedangkan `Mobile C-01` tetap penuh di dalam bilah
+  lilac — jadi `lg:mx-auto lg:w-auto lg:min-w-[320px]`.
+
+### Catatan resolusi
+
+Semua aset diekspor 1x. Di layar 2x (Retina, dan semua HP) gambarnya akan sedikit
+lembut, paling terasa pada `start.png` yang dirender 300px dari sumber 283px.
+Kalau tim desain bisa mengekspor ulang di 2x (`start@2x` 566x720, `step-*` 944x474,
+`done` 640x640), tidak ada perubahan kode yang diperlukan — Next.js `Image` akan
+memakainya begitu file diganti, asal `width`/`height` di `ILLUSTRATIONS`
+disesuaikan ke ukuran baru.
+
+## Fase 1e — roadmap Stage → Milestone → Activity (selesai)
+
+Bagian yang selama ini kosong: knowledge base sudah tahu profesi apa yang cocok
+untuk seorang siswa, tapi belum bisa menjawab "lalu saya harus apa".
+
+`0006_roadmap.sql` membuat strukturnya, `0007_roadmap_data.sql` mengisinya untuk
+seluruh 477 profesi aktif: **2.676 fase, 8.508 capaian, 18.596 aktivitas**,
+semuanya berbahasa Indonesia dan diturunkan dari data, tanpa LLM.
+
+### Menerjemahkan kosakata, bukan kalimatnya
+
+O*NET menyusun pekerjaan berlapis: GWA (41) → IWA (332) → DWA (2.087) → Task
+Statement (18.796). Godaannya adalah memakai task statement — itu yang paling
+konkret. Tapi task statement tidak dipakai ulang antar profesi, jadi memakainya
+berarti menerjemahkan 18.796 kalimat dan tidak ada satu pun yang bisa dipakai
+dua kali.
+
+Lapisan IWA seukuran "capaian" dan dipakai ulang: 464 profesi kita hanya
+menyentuh **311 IWA**. Menerjemahkan 311 kalimat sekali memberi milestone
+Indonesia untuk seluruh knowledge base. Hasilnya di `supabase/roadmap/iwa_id.py`,
+tersimpan di tabel `roadmap_skill_areas` lengkap dengan `name_en` supaya tiap
+terjemahan bisa diaudit.
+
+### Bentuk roadmap
+
+| Fase | Isi | Hilang kalau |
+|---|---|---|
+| SEKOLAH | kenali profesi, pilih jurusan | sudah lulus SMA/SMK |
+| KULIAH | pilih prodi, selesaikan studi | jenjang target sudah dicapai |
+| FONDASI | 4 kemampuan inti teratas | — |
+| PENGALAMAN | alat kerja, 2 kemampuan, magang pertama | — |
+| PROFESIONAL | izin praktik, rekrutmen, 3 kemampuan | — |
+| LANJUT | profesi lanjutan yang serumpun | — |
+
+Satu template per profesi, bukan satu per (profesi, jenjang). Fase yang sudah
+dilewati disaring saat dibaca lewat `skip_if_rank_at_least`. Anak SMP melihat 44
+aktivitas untuk Backend Developer, fresh graduate S1 melihat 33 — template yang
+sama.
+
+### Empat keputusan yang mengubah hasil
+
+**Jenjang target diambil dari distribusi pendidikan O*NET, bukan Job Zone.**
+`min_education_rank` yang lama sebenarnya hanya salinan job zone. Distribusi
+"Required Level of Education" jauh lebih informatif — dan untuk 69 profesi
+hasilnya lebih rendah dari baseline, yang justru benar: mekanik, machinist, dan
+operator crane di Indonesia memang masuk lewat SMK, bukan D3. Dua kategori
+Amerika sengaja tidak dipetakan ke D1, karena D1 nyaris tidak dipakai pasar
+kerja Indonesia. Selisihnya ada di `supabase/roadmap/review_education.csv`.
+
+**Kemampuan memimpin didorong ke fase belakang.** O*NET mensurvei pemegang
+jabatan di semua tingkat senioritas, jadi "menyupervisi personel" muncul di
+peringkat 3 untuk Software Developer. Menaruhnya di FONDASI berarti menyuruh
+anak SMA berlatih memimpin tim sebelum bisa membuat program.
+
+**Alat kerja diurutkan dari yang paling khas, bukan alfabetis.** Urutan
+alfabetis memberi Backend Developer "C" dan "C#"; diurutkan dari yang paling
+sedikit disebut profesi lain, hasilnya TypeScript, Terraform, RESTful API,
+Jenkins, Spring Boot. Alat serba-guna seperti Excel turun sendiri.
+
+**Angka pengalaman O*NET tidak dipakai apa adanya.** "Related Work Experience"
+adalah pengalaman yang DIMILIKI pemegang jabatan sekarang, bukan yang
+dibutuhkan untuk masuk. Untuk Software Developer nilainya 84 bulan; ditampilkan
+apa adanya ia terbaca "butuh 7 tahun pengalaman sebelum bisa mulai". Fase
+pengalaman dibatasi 24 bulan, angka aslinya disebut di deskripsi sebagai
+gambaran jangka panjang.
+
+### Izin praktik
+
+Tidak ada di O*NET — yang dipetakan di sana lisensi Amerika. Roadmap perawat
+yang berhenti di kelulusan berhenti tepat sebelum syarat yang paling
+menentukan. `supabase/roadmap/licenses.py` menandai **143 profesi** yang butuh
+STR/SIP, PPG, NIDN, atau izin profesi lain; fase PROFESIONAL-nya dimulai dengan
+mengurus izin itu. Daftarnya disusun manual dari peraturan Indonesia dan
+**wajib diperiksa ulang** — aturannya berubah.
+
+### Dua celah keamanan yang ketahuan saat diuji
+
+Keduanya lolos policy RLS dan baru ketahuan saat ditembak langsung:
+
+1. **Menyisipkan progres ke roadmap orang lain.** Policy pemilik baris hanya
+   memeriksa `user_id`. Pengguna A bisa menulis baris ber-`user_id` miliknya
+   sendiri tapi menunjuk `user_roadmap_id` milik B — lolos policy, lalu ikut
+   terhitung di progres B. Diperbaiki dengan foreign key gabungan
+   `(user_roadmap_id, user_id)` → `user_roadmaps (id, user_id)`, sehingga
+   kombinasinya mustahil di level basis data, bukan bergantung pada policy.
+
+2. **Mencentang aktivitas dari profesi lain untuk mengumpulkan XP.** 18.596
+   aktivitas tersedia dan semuanya public-read. Relasinya lewat tiga tabel jadi
+   tidak bisa jadi foreign key; ditutup dengan trigger BEFORE INSERT yang
+   memastikan aktivitasnya benar-benar milik template roadmap itu.
+
+XP sendiri tidak pernah ditulis client: `xp_ledger` menolak INSERT dari
+`authenticated`, dan satu-satunya penulisnya adalah trigger `grant_activity_xp`.
+Indeks unik parsial mencegah centang-batal-centang menggandakan poin.
+
+### Verifikasi
+
+Rantai `0000` → `0007` dijalankan dari DB kosong di PostgreSQL 16 lokal, lalu
+dijalankan ulang seluruhnya untuk menguji idempotensi — bersih dua-duanya.
+Uji fungsional: dua pengguna (SMP dan fresh graduate S1) memulai roadmap yang
+sama, penyaringan fase benar, `start_roadmap` idempoten, XP tidak dobel.
+Empat bentuk serangan diuji satu per satu; tiga ditolak, satu (yang sah)
+berhasil. `tsc` dan `eslint` bersih untuk `lib/roadmap.ts`.
+
+### Yang masih kurang
+
+- **Aktivitas masih pola, belum spesifik.** "Pelajari dasar merancang sistem
+  atau aplikasi komputer" benar tapi tidak menyebut kursus, buku, atau kanal
+  mana. Sumber belajar Indonesia belum ada di knowledge base.
+- **311 terjemahan IWA belum diverifikasi manusia** (`is_verified = false`).
+- **`0007` menghapus lalu membangun ulang.** Aman sekarang, tapi begitu ada
+  pengguna sungguhan, centang mereka ikut terhapus. Catatan cara menggantinya
+  ada di bagian 5 file itu.
+- **Estimasi waktu kasar.** Diturunkan dari titik tengah kategori O*NET, bukan
+  data Indonesia.
