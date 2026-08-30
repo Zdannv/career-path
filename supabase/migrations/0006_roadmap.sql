@@ -99,7 +99,8 @@ create table if not exists public.roadmap_stages (
   -- ini. NULL = selalu relevan. Contoh: fase SEKOLAH punya nilai 2, jadi
   -- hilang begitu pengguna lulus SMA/SMK.
   skip_if_rank_at_least smallint,
-  constraint uq_roadmap_stage_order unique (template_id, stage_order),
+  -- Kunci stabil lintas generate ulang; lihat bagian 5b.
+  slug           text,
   constraint chk_stage_skip_rank check (skip_if_rank_at_least is null or skip_if_rank_at_least between 1 and 8),
   constraint chk_stage_kind check (kind in (
     'SEKOLAH',      -- selesaikan jenjang sekolah yang sedang dijalani
@@ -122,7 +123,7 @@ create table if not exists public.roadmap_milestones (
   description_id  text,
   skill_area_code text     references public.roadmap_skill_areas(code),
   weight          numeric(6,2),   -- bobot kepentingan dari O*NET, untuk urutan
-  constraint uq_roadmap_milestone_order unique (stage_id, milestone_order)
+  slug            text            -- kunci stabil lintas generate ulang, lihat 5b
 );
 
 comment on column public.roadmap_milestones.skill_area_code is
@@ -140,7 +141,7 @@ create table if not exists public.roadmap_activities (
   description_id text,
   xp             integer  not null default 10,
   est_hours      integer,
-  constraint uq_roadmap_activity_order unique (milestone_id, activity_order),
+  slug           text,           -- kunci stabil lintas generate ulang, lihat 5b
   constraint chk_activity_xp check (xp between 0 and 1000),
   constraint chk_activity_kind check (kind in (
     'RISET',    -- cari tahu, baca, tanya orang
@@ -150,6 +151,78 @@ create table if not exists public.roadmap_activities (
     'ADMIN'     -- daftar, urus berkas, ambil ujian
   ))
 );
+
+-- ---------------------------------------------------------------------------
+-- 5b. Kunci stabil untuk generate ulang
+--
+-- Isi roadmap di-generate; ia akan dibangun ulang setiap kali pola kalimatnya
+-- diperbaiki atau O*NET diperbarui. Kalau id-nya ikut berubah tiap kali, semua
+-- centang pengguna kehilangan sasarannya — `user_roadmap_activities` menunjuk
+-- `roadmap_activities.id`, dan baris yang ditunjuk sudah tidak ada.
+--
+-- `slug` memberi tiap baris identitas yang tidak bergantung pada urutan insert:
+--
+--   stage      kind fase                     'FONDASI'
+--   milestone  kode IWA, atau slug struktural '4.A.2.b.2.b' / 'REKRUTMEN'
+--   activity   jenis, plus pembeda bila perlu 'BELAJAR' / 'BELAJAR:Docker'
+--
+-- Dengan itu generate ulang jadi UPSERT: baris yang slug-nya sama dipertahankan
+-- berikut id-nya, yang hilang dari sumber dihapus, yang baru ditambahkan.
+-- Progres pengguna selamat, dan memperbaiki satu kalimat tidak lagi berarti
+-- mengorbankan data.
+--
+-- Kolom urutan tetap unik, tapi DEFERRABLE: saat generate ulang, milestone bisa
+-- bertukar posisi, dan pemeriksaan langsung akan gagal di tengah jalan ketika
+-- dua baris sesaat memegang nomor yang sama. Ditunda sampai commit, keadaan
+-- akhirnya yang diperiksa.
+-- ---------------------------------------------------------------------------
+do $$
+begin
+  -- Instalasi yang sudah terlanjur punya isi tanpa slug: kosongkan sekali.
+  -- 0007 akan mengisinya kembali, lengkap dengan slug. Aman selama belum ada
+  -- pengguna sungguhan — dan kalau sudah ada, jangan jalankan blok ini.
+  if exists (
+    select 1 from public.roadmap_stages where slug is null limit 1
+  ) then
+    raise notice 'roadmap lama tanpa slug ditemukan, dikosongkan agar 0007 bisa mengisi ulang';
+    delete from public.roadmap_templates;
+  end if;
+end $$;
+
+alter table public.roadmap_stages     alter column slug set not null;
+alter table public.roadmap_milestones alter column slug set not null;
+alter table public.roadmap_activities alter column slug set not null;
+
+create unique index if not exists uq_roadmap_stage_slug
+  on public.roadmap_stages (template_id, slug);
+create unique index if not exists uq_roadmap_milestone_slug
+  on public.roadmap_milestones (stage_id, slug);
+create unique index if not exists uq_roadmap_activity_slug
+  on public.roadmap_activities (milestone_id, slug);
+
+do $$
+declare
+  spec text;
+begin
+  foreach spec in array array[
+    'roadmap_stages|uq_roadmap_stage_order|template_id, stage_order',
+    'roadmap_milestones|uq_roadmap_milestone_order|stage_id, milestone_order',
+    'roadmap_activities|uq_roadmap_activity_order|milestone_id, activity_order'
+  ]
+  loop
+    declare
+      t    text := split_part(spec, '|', 1);
+      c    text := split_part(spec, '|', 2);
+      cols text := split_part(spec, '|', 3);
+    begin
+      execute format('alter table public.%I drop constraint if exists %I', t, c);
+      execute format(
+        'alter table public.%I add constraint %I unique (%s) deferrable initially deferred',
+        t, c, cols
+      );
+    end;
+  end loop;
+end $$;
 
 create index if not exists idx_roadmap_stages_template   on public.roadmap_stages (template_id, stage_order);
 create index if not exists idx_roadmap_milestones_stage  on public.roadmap_milestones (stage_id, milestone_order);
