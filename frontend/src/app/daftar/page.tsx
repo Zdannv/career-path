@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Mail, Lock, AlertCircle } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
+import { siteUrl } from "@/lib/siteUrl";
 import AuthBrandHeader from "@/components/AuthBrandHeader";
 import AuthPageShell from "@/components/AuthPageShell";
 import AuthField from "@/components/AuthField";
@@ -63,8 +64,9 @@ export default function DaftarPage() {
       const { data, error } = await supabase.auth.signUp({
         email: email.trim(),
         password,
-        // TODO: point at /login once the Masuk screen lands (Authentication module).
-        options: { emailRedirectTo: `${window.location.origin}/` },
+        // Setelah verifikasi, pengguna baru langsung masuk ke onboarding —
+        // itu langkah berikutnya yang memang harus dia kerjakan.
+        options: { emailRedirectTo: siteUrl("/onboarding") },
       });
 
       if (error) {

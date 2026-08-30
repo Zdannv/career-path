@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { MailSearch, TriangleAlert, TimerReset, Undo2 } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
+import { siteUrl } from "@/lib/siteUrl";
 import AuthPageShell from "@/components/AuthPageShell";
 
 /** Seconds the user has to wait before another verification email can be sent. */
@@ -46,7 +47,7 @@ export default function VerifikasiContent({ email }: { email: string }) {
       const { error } = await supabase.auth.resend({
         type: "signup",
         email,
-        options: { emailRedirectTo: `${window.location.origin}/` },
+        options: { emailRedirectTo: siteUrl("/onboarding") },
       });
       if (error) {
         setNotice(error.message);

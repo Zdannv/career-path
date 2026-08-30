@@ -705,3 +705,92 @@ berhasil. `tsc` dan `eslint` bersih untuk `lib/roadmap.ts`.
   ada di bagian 5 file itu.
 - **Estimasi waktu kasar.** Diturunkan dari titik tengah kategori O*NET, bukan
   data Indonesia.
+
+## Fase 1f — slug stabil dan perbaikan link email (selesai)
+
+Dua utang dari fase sebelumnya dilunasi.
+
+### `0007` tidak lagi menghapus progres pengguna
+
+Sebelumnya generate ulang berarti `delete from roadmap_templates` lalu tulis
+ulang semuanya. Id aktivitas berubah tiap kali, dan `user_roadmap_activities`
+menunjuk id itu — jadi memperbaiki satu kalimat berarti mengorbankan seluruh
+centang pengguna. Aman selama belum ada pengguna, dan menjadi mahal persis di
+hari pertama ada.
+
+Sekarang tiap baris punya `slug` yang tidak bergantung urutan insert:
+
+| Tabel | Slug | Contoh |
+|---|---|---|
+| stage | kind fase | `FONDASI` |
+| milestone | kode IWA, atau slug struktural | `4.A.2.b.2.b`, `REKRUTMEN` |
+| activity | perannya di dalam capaian | `PRAKTIK`, `TOOL:Docker` |
+
+Generate ulang jadi UPSERT lewat tiga helper (`_rm_stage`, `_rm_milestone`,
+`_rm_activity`) yang mencatat id terpakai ke tabel sementara; yang tidak
+tercatat dibersihkan di akhir. Baris yang slug-nya sama dipertahankan berikut
+id-nya.
+
+Dua hal yang perlu ada supaya ini bekerja:
+
+- **Constraint urutan jadi DEFERRABLE.** Saat generate ulang, milestone bisa
+  bertukar posisi, dan pemeriksaan langsung gagal di tengah jalan ketika dua
+  baris sesaat memegang nomor yang sama. Ditunda sampai commit.
+- **Parameter helper bertipe `integer`, bukan `smallint`.** Literal `1` di
+  PL/pgSQL bertipe integer, dan integer ke smallint bukan cast implisit — jadi
+  resolusi fungsinya gagal dengan `function ... does not exist` yang
+  menyesatkan.
+
+Diuji: centang tiga aktivitas, jalankan ulang `0007`, id-nya (56, 57, 58) tetap
+sama, centang tetap tiga, XP tetap 50. Menonaktifkan satu profesi lalu generate
+ulang menghapus template beserta turunannya tanpa meninggalkan baris yatim, dan
+mengaktifkannya kembali memulihkannya — centang pengguna lain tidak tersentuh.
+
+### Link verifikasi email tidak lagi menunjuk localhost
+
+`emailRedirectTo` diisi `window.location.origin`, yang dibekukan ke dalam email
+pada detik pengguna menekan daftar. Kalau ia mendaftar dari `localhost:3000`,
+link verifikasinya selamanya ke sana — dan email itu biasanya dibuka beberapa
+menit kemudian saat dev server sudah mati, atau dibuka di HP, di mana
+`localhost` berarti HP itu sendiri. Dua-duanya ERR_CONNECTION_REFUSED.
+
+`lib/siteUrl.ts` memisahkan "di mana aku dibuka sekarang" dari "ke mana orang
+harus kembali nanti", dibaca dari `NEXT_PUBLIC_SITE_URL` dengan fallback ke
+origin. Dipakai di tiga tempat: daftar, kirim ulang verifikasi, dan reset sandi.
+Tujuan setelah verifikasi juga diubah dari `/` ke `/onboarding`.
+
+Perlu diiringi setelan di Supabase Dashboard -> Authentication -> URL
+Configuration: alamat yang dihasilkan harus terdaftar di **Redirect URLs**,
+kalau tidak Supabase mengabaikannya dan diam-diam memakai **Site URL**.
+
+### Yang masih tersisa
+
+- Sumber belajar Indonesia (`learning_resources`) belum ada — aktivitas masih
+  berupa pola tanpa menyebut kursus atau kanal.
+- 311 terjemahan IWA masih `is_verified = false`.
+- Pemetaan ke SKKNI/BNSP belum diselidiki; itu yang akan membuat kalimat capaian
+  dan jalur sertifikasi punya dasar resmi Indonesia, bukan terjemahan O*NET.
+
+### Koreksi: jalur upgrade tidak ikut teruji
+
+Slug di atas diuji hanya dari database kosong, dan itu melewatkan justru jalur
+yang dipakai orang: instalasi yang sudah menjalankan 0006 versi lama.
+`create table if not exists` diam saja kalau tabelnya sudah ada, jadi kolom
+`slug` tidak pernah ditambahkan dan seluruh migrasi gagal dengan
+`column "slug" does not exist`.
+
+Perbaikannya: `alter table ... add column if not exists slug text` terpisah,
+plus blok yang menukar foreign key satu kolom di `user_roadmap_activities`
+dengan yang menyertakan `user_id` — dua-duanya hal yang CREATE TABLE lewati
+di tabel yang sudah ada.
+
+Menguji jalur itu memunculkan bug kedua yang lebih serius, dan sudah ada sejak
+versi pertama: `user_roadmaps.template_id` memakai ON DELETE SET NULL, jadi
+begitu template terhapus, roadmap pengguna kehilangan tautannya dan tampil
+kosong **selamanya** — tidak ada yang menyambungkannya kembali. Sekarang 0007
+menyambung ulang di bagian 4b; aman karena `roadmap_templates` unik per profesi.
+
+Sekali upgrade ini, centang yang sudah ada tetap hilang: baris lama tidak punya
+slug, jadi semuanya dibangun ulang. Setelah itu generate ulang mempertahankan
+id — diverifikasi dengan mencentang tiga aktivitas, menjalankan ulang 0007, dan
+memastikan id serta XP-nya tidak berubah.
