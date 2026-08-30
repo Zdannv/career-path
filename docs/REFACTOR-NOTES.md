@@ -794,3 +794,26 @@ Sekali upgrade ini, centang yang sudah ada tetap hilang: baris lama tidak punya
 slug, jadi semuanya dibangun ulang. Setelah itu generate ulang mempertahankan
 id — diverifikasi dengan mencentang tiga aktivitas, menjalankan ulang 0007, dan
 memastikan id serta XP-nya tidak berubah.
+
+### Onboarding tidak punya jalan masuk
+
+Ketahuan saat mencoba daftar sungguhan: setelah berhasil login, pengguna
+mendarat di `/student` — layar CareerPath AI lama. Halaman `/onboarding`
+berdiri lengkap dan sudah diverifikasi, tapi tidak ada satu pun yang menautkan
+ke sana. Tiga tempat menulis `/student` sendiri-sendiri: `login/page.tsx`,
+tombol utama di landing, dan item navbar.
+
+Ini kelemahan cara verifikasinya, bukan kelemahan halamannya. Playwright
+membuka `/onboarding` langsung lewat URL, jadi ia membuktikan halamannya benar
+tanpa pernah menanyakan apakah ada orang yang bisa sampai ke sana.
+
+`lib/postAuth.ts` menaruh aturannya di satu tempat: baca
+`profiles.onboarding_completed_at` — kosong berarti ke onboarding, terisi
+berarti ke beranda. Dipakai tombol login dan tombol utama landing. Kalau query
+profilnya gagal, tujuannya onboarding; onboarding aman diulang karena tiap
+langkahnya menulis ulang baris yang sama.
+
+`/student` tetap jadi tujuan setelah onboarding, lewat konstanta
+`HOME_AFTER_ONBOARDING`. Saat dashboard baru ada, satu baris itu yang diganti.
+Navbar sengaja dibiarkan menunjuk `/student` — itu tautan eksplisit ke layar
+lama, bukan routing otomatis.

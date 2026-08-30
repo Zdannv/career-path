@@ -6,6 +6,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Mail, Lock, AlertCircle } from "lucide-react";
 import { supabase, setRememberMe } from "@/lib/supabaseClient";
+import { postLoginDestination } from "@/lib/postAuth";
 import AuthBrandHeader from "@/components/AuthBrandHeader";
 import AuthPageShell from "@/components/AuthPageShell";
 import AuthField from "@/components/AuthField";
@@ -68,7 +69,9 @@ export default function LoginPage() {
         return;
       }
 
-      router.push("/student");
+      // Pengguna yang belum onboarding dikirim ke sana dulu, bukan ke layar
+      // lama. Aturannya ada di postAuth supaya semua pintu masuk sepakat.
+      router.push(await postLoginDestination());
     } catch (err) {
       setFormError(
         err instanceof Error ? err.message : "Gagal masuk. Coba lagi sebentar."

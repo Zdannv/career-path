@@ -16,6 +16,7 @@ import {
   Globe,
 } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
+import { postLoginDestination, HOME_AFTER_ONBOARDING } from "@/lib/postAuth";
 import type { User } from "@supabase/supabase-js";
 
 const TARGET_USERS = [
@@ -73,23 +74,28 @@ const DASHBOARD_HIGHLIGHTS = [
 
 export default function LandingPage() {
   const [user, setUser] = useState<User | null>(null);
+  // Tujuan bagi pengunjung yang sudah login; perlu query profil, jadi
+  // disimpan di state alih-alih dihitung saat render.
+  const [signedInHref, setSignedInHref] = useState(HOME_AFTER_ONBOARDING);
 
   useEffect(() => {
     // Get current session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
+      if (session?.user) postLoginDestination().then(setSignedInHref);
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
+      if (session?.user) postLoginDestination().then(setSignedInHref);
     });
 
     return () => subscription.unsubscribe();
   }, []);
 
-  // Signed-out visitors are sent to the designed sign-up page; signed-in ones go
-  // straight to their dashboard.
-  const startJourneyHref = user ? "/student" : "/daftar";
+  // Pengunjung yang belum masuk ke halaman daftar; yang sudah masuk ke
+  // onboarding kalau belum selesai, atau ke berandanya kalau sudah.
+  const startJourneyHref = user ? signedInHref : "/daftar";
 
   return (
     <div className="w-full bg-white text-slate-900">
