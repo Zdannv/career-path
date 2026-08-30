@@ -41,10 +41,19 @@ export default function Navbar() {
     { name: "Dashboard Siswa", href: "/student", icon: Brain },
   ];
 
-  // The auth screens carry their own centered "Navika | Career path journey"
-  // lockup, so the app navigation is hidden there entirely.
-  const AUTH_ROUTES = ["/daftar", "/login", "/verifikasi", "/lupa-sandi", "/reset-sandi"];
-  if (AUTH_ROUTES.includes(pathname)) {
+  // Auth dan onboarding sama-sama membawa lockup "Navika | Career path journey"
+  // sendiri di tengah, jadi navigasi aplikasi disembunyikan sepenuhnya di sana.
+  // Keduanya juga alur yang harus diselesaikan, bukan halaman yang boleh
+  // ditinggalkan lewat menu.
+  const CHROMELESS_ROUTES = [
+    "/daftar",
+    "/login",
+    "/verifikasi",
+    "/lupa-sandi",
+    "/reset-sandi",
+    "/onboarding",
+  ];
+  if (CHROMELESS_ROUTES.includes(pathname)) {
     return null;
   }
 

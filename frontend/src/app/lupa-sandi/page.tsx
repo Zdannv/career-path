@@ -6,6 +6,7 @@ import Image from "next/image";
 import { Mail, Undo2, AlertCircle } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import AuthBrandHeader from "@/components/AuthBrandHeader";
+import AuthPageShell from "@/components/AuthPageShell";
 import AuthField from "@/components/AuthField";
 import AuthDialog from "@/components/AuthDialog";
 
@@ -52,7 +53,7 @@ export default function LupaSandiPage() {
   };
 
   return (
-    <div className="flex-1 bg-white lg:bg-[#CBD5E1]">
+    <AuthPageShell cancelHref="/login">
       <AuthBrandHeader />
 
       <div className="mx-auto w-full max-w-[1014px] px-5 sm:px-11 lg:px-0">
@@ -144,6 +145,6 @@ export default function LupaSandiPage() {
           onClose={() => setSent(false)}
         />
       )}
-    </div>
+    </AuthPageShell>
   );
 }

@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { MailSearch, TriangleAlert, TimerReset, Undo2 } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
+import AuthPageShell from "@/components/AuthPageShell";
 
 /** Seconds the user has to wait before another verification email can be sent. */
 const RESEND_COOLDOWN_SECONDS = 90;
@@ -63,7 +64,7 @@ export default function VerifikasiContent({ email }: { email: string }) {
   }, [canResend, email]);
 
   return (
-    <div className="flex-1 bg-white lg:bg-[#CBD5E1] lg:py-14">
+    <AuthPageShell cancelHref="/" className="lg:py-14">
       <div className="mx-auto w-full max-w-[800px] px-5 sm:px-10 lg:px-0">
         <div className="lg:rounded-3xl lg:bg-white lg:px-10 lg:py-12 lg:shadow-xl">
           {/* Illustration */}
@@ -159,6 +160,6 @@ export default function VerifikasiContent({ email }: { email: string }) {
           </div>
         </div>
       </div>
-    </div>
+    </AuthPageShell>
   );
 }

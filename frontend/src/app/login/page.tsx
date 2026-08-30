@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { Mail, Lock, AlertCircle } from "lucide-react";
 import { supabase, setRememberMe } from "@/lib/supabaseClient";
 import AuthBrandHeader from "@/components/AuthBrandHeader";
+import AuthPageShell from "@/components/AuthPageShell";
 import AuthField from "@/components/AuthField";
 
 const ILLUSTRATION_ALT = "Perjalanan karier menuju puncak bersama Navika";
@@ -78,7 +79,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex-1 bg-white lg:bg-[#CBD5E1]">
+    <AuthPageShell cancelHref="/">
       <AuthBrandHeader />
 
       <div className="mx-auto w-full max-w-[1013px] px-5 sm:px-11 lg:px-0">
@@ -170,6 +171,6 @@ export default function LoginPage() {
 
         <div className="h-10" />
       </div>
-    </div>
+    </AuthPageShell>
   );
 }

@@ -441,31 +441,61 @@ def fetch_data() -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame
 # ─────────────────────────────────────────────────────────────────────────────
 
 def map_user_education_rank(user_edu_str: str, df_edu: pd.DataFrame) -> int:
+    """
+    Petakan jenjang pendidikan user ke order_rank.
+
+    PENTING: skala berubah di migration 0005 dari 6 jenjang menjadi 10.
+    SMA dan SMK sekarang terpisah (rank sama, 2), D1-D4 terpisah, dan SMP
+    ditambahkan. Angka di bawah HARUS sama dengan education_levels.order_rank --
+    kalau meleset, filter KBF akan menyaring profesi yang salah.
+
+        SMP 1 | SMA 2 | SMK 2 | D1 3 | D2 4 | D3 5 | D4 6 | S1 6 | S2 7 | S3 8
+    """
     if not user_edu_str:
-        return 4  # default: Bachelor
+        return 6  # default: sarjana
 
     clean = user_edu_str.lower().strip()
 
-    # Check against DB level names first
+    # Kode jenjang dari onboarding baru ('SMK', 'S1', ...) -- paling akurat,
+    # dicek lebih dulu sebelum pencocokan teks bebas.
+    codes = {
+        "smp": 1, "sma": 2, "smk": 2,
+        "d1": 3, "d2": 4, "d3": 5, "d4": 6,
+        "s1": 6, "s2": 7, "s3": 8,
+    }
+    if clean in codes:
+        return codes[clean]
+
+    # Nama jenjang dari tabel education_levels
     col = "level_name" if "level_name" in df_edu.columns else df_edu.columns[1]
+    if "code" in df_edu.columns:
+        for _, row in df_edu.iterrows():
+            if str(row["code"]).lower() == clean:
+                return int(row["order_rank"])
     for _, row in df_edu.iterrows():
         lvl = str(row[col]).lower()
         if clean in lvl or lvl in clean:
             return int(row["order_rank"])
 
-    # Keyword shortcuts
-    shortcuts = {
-        "sma": 1, "smk": 1, "high school": 1,
-        "d1": 2, "d2": 2, "diploma 1": 2, "diploma 2": 2,
-        "d3": 3, "diploma 3": 3, "diploma": 3,
-        "d4": 4, "s1": 4, "bachelor": 4, "sarjana": 4,
-        "s2": 5, "master": 5, "magister": 5,
-        "s3": 6, "doctor": 6, "doktor": 6, "phd": 6, "doctorate": 6,
-    }
-    for kw, rank in shortcuts.items():
+    # Pencocokan kata kunci. Urutannya penting: yang lebih spesifik dulu,
+    # supaya "diploma 3" tidak tertangkap oleh "diploma".
+    shortcuts = [
+        ("smp", 1), ("mts", 1), ("junior high", 1),
+        ("smk", 2), ("mak", 2), ("vocational", 2),
+        ("sma", 2), ("ma ", 2), ("high school", 2),
+        ("diploma 1", 3), ("d1", 3),
+        ("diploma 2", 4), ("d2", 4),
+        ("diploma 3", 5), ("d3", 5),
+        ("diploma 4", 6), ("d4", 6), ("sarjana terapan", 6),
+        ("s1", 6), ("bachelor", 6), ("sarjana", 6),
+        ("diploma", 5),
+        ("s2", 7), ("master", 7), ("magister", 7),
+        ("s3", 8), ("doctor", 8), ("doktor", 8), ("phd", 8), ("doctorate", 8),
+    ]
+    for kw, rank in shortcuts:
         if kw in clean:
             return rank
-    return 4
+    return 6
 
 
 # ─────────────────────────────────────────────────────────────────────────────
