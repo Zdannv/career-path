@@ -865,3 +865,37 @@ Hasil review lengkap beserta kalkulator yang bisa diutak-atik ada di
 `docs/Career path 1 - review.xlsx`, sheet "Review Rumus". Kalkulatornya
 mereproduksi contoh Data Analyst di diagram persis: 40,04% sebelum gate,
 50,04% sesudah Rule 3.
+
+### Gap analysis terhadap spesifikasi lengkap
+
+Setelah membaca keenam sheet (bukan hanya Career DNA dan Career Matching Score),
+statusnya: dari 36 layar di "Screen & Feature specification", **4 sudah jadi,
+13 sebagian** (data dan fungsinya siap, layarnya belum), **19 belum**.
+
+Penghalang terbesar bukan yang paling banyak pekerjaannya: **layar Interest &
+Activity belum ada, bahkan desainnya belum**. Seluruh Career Matching Score,
+rekomendasi, dan reason engine bergantung padanya, dan semuanya sudah siap di
+database — yang tidak ada hanyalah cara bagi user mengisikan DNA-nya. Onboarding
+yang sudah dibangun baru mencakup Education; mockup yang diterima memang hanya
+untuk itu.
+
+Tujuh benturan antara spek dan yang terbangun, lengkap di sheet "Gap Analysis":
+
+- **Dynamic Journey.** Spek ingin roadmap menyesuaikan diri saat pendidikan user
+  berubah; `user_roadmaps.start_rank` justru sengaja dibekukan supaya fase yang
+  sudah dikerjakan tidak mendadak hilang. Bisa didamaikan lewat aksi eksplisit
+  "perbarui kondisi", tapi harus diputuskan sebelum ada pengguna sungguhan —
+  setelah itu mengubah aturan penyaringan fase berarti memindahkan data mereka.
+- **25 industri vs 9 di database**, plus relasi industri-Interest DNA yang belum
+  ada sama sekali.
+- **Education Path Node**: satu profesi punya beberapa jalur alternatif
+  (universitas, bootcamp, sertifikasi). Roadmap sekarang satu jalur linear;
+  menambah alternatif berarti `roadmap_templates` unik per (profesi, jalur).
+- **Career Readiness / Feasibility Score** disebut di dua tempat tapi belum
+  didefinisikan maupun dibangun.
+- **BNSP dan LSP** disebut sebagai sumber sertifikasi — persis arah SKKNI yang
+  disarankan sebelumnya, jadi keduanya sejalan.
+- **PDDikti** sebagai sumber program studi; ini sekaligus menyelesaikan utang
+  243 prodi yang masih `is_verified = false`.
+- **Market & Salary Intelligence** (Layer 4-5) tetap satu-satunya bagian yang
+  tidak bisa diambil dari O*NET.
