@@ -899,3 +899,69 @@ Tujuh benturan antara spek dan yang terbangun, lengkap di sheet "Gap Analysis":
   243 prodi yang masih `is_verified = false`.
 - **Market & Salary Intelligence** (Layer 4-5) tetap satu-satunya bagian yang
   tidak bisa diambil dari O*NET.
+
+## Fase 1g — mengikuti spek tim: mesin pencocokan & 25 industri (selesai)
+
+### Career Matching Score diganti ke rumus tim
+
+`career_match_scores()` sekarang persis rumus di sheet: Jaccard per kategori DNA,
+dibobot 35/30/15/10/10, lalu Rule 1 (Main Interest Gate), Rule 2 (Activity Gate),
+Rule 3 (Double Core Bonus), lalu band label.
+
+Cara lama — rata-rata skor kontinu O*NET pada atribut pilihan user — tidak
+dibuang, hanya berganti nama jadi `career_affinity_scores()`. Angka yang muncul
+di layar harus bisa dijelaskan ke siswa dengan kalimat sederhana ("kamu cocok
+2 dari 3 minat utama profesi ini"), dan Jaccard bisa; rata-rata tertimbang
+tidak. Tapi skor kontinunya tetap tersimpan di `onet_dna`, jadi kalau nanti
+rumusnya ditinjau ulang, pembandingnya masih ada.
+
+Kolom `detail` mengembalikan rincian per kategori: similarity, jumlah atribut
+user, jumlah atribut profesi, yang cocok, dan yang belum. Reason engine butuh
+tahu atribut MANA yang cocok — tanpa itu kalimat "Main interest [nama_atribut]
+selaras dengan profesi ini" tidak bisa diisi.
+
+Diverifikasi: user yang menyalin DNA Backend Developer mendapat 100% untuk
+profesi itu dan saudara SOC-nya, lalu peran keinsinyuran di 88-98%. Aritmetika
+dicek manual pada satu profesi — 100×0,35 + 60×0,30 + 66,67×0,15 + 100×0,10 +
+100×0,10 = 83,00, cocok dengan `base_score`, dan 93,00 setelah Rule 3.
+
+### 25 industri
+
+Transkripsi langsung dari sheet Mapping (Industri), plus tabel
+`industry_interest_dna` (28 relasi) yang selama ini belum ada — itu yang
+membuat "user suka Teknologi" bisa diterjemahkan jadi "industri ini mungkin
+cocok" tanpa lewat profesi satu per satu.
+
+Sembilan kode industri lama dipertahankan supaya 636 tautan hasil kurasi di
+0003 tidak putus; hanya namanya yang mengikuti sheet. FMCG dinonaktifkan, bukan
+dihapus: ia kategori barang yang membentang di Manufaktur, Retail, dan F&B —
+bukan industri dalam pengertian sheet — dan 41 tautannya masih menunggu
+dipindahkan.
+
+**Yang sengaja belum dikerjakan: memetakan 477 profesi ke 16 industri baru.**
+Godaannya mengisinya otomatis dari kode SOC, dan itu keliru — SOC menggambarkan
+jenis pekerjaan, bukan industri tempat orang mengerjakannya. Software Engineer
+bekerja di perbankan, rumah sakit, dan ritel; memetakannya ke "Teknologi
+Informasi & AI" saja justru menghapus kenyataan yang ingin ditangkap sheet itu,
+yang kalimatnya sendiri berbunyi "satu profesi ke satu atau lebih industri".
+Kolom `source` dan `is_verified` sudah disiapkan di `career_industries` supaya
+saat pemetaan itu dikerjakan, asal-usul tiap tautan terbawa.
+
+### Batas data yang tidak bisa saya tembus
+
+Layer 4 dan 5 (Market Demand & Salary Intelligence) tetap kosong, dan bukan
+karena belum sempat:
+
+- Scraping LinkedIn/Glassdoor/Jobstreet/Glints tidak mungkin dari sini, dan
+  melanggar ketentuan layanan mereka.
+- WebSearch diblokir di lingkungan ini (HTTP 403).
+- Situs BPS di-render JavaScript, jadi WebFetch hanya mendapat kerangka kosong.
+
+Yang TIDAK saya lakukan: memakai angka gaji Amerika dari O*NET sebagai
+pengganti. Menampilkan gaji Amerika ke siswa Indonesia lebih menyesatkan
+daripada tidak menampilkan apa pun, dan guard `showSalary` di `getCareerDetail`
+sudah menahan tampilannya selama datanya kosong.
+
+Jalur yang sah untuk mengisinya: tabel Sakernas BPS yang bisa diunduh sebagai
+xlsx, data Kemnaker, atau API berbayar. Ketiganya butuh orang mengunduh dan
+memberikannya — bukan sesuatu yang bisa diambil sendiri dari sesi ini.
