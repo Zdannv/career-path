@@ -817,3 +817,51 @@ langkahnya menulis ulang baris yang sama.
 `HOME_AFTER_ONBOARDING`. Saat dashboard baru ada, satu baris itu yang diganti.
 Navbar sengaja dibiarkan menunjuk `/student` — itu tautan eksplisit ke layar
 lama, bukan routing otomatis.
+
+## Review rumus Career Matching Score dari tim (selesai)
+
+Tim desain & PO mengirim spesifikasi Career DNA, Mapping Industri, dan Career
+Matching Score lewat workbook. Diminta memeriksa rumus dan aturannya.
+
+Rumusnya: Jaccard per kategori DNA, dibobot 35/30/15/10/10, lalu tiga gate rule
+(Main Interest Gate, Activity Gate, Double Core Bonus), lalu dilabeli tiga band.
+
+**Rumusnya sehat.** Diuji dengan mensimulasikannya pada 477 profesi sungguhan:
+user yang menyalin persis DNA sebuah profesi dapat 100%, user yang meleset dua
+atribut dari tujuh belas dapat 93%, dan profesi yang seharusnya jadi jawaban
+muncul di peringkat median #2 dari 477. Kualitas urutannya — bagian yang paling
+menentukan — lulus.
+
+Temuan yang perlu ditindaklanjuti tim:
+
+- **Salah ketik di diagram.** Baris Activity: irisan 2, gabungan 5, tertulis
+  S = 25%. Seharusnya 40%. Perhitungan berbobot di bawahnya sudah memakai 40%
+  dan totalnya benar, jadi yang salah hanya angka yang ditampilkan.
+- **Batas Work Style bentrok di dalam workbook itu sendiri.** Sheet "Career DNA"
+  menulis 2 pilihan; sheet "Career Matching Score" dan diagram menulis 3.
+  Menaikkan ke 3 tanpa menaikkan jumlah atribut Work Style pada DNA profesi
+  membuat kategori itu mentok di 66,7% selamanya, karena Jaccard membagi dengan
+  gabungan. Database tetap di 2 sampai ada keputusan.
+- **Jaccard menghukum user yang jujur.** Cocok satu atribut Interest bernilai
+  33% kalau user memilih satu atribut, 25% kalau dua, 20% kalau tiga. Makin
+  lengkap seseorang menyebutkan minatnya, makin rendah skornya. Dice
+  (2×irisan/(user+profesi)) memberi 50/40/33 — urutannya tidak berubah, tapi
+  hukumannya jauh lebih ringan.
+- **Skor kontinu O*NET tidak terpakai.** `onet_dna` menyimpan 0-100 per pasangan
+  (profesi, atribut); Jaccard memampatkannya jadi ya/tidak, sehingga cocok
+  dengan minat utama profesi dihitung sama dengan cocok dengan minat ketiganya.
+- Poster arsitektur masih menyebut 40 atribut (Skill 10, tanpa Work Style);
+  sheet dan diagram rumus menyebut 54. Yang 54 yang terpasang.
+
+`0008_dna_align_spec.sql` menyelaraskan yang tidak perlu diperdebatkan: bobot
+30/30/20/10/10 menjadi 35/30/15/10/10 sesuai spek, empat nama atribut mengikuti
+sheet ("Pelayanan Kesehatan", "Institusi Pendidikan", "Pabrik", "Adaptif"), dan
+tabel `match_score_bands` supaya ambang label tidak ditulis ulang di tiap
+pemanggil. Ada guard yang menggagalkan migrasi kalau bobotnya tidak berjumlah
+tepat 1,0 — kalau meleset, `career_match_scores` membagi dengan total yang salah
+dan semua skor bergeser tanpa ada yang sadar.
+
+Hasil review lengkap beserta kalkulator yang bisa diutak-atik ada di
+`docs/Career path 1 - review.xlsx`, sheet "Review Rumus". Kalkulatornya
+mereproduksi contoh Data Analyst di diagram persis: 40,04% sebelum gate,
+50,04% sesudah Rule 3.
