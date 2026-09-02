@@ -965,3 +965,87 @@ sudah menahan tampilannya selama datanya kosong.
 Jalur yang sah untuk mengisinya: tabel Sakernas BPS yang bisa diunduh sebagai
 xlsx, data Kemnaker, atau API berbayar. Ketiganya butuh orang mengunduh dan
 memberikannya — bukan sesuatu yang bisa diambil sendiri dari sesi ini.
+
+## Fase 1h — lapisan rumpun profesi, template quest, dan batas market demand
+
+### Rumpun profesi (0011)
+
+Tim desain menunjuk masalah nyata: 21 profesi rumpun marketing terlalu banyak
+untuk ditelusuri siswa, dan sebagian sebutannya cuma beda nama untuk pekerjaan
+yang sama — Account Executive dan Sales Executive tidak berbeda dari Sales
+Representative.
+
+Solusinya dua lapis, bukan penggabungan: `career_families` (7, yang dilihat
+siswa) di atas `careers` (21, yang menyimpan DNA dan roadmap asli). Kalau yang
+21 digabung jadi satu baris, tautan ke O*NET ikut putus — dan bersamanya DNA,
+roadmap, tools, serta skor pencocokan.
+
+Rumpunnya dibentuk berdasarkan fungsi kerja, lalu diukur seberapa kuat data
+mendukungnya. Angkanya disimpan di `dna_cohesion` berikut catatannya, karena
+dua rumpun **sengaja dibiarkan berkohesi rendah**: "Marketing & Periklanan"
+hanya 39% (terendah 19%, Digital Marketing Analyst vs Sales Iklan) dan
+"Penjualan B2B & Teknis" 46%. Keduanya keputusan produk, bukan temuan data, dan
+catatan itu menandainya sebagai kandidat pertama untuk dipecah.
+
+Yang paling kohesif justru "Supervisi Penjualan & Toko" (73%) dan "Penjualan
+Berlisensi" (64%) — yang terakhir memvalidasi usul tim desain bahwa lisensi
+adalah pemisah yang tepat.
+
+456 profesi lain belum punya rumpun, dan itu keadaan yang sah: `family_code`
+boleh NULL, jadi profesi tanpa rumpun tetap tampil sebagai dirinya sendiri.
+View `career_family_candidates` memberi bahan kurasi dari SOC minor group —
+sekitar 65 rumpun untuk seluruh 477 profesi. Tapi hanya sebagai titik awal:
+rumpun marketing sendiri membuktikan SOC bisa keliru, karena ia menaruh Sales
+Kanvas di grup transportasi padahal pekerjaannya penjualan.
+
+### Template quest soft skill
+
+Tim desain sudah membuat template quest untuk hard skill dan meminta satu
+contoh untuk soft skill berbasis Skill DNA. Dibuat untuk "Manajemen Waktu":
+12 minggu, satu tema per minggu, dan **empat versi per minggu** menurut jenjang
+pengguna — 48 baris.
+
+Empat versi karena target pengguna membentang SMP sampai pekerja. Quest yang
+menyuruh anak SMP "blokir kalender kerjamu" tidak bisa dikerjakan, dan yang
+menyuruh pekerja "susun jadwal belajar untuk ulangan" terasa merendahkan. Yang
+dipertahankan sama: keterampilan yang dilatih dan bentuk buktinya, supaya XP
+dan progresnya setara antar jenjang.
+
+Tiga hal yang perlu diputuskan tim sebelum ini masuk database, dicatat di sheet
+"Cara Pakai Template":
+
+- **Tipe quest bentrok.** Daftar tim (Learn/Research/Practice/Create/Do/Attend)
+  berbeda dari yang sudah dipakai roadmap (RISET/BELAJAR/PRAKTIK/BUKTI/ADMIN).
+- **Hubungan quest dengan roadmap.** Quest mengembangkan satu atribut DNA
+  selama 12 minggu; roadmap mengejar satu profesi selama bertahun-tahun.
+  Keduanya masuk akal sebagai bagian dari yang lain, tapi bentuk tabelnya
+  berbeda dan sulit diubah setelah ada pengguna.
+- **XP tenggelam.** Quest ini memberi 370 XP; satu roadmap penuh memberi
+  500-900 XP. Tanpa batas jumlah quest aktif, XP quest akan menenggelamkan
+  progres profesi.
+
+### Market demand: kenapa usulan hitungannya belum bisa dipakai
+
+Usul PM — selisih jumlah lowongan 2025 vs 2024 dari LinkedIn dan Glassdoor —
+logikanya benar tapi tidak bisa dikerjakan sekarang: kedua platform **hanya
+menampilkan lowongan yang masih aktif**. Tidak ada cara menanyakan jumlah
+lowongan tahun 2024 hari ini. Selisih antar tahun baru ada kalau kita mulai
+mencatat dari sekarang, artinya kolom itu kosong selama 12 bulan pertama.
+
+Masalah kedua, angka pencarian berubah tergantung kata kunci: "Sales" vs "Sales
+Representative" vs "Account Executive" memberi tiga angka berbeda untuk
+pekerjaan yang sama. Tanpa aturan kueri yang dibakukan, angkanya tidak bisa
+dibandingkan antar profesi — padahal justru itu gunanya.
+
+**Peringatan terpenting: prompt "lakukan web browsing dan sajikan estimasi
+jumlah lowongan" akan menghasilkan angka karangan.** Bukan karena modelnya
+jahat, tapi karena diminta mengisi tabel — kalau browsing tidak memberi angka
+yang pas, model mengisi yang paling masuk akal, lengkap dengan satuan dan
+persentase, tanpa tanda apa pun bahwa itu tebakan. Untuk produk yang dipakai
+siswa memilih jurusan, itu risiko nyata.
+
+Keputusan PM mengeluarkan "Prospek Profesi" dulu sudah tepat, dan alasannya
+lebih kuat dari "terlalu deep": skor gabungan berbobot menyembunyikan
+ketidaktahuan. Kalau tiga dari empat komponennya belum berdata, skor akhirnya
+tetap keluar sebagai satu angka rapi, dan tidak ada yang bisa melihat bahwa itu
+sebenarnya satu komponen dengan tiga tetangga kosong.
