@@ -1049,3 +1049,77 @@ lebih kuat dari "terlalu deep": skor gabungan berbobot menyembunyikan
 ketidaktahuan. Kalau tiga dari empat komponennya belum berdata, skor akhirnya
 tetap keluar sebagai satu angka rapi, dan tidak ada yang bisa melihat bahwa itu
 sebenarnya satu komponen dengan tiga tetangga kosong.
+
+## Fase 1i — melengkapi seluruh data (0012, 0013)
+
+Arahan berubah: kelengkapan dan kecepatan lebih penting daripada menunggu data
+survei. Semua kolom yang kosong diisi, termasuk yang sumbernya harus dibuat
+sendiri. Satu hal yang tetap dijaga karena tidak memperlambat apa pun: tiap
+nilai hasil estimasi membawa penanda sumbernya, jadi saat data sungguhan datang
+yang perlu diganti kelihatan tanpa menebak.
+
+### Market Intelligence untuk 477 profesi (0012)
+
+Tabel `career_market`: gaji, demand score, growth, dan ketahanan otomasi.
+Semuanya estimasi model, ditandai `source = 'estimasi_model'` dan
+`confidence = 'low'`.
+
+Yang penting: **tidak ada angka yang dikarang per profesi**. Semuanya keluaran
+rumus berparameter di `supabase/roadmap/market_model.py`. Bedanya besar — 477
+angka yang ditulis satu per satu tidak bisa diperiksa, tidak konsisten antar
+profesi, dan tidak bisa diperbaiki serentak. Kalau nanti ada yang tidak setuju
+premi sektor teknologi 1,35x, satu angka diubah dan seluruh tabel menyesuaikan.
+
+    gaji   = UMP nasional (Rp 3,1 jt) x pengali jenjang x Job Zone x premi industri
+    demand = luas rumpun + pertumbuhan industri + keterjangkauan jenjang
+    growth = pertumbuhan tahunan industri tertinggi yang ditautkan
+    ai_res = rata-rata ketahanan Activity DNA, disesuaikan Skill DNA
+
+Hasilnya wajar untuk Indonesia: SMA/SMK Rp 3,1-4,7 jt · D3 Rp 4,7-7,4 jt ·
+S1 Rp 6,8-12,1 jt · S2 Rp 11,2-20 jt.
+
+`ai_resilience` adalah satu-satunya kolom yang benar-benar diturunkan dari data
+profesi, bukan asumsi sektor: dihitung dari komposisi Activity DNA-nya.
+Aktivitas yang menuntut kehadiran fisik dan penilaian situasional sulit
+digantikan, yang mengolah informasi menurut aturan tetap paling mudah. Hasilnya
+lolos uji akal sehat — Guru PAUD 99, Terapis Musik 99, Operator Truk 36,
+Petugas Pencatat Meter 38.
+
+View `career_market_view` membawa kolom `is_estimasi` yang wajib dipakai UI
+untuk menandai angka yang belum berasal dari survei.
+
+### Deskripsi Indonesia dan rumpun lengkap (0013)
+
+406 deskripsi yang masih berteks O*NET diganti. Tidak diterjemahkan kalimat per
+kalimat, melainkan dirakit dari data yang sudah berbahasa Indonesia: capaian
+inti (IWA hasil terjemahan di 0007), Activity DNA, Environment DNA, dan jenjang
+pendidikan. Konsekuensinya seragam dan agak formulaik, tapi lengkap untuk semua
+profesi dan polanya bisa diperbaiki serentak dari satu tempat alih-alih
+disunting 400 kali. Ditandai `description_source = 'generate_dari_dna'`.
+
+61 rumpun tambahan dari SOC minor group melengkapi 7 yang dikurasi di 0011,
+sehingga seluruh 477 profesi punya rumpun. Ini bagian paling kasar: nama
+rumpunnya diambil otomatis dari profesi paling representatif di grupnya, dan
+"Kelompok profesi serumpun menurut O*NET" bukan nama yang enak dibaca siswa.
+Semuanya `is_curated = false`; yang 7 dari 0011 tidak tersentuh karena
+`on conflict` di 0013 sengaja tidak menimpa baris yang sudah dikurasi.
+
+### Keadaan knowledge base sekarang
+
+    477 profesi aktif
+      0 tanpa rumpun
+      0 tanpa deskripsi
+      0 tanpa data pasar
+    477 deskripsi berbahasa Indonesia
+     68 rumpun (7 terkurasi, 61 otomatis)
+
+Rantai 0000-0013 bersih dari database kosong, semuanya idempoten.
+
+### Sisa lubang
+
+- `career_skills` baru 26 dari 477. Tabel `skills` lama isinya 113 keahlian
+  khas IT (Python, React), jadi tidak cocok dipakai untuk 451 profesi lain —
+  perlu didesain ulang, bukan sekadar diisi.
+- Sumber belajar (`learning_resources`) belum ada.
+- 311 terjemahan IWA masih `is_verified = false`.
+- Nama 61 rumpun otomatis perlu ditulis ulang manusia.
