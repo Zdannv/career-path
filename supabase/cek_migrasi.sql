@@ -16,6 +16,11 @@ select * from (values
              where table_name='careers' and column_name='description_source')),
   ('0014 nama rumpun otomatis',
      exists (select 1 from public.career_families
-             where code = 'SOC_15_12' and name_id = 'Pengembang Perangkat Lunak & Infrastruktur TI'))
+             where code = 'SOC_15_12' and name_id = 'Pengembang Perangkat Lunak & Infrastruktur TI')),
+  ('0015 katalog hard skill',      to_regclass('public.hard_skills')            is not null),
+  ('0016 engine template quest',   to_regclass('public.quest_template_steps')   is not null),
+  ('0017 roadmap jadi quest',
+     exists (select 1 from information_schema.columns
+             where table_name='roadmap_activities' and column_name='quest_template_code'))
 ) as t(migrasi, sudah_jalan)
 order by migrasi;
