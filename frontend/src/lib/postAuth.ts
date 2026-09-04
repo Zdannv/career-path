@@ -11,12 +11,12 @@
 import { supabase } from "@/lib/supabaseClient";
 
 /**
- * Tujuan sementara bagi pengguna yang onboarding-nya sudah selesai.
+ * Tujuan bagi pengguna yang onboarding-nya sudah selesai.
  *
- * `/student` adalah layar CareerPath AI lama. Ia bertahan sampai dashboard
- * baru ada; begitu itu terjadi, cukup satu baris ini yang diganti.
+ * Sampai sebelum ini `/student` — layar CareerPath AI lama. Sekarang Explore,
+ * yang memang dirancang sebagai layar utama setelah masuk.
  */
-export const HOME_AFTER_ONBOARDING = "/student";
+export const HOME_AFTER_ONBOARDING = "/explore";
 
 export const ONBOARDING_PATH = "/onboarding";
 

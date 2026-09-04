@@ -21,6 +21,17 @@ select * from (values
   ('0016 engine template quest',   to_regclass('public.quest_template_steps')   is not null),
   ('0017 roadmap jadi quest',
      exists (select 1 from information_schema.columns
-             where table_name='roadmap_activities' and column_name='quest_template_code'))
+             where table_name='roadmap_activities' and column_name='quest_template_code')),
+  ('0018 sub-industri',            to_regclass('public.career_sub_industries') is not null),
+  ('0019 prodi -> profesi',        to_regclass('public.education_career')      is not null),
+  ('0020 API layar Explore',
+     exists (select 1 from pg_proc where proname='explore_state')),
+  ('0021 deskripsi dirapikan',
+     not exists (select 1 from public.careers
+                 where description_source='generate_dari_dna'
+                   and career_description ~ '[a-z]+ [A-Z][a-z]+')),
+  ('0022 jenjang Indonesia',
+     exists (select 1 from public.careers
+             where career_name='Apoteker' and min_education_rank=6))
 ) as t(migrasi, sudah_jalan)
 order by migrasi;

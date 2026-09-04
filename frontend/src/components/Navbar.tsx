@@ -57,6 +57,21 @@ export default function Navbar() {
     return null;
   }
 
+  // Layar aplikasi (Explore dan tetangganya) membawa bar atas dan bar bawahnya
+  // sendiri sesuai desain. Dua bar navigasi bertumpuk hanya membingungkan.
+  const APP_SHELL_ROUTES = [
+    "/explore",
+    "/roadmap",
+    "/journey",
+    "/quest",
+    "/progress",
+    "/career-dna",
+    "/career-insights",
+  ];
+  if (APP_SHELL_ROUTES.some((r) => pathname === r || pathname.startsWith(`${r}/`))) {
+    return null;
+  }
+
   // The landing page ("/") ships its own marketing header (brand + Masuk/Daftar)
   // to match the Figma design, instead of the app's internal navigation.
   if (pathname === "/") {
