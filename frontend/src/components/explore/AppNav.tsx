@@ -9,9 +9,9 @@
  */
 
 import Link from "next/link";
-import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { Compass, Map, Route, ClipboardList, LineChart } from "lucide-react";
+import NavikaMark from "@/components/explore/NavikaMark";
 
 export const TUJUAN = [
   { href: "/explore", label: "Explore", icon: Compass },
@@ -31,7 +31,7 @@ export function AppTopNav() {
     <header className="sticky top-0 z-30 hidden border-b border-slate-200 bg-white/95 backdrop-blur lg:block">
       <div className="mx-auto flex h-16 max-w-[1440px] items-center gap-6 px-8">
         <Link href="/explore" className="flex items-center gap-3">
-          <Image src="/navika-logo.png" alt="" width={28} height={28} className="size-7" aria-hidden />
+          <NavikaMark className="h-7 w-[21px] shrink-0 text-violet-600" />
           <span className="text-[17px] font-bold tracking-tight text-slate-900">Navika</span>
           <span className="h-6 w-px bg-slate-200" aria-hidden />
           <span className="leading-tight">
