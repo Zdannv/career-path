@@ -39,7 +39,12 @@ export type ScoredCard = CareerCard & {
 export type ExploreState = {
   full_name: string | null;
   has_career: boolean;
+  /** Career DNA SELESAI — bukan sekadar ada pilihan tersimpan. */
   has_dna: boolean;
+  /** Langkah tertinggi yang pernah dicapai di Career DNA, 1..6. */
+  dna_step: number;
+  /** Sudah ada pilihan tersimpan, walau belum selesai. */
+  dna_started: boolean;
   career_id: number | null;
   career_name: string | null;
   percent_done: number | null;

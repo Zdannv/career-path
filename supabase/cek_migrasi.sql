@@ -32,6 +32,12 @@ select * from (values
                    and career_description ~ '[a-z]+ [A-Z][a-z]+')),
   ('0022 jenjang Indonesia',
      exists (select 1 from public.careers
-             where career_name='Apoteker' and min_education_rank=6))
+             where career_name='Apoteker' and min_education_rank=6)),
+  ('0023 nama pengguna',
+     exists (select 1 from pg_proc where proname='nama_dari_email')),
+  ('0024 skema DNA sesuai desain',
+     exists (select 1 from public.dna_layers
+             where code='WORKSTYLE' and selection_count=3 and display_order=4)),
+  ('0025 progres DNA + RPC',      to_regclass('public.user_dna_progress')     is not null)
 ) as t(migrasi, sudah_jalan)
 order by migrasi;

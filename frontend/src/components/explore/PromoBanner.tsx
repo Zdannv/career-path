@@ -77,9 +77,15 @@ type Props = {
   href: string;
   className?: string;
   priority?: boolean;
+  /**
+   * Menimpa teks banner. Dipakai banner Career DNA saat pengisiannya sudah
+   * berjalan sebagian: eyebrow-nya menyebut langkah keberapa dan tombolnya
+   * berbunyi "Lanjutkan progress-mu", bukan mengajak mulai dari awal.
+   */
+  overrides?: { eyebrow?: string; cta?: string };
 };
 
-export default function PromoBanner({ variant, href, className = "", priority = false }: Props) {
+export default function PromoBanner({ variant, href, className = "", priority = false, overrides }: Props) {
   const b = BANNERS[variant];
 
   if (b.jenis === "image") {
@@ -126,7 +132,7 @@ export default function PromoBanner({ variant, href, className = "", priority = 
       />
 
       <div className={`relative flex flex-col gap-1.5 p-5 ${b.textW}`}>
-        <p className="text-[12px] font-bold text-violet-600">{b.eyebrow}</p>
+        <p className="text-[12px] font-bold text-violet-600">{overrides?.eyebrow ?? b.eyebrow}</p>
         <h3 className="text-[18px] font-bold leading-tight tracking-tight text-slate-900 sm:text-[19px]">
           {b.title}
         </h3>
@@ -134,7 +140,7 @@ export default function PromoBanner({ variant, href, className = "", priority = 
         {/* Tombolnya harus tetap satu baris: di kolom kiri desktop yang cuma 340px,
             "Mulai Career Discovery" pecah jadi dua baris dan bentuk pilnya rusak. */}
         <span className="mt-3 inline-flex w-fit items-center gap-2 whitespace-nowrap rounded-full bg-violet-600 px-4 py-2 text-[12px] font-semibold text-white transition-colors group-hover:bg-violet-700 sm:text-[12.5px]">
-          {b.cta}
+          {overrides?.cta ?? b.cta}
           <ArrowRight className="size-3.5" aria-hidden />
         </span>
       </div>

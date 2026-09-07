@@ -171,10 +171,25 @@ export default function ExploreView({
                 href="/roadmap"
               />
             ) : (
-              !state.has_dna && <PromoBanner variant="discovery" href="/career-dna" priority />
+              // Career Discovery hanya mengajak yang benar-benar belum mulai.
+              // Yang pengisiannya tertunda di tengah jalan tidak perlu diajak
+              // dari awal — untuknya ada banner Career DNA di bawah.
+              !state.has_dna &&
+              !state.dna_started && <PromoBanner variant="discovery" href="/career-dna" priority />
             )}
-            {state.has_career && !state.has_dna && (
-              <PromoBanner variant="dna" href="/career-dna" />
+            {!state.has_dna && (state.has_career || state.dna_started) && (
+              <PromoBanner
+                variant="dna"
+                href="/career-dna"
+                overrides={
+                  state.dna_started
+                    ? {
+                        eyebrow: `Career DNA (${state.dna_step}/6)`,
+                        cta: "Lanjutkan progress-mu",
+                      }
+                    : undefined
+                }
+              />
             )}
             {/* Di desktop banner ini menutup kolom kiri, sesuai mockup. Di layar
                 sempit ia pindah ke ujung bawah isi supaya tidak menyela deretan

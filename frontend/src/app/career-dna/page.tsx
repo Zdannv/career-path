@@ -1,5 +1,103 @@
-import SoonScreen from "@/components/explore/SoonScreen";
+"use client";
 
-export default function Page() {
-  return <SoonScreen title="Career DNA" note="Layar pemilihan Career DNA belum dibangun. Ini yang mengisi 54 atribut dalam lima kategori, dan tanpa itu skor kecocokan belum bisa dihitung." />;
+/**
+ * Career DNA (Discovery).
+ *
+ * Halaman ini hanya mengurus tiga hal: memastikan ada sesi, memuat opsi dan
+ * progres, dan menyerahkan sisanya ke DnaFlow. Kalau DNA-nya sudah selesai,
+ * pengguna dibawa langsung ke layar penutup — bukan disuruh mengisi ulang dari
+ * langkah satu.
+ */
+
+import { useCallback, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { Loader2 } from "lucide-react";
+import type { User } from "@supabase/supabase-js";
+import { supabase } from "@/lib/supabaseClient";
+import {
+  completeDna,
+  getDnaProgress,
+  getDnaSteps,
+  saveDnaStep,
+  type DnaLayerStep,
+} from "@/lib/careerDna";
+import DnaFlow from "@/components/career-dna/DnaFlow";
+
+export default function CareerDnaPage() {
+  const router = useRouter();
+  const [user, setUser] = useState<User | null>(null);
+  const [memuat, setMemuat] = useState(true);
+  const [steps, setSteps] = useState<DnaLayerStep[]>([]);
+  const [picks, setPicks] = useState<Record<string, string[]>>({});
+  const [reached, setReached] = useState(1);
+  const [sudahSelesai, setSudahSelesai] = useState(false);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session?.user) {
+        router.replace("/login");
+        return;
+      }
+      setUser(session.user);
+    });
+  }, [router]);
+
+  const muat = useCallback(async () => {
+    const [s, p] = await Promise.all([getDnaSteps(), getDnaProgress()]);
+    setSteps(s);
+    setPicks(p.picks);
+    setReached(p.currentStep);
+    setSudahSelesai(p.completedAt !== null);
+    setMemuat(false);
+  }, []);
+
+  useEffect(() => {
+    if (user) void muat();
+  }, [user, muat]);
+
+  if (memuat) {
+    return (
+      <div className="flex min-h-[70vh] flex-col items-center justify-center gap-3">
+        <Loader2 className="size-7 animate-spin text-violet-600" aria-hidden />
+        <p className="text-[12px] font-semibold text-slate-500">Menyiapkan Career DNA…</p>
+      </div>
+    );
+  }
+
+  if (steps.length === 0) {
+    return (
+      <div className="flex min-h-[70vh] flex-col items-center justify-center gap-3 px-6 text-center">
+        <p className="text-[15px] font-semibold text-slate-900">Career DNA belum bisa dimuat</p>
+        <p className="max-w-sm text-[13px] text-slate-500">
+          Daftar pilihannya tidak terbaca. Coba muat ulang halaman ini.
+        </p>
+        <button
+          onClick={() => {
+            setMemuat(true);
+            void muat();
+          }}
+          className="mt-1 rounded-full bg-violet-600 px-5 py-2.5 text-[13px] font-semibold text-white transition-colors hover:bg-violet-700"
+        >
+          Coba lagi
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <DnaFlow
+      steps={steps}
+      initialPicks={picks}
+      initialReached={reached}
+      initialScreen={sudahSelesai ? "selesai" : "intro"}
+      onSaveStep={async (layerCode, codes, nextStep) => {
+        const { error } = await saveDnaStep(layerCode, codes, nextStep);
+        return error;
+      }}
+      onComplete={async () => {
+        const { error } = await completeDna();
+        return error;
+      }}
+    />
+  );
 }
