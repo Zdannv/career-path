@@ -10,6 +10,7 @@ import AuthBrandHeader from "@/components/AuthBrandHeader";
 import AuthPageShell from "@/components/AuthPageShell";
 import AuthField from "@/components/AuthField";
 import AuthDialog from "@/components/AuthDialog";
+import { ROUTES } from "@/lib/routes";
 
 const EMAIL_HINT = "Gunakan format email yang benar, contoh: nama@domain.com";
 const ILLUSTRATION_ALT = "Lupa kata sandi";
@@ -121,7 +122,7 @@ export default function LupaSandiPage() {
             </form>
 
             <Link
-              href="/login"
+              href={ROUTES.login}
               className="mt-5 flex items-center justify-center gap-2 text-sm font-semibold text-slate-900 hover:text-[#7033FF] transition-colors cursor-pointer"
             >
               <Undo2 className="w-4 h-4" />

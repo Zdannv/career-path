@@ -10,14 +10,13 @@
 import { useCallback, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
-import { supabase } from "@/lib/supabaseClient";
 import { getCareerDetail, type CareerDetail } from "@/lib/careerDetail";
+import { ROUTES } from "@/lib/routes";
+import RequireAuth from "@/components/RequireAuth";
 import ProfesiDetail from "@/components/profesi/ProfesiDetail";
 
-export default function Page() {
+function Isi({ id }: { id: number }) {
   const router = useRouter();
-  const params = useParams<{ id: string }>();
-  const id = Number(params?.id);
   const [detail, setDetail] = useState<CareerDetail | null>(null);
   const [memuat, setMemuat] = useState(true);
 
@@ -26,14 +25,9 @@ export default function Page() {
       setMemuat(false);
       return;
     }
-    const { data } = await supabase.auth.getSession();
-    if (!data.session?.user) {
-      router.replace("/login");
-      return;
-    }
     setDetail(await getCareerDetail(id));
     setMemuat(false);
-  }, [id, router]);
+  }, [id]);
 
   useEffect(() => {
     void muat();
@@ -56,7 +50,7 @@ export default function Page() {
           Profesi ini mungkin sudah tidak aktif. Coba cari lagi dari Explore.
         </p>
         <button
-          onClick={() => router.push("/explore")}
+          onClick={() => router.push(ROUTES.explore)}
           className="mt-1 rounded-full bg-violet-600 px-5 py-2.5 text-[13px] font-semibold text-white transition-colors hover:bg-violet-700"
         >
           Kembali ke Explore
@@ -66,4 +60,13 @@ export default function Page() {
   }
 
   return <ProfesiDetail detail={detail} />;
+}
+
+export default function Page() {
+  const params = useParams<{ id: string }>();
+  return (
+    <RequireAuth pesan="Membuka profesi…">
+      <Isi id={Number(params?.id)} />
+    </RequireAuth>
+  );
 }

@@ -9,6 +9,7 @@ import { siteUrl } from "@/lib/siteUrl";
 import AuthBrandHeader from "@/components/AuthBrandHeader";
 import AuthPageShell from "@/components/AuthPageShell";
 import AuthField from "@/components/AuthField";
+import { ROUTES } from "@/lib/routes";
 import {
   SignupIllustrationPanel,
   SignupIllustrationBlock,
@@ -170,7 +171,7 @@ export default function DaftarPage() {
 
             <p className="mt-5 text-center text-sm font-medium text-slate-900">
               Sudah punya akun?{" "}
-              <Link href="/login" className="font-bold underline cursor-pointer">
+              <Link href={ROUTES.login} className="font-bold underline cursor-pointer">
                 Masuk
               </Link>
             </p>
@@ -186,11 +187,11 @@ export default function DaftarPage() {
 
         <p className="py-8 text-center text-sm text-[#525252]">
           Dengan membuat akun, Kamu telah menyetujui{" "}
-          <Link href="/syarat-layanan" className="text-[#1E69DC] cursor-pointer">
+          <Link href={ROUTES.syaratLayanan} className="text-[#1E69DC] cursor-pointer">
             Syarat Layanan
           </Link>{" "}
           dan{" "}
-          <Link href="/kebijakan-privasi" className="text-[#1E69DC] cursor-pointer">
+          <Link href={ROUTES.kebijakanPrivasi} className="text-[#1E69DC] cursor-pointer">
             Kebijakan Privasi
           </Link>
           .

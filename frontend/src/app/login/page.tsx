@@ -1,12 +1,13 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { Suspense, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Mail, Lock, AlertCircle } from "lucide-react";
 import { supabase, setRememberMe } from "@/lib/supabaseClient";
 import { postLoginDestination } from "@/lib/postAuth";
+import { ROUTES } from "@/lib/routes";
 import AuthBrandHeader from "@/components/AuthBrandHeader";
 import AuthPageShell from "@/components/AuthPageShell";
 import AuthField from "@/components/AuthField";
@@ -29,8 +30,13 @@ function LoginIllustrationPanel({ className = "" }: { className?: string }) {
   );
 }
 
-export default function LoginPage() {
+/**
+ * Isi halaman dipisah dari default export karena `useSearchParams()` menuntut
+ * batas Suspense di App Router. Tanpa itu build gagal saat prerender.
+ */
+function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -69,9 +75,10 @@ export default function LoginPage() {
         return;
       }
 
-      // Pengguna yang belum onboarding dikirim ke sana dulu, bukan ke layar
-      // lama. Aturannya ada di postAuth supaya semua pintu masuk sepakat.
-      router.push(await postLoginDestination());
+      // Pengguna yang belum onboarding dikirim ke sana dulu; yang sudah
+      // dikembalikan ke halaman yang tadi ia coba buka (?next=), atau ke
+      // Explore. Aturannya ada di postAuth supaya semua pintu masuk sepakat.
+      router.push(await postLoginDestination(searchParams.get("next")));
     } catch (err) {
       setFormError(
         err instanceof Error ? err.message : "Gagal masuk. Coba lagi sebentar."
@@ -82,7 +89,7 @@ export default function LoginPage() {
   };
 
   return (
-    <AuthPageShell cancelHref="/">
+    <AuthPageShell cancelHref={ROUTES.landing}>
       <AuthBrandHeader />
 
       <div className="mx-auto w-full max-w-[1013px] px-5 sm:px-11 lg:px-0">
@@ -131,7 +138,7 @@ export default function LoginPage() {
                 </label>
 
                 <Link
-                  href="/lupa-sandi"
+                  href={ROUTES.lupaSandi}
                   className="text-sm font-bold text-slate-900 hover:text-[#7033FF] transition-colors cursor-pointer"
                 >
                   Lupa Kata Sandi?
@@ -156,7 +163,7 @@ export default function LoginPage() {
 
             <p className="mt-5 text-center text-sm font-medium text-slate-900">
               Belum punya akun?{" "}
-              <Link href="/daftar" className="font-bold underline cursor-pointer">
+              <Link href={ROUTES.daftar} className="font-bold underline cursor-pointer">
                 Daftar disini
               </Link>
             </p>
@@ -175,5 +182,13 @@ export default function LoginPage() {
         <div className="h-10" />
       </div>
     </AuthPageShell>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginForm />
+    </Suspense>
   );
 }

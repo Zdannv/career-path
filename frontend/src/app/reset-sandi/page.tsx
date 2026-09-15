@@ -10,6 +10,7 @@ import AuthBrandHeader from "@/components/AuthBrandHeader";
 import AuthPageShell from "@/components/AuthPageShell";
 import AuthField from "@/components/AuthField";
 import AuthDialog from "@/components/AuthDialog";
+import { ROUTES } from "@/lib/routes";
 
 const PASSWORD_HINT = "Minimal 8 karakter dengan kombinasi huruf dan angka.";
 
@@ -117,7 +118,7 @@ export default function ResetSandiPage() {
                 untuk melanjutkan.
               </p>
               <Link
-                href="/lupa-sandi"
+                href={ROUTES.lupaSandi}
                 className="mt-6 inline-block rounded-full bg-[#7033FF] px-6 py-3 text-sm font-semibold text-white hover:bg-[#5f27e6] transition-colors cursor-pointer"
               >
                 Minta Link Baru
@@ -181,7 +182,7 @@ export default function ResetSandiPage() {
 
                 <div className="flex items-center justify-end gap-5 !mt-6">
                   <Link
-                    href="/login"
+                    href={ROUTES.login}
                     className="inline-flex items-center gap-2 text-sm font-semibold text-slate-900 hover:text-[#7033FF] transition-colors cursor-pointer"
                   >
                     <X className="w-4 h-4" />
@@ -212,8 +213,8 @@ export default function ResetSandiPage() {
           heading="Kata sandi berhasil diperbarui."
           description="Sekarang kamu bisa melanjutkan perjalanan kariermu."
           actionLabel="Masuk Akun"
-          onAction={() => router.push("/login")}
-          onClose={() => router.push("/login")}
+          onAction={() => router.push(ROUTES.login)}
+          onClose={() => router.push(ROUTES.login)}
         />
       )}
     </AuthPageShell>

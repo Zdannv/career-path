@@ -5,6 +5,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, Compass } from "lucide-react";
+import { ROUTES } from "@/lib/routes";
 
 export default function DoneScreen() {
   return (
@@ -30,7 +31,7 @@ export default function DoneScreen() {
         <div className="mx-auto mt-6 max-w-[520px] border-t border-slate-200 pt-6">
           <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
             <Link
-              href="/explore"
+              href={ROUTES.explore}
               className="inline-flex items-center justify-center gap-2 rounded-full bg-slate-100 px-5 py-3 text-[13.5px] font-semibold text-slate-700 transition-colors hover:bg-slate-200"
             >
               <Compass className="size-4" aria-hidden />

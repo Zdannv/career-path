@@ -4,6 +4,7 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { GraduationCap, BookMarked, AlertCircle, ArrowRight } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
+import { HOME_AFTER_ONBOARDING, ROUTES } from "@/lib/routes";
 import AuthBrandHeader from "@/components/AuthBrandHeader";
 import ProgressHeader from "@/components/onboarding/ProgressHeader";
 import ChipGroup, { type ChipOption } from "@/components/onboarding/ChipGroup";
@@ -90,7 +91,7 @@ export default function OnboardingPage() {
       const { data } = await supabase.auth.getSession();
       if (!alive) return;
       if (!data.session) {
-        router.replace("/login?next=/onboarding");
+        router.replace(`${ROUTES.login}?next=${encodeURIComponent(ROUTES.onboarding)}`);
         return;
       }
       setUserId(data.session.user.id);
@@ -286,10 +287,10 @@ export default function OnboardingPage() {
                   mobile dan tablet ia melebar penuh di dalam bilah lilac. */}
               <button
                 type="button"
-                onClick={() => router.push("/dashboard")}
+                onClick={() => router.push(HOME_AFTER_ONBOARDING)}
                 className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-full bg-[#7033FF] px-6 py-3.5 text-sm font-semibold text-white transition-colors hover:bg-[#5f27e6] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#7033FF] lg:mx-auto lg:w-auto lg:min-w-[320px] lg:px-8"
               >
-                Lanjut ke Dashboard
+                Lanjut ke Explore
                 <ArrowRight className="h-4 w-4" />
               </button>
             </div>

@@ -10,6 +10,7 @@
 import Link from "next/link";
 import { ArrowRight, BookOpen, Compass, FileCheck2, PlayCircle, Wrench } from "lucide-react";
 import type { WeeklyQuest } from "@/lib/explore";
+import { ROUTES } from "@/lib/routes";
 
 const IKON: Record<string, typeof BookOpen> = {
   HARD_SKILL: Wrench,
@@ -45,7 +46,7 @@ export default function QuestWeek({ quests, total }: { quests: WeeklyQuest[]; to
             Quest minggu ini ({total}+)
           </h2>
           <Link
-            href="/quest"
+            href={ROUTES.quest}
             aria-label="Lihat semua quest"
             className="grid size-8 shrink-0 place-items-center rounded-full border border-slate-200 bg-white text-slate-700 transition-colors hover:bg-slate-50"
           >
@@ -59,7 +60,7 @@ export default function QuestWeek({ quests, total }: { quests: WeeklyQuest[]; to
             return (
               <li key={q.activity_id}>
                 <Link
-                  href="/quest"
+                  href={ROUTES.quest}
                   className="flex items-center gap-3 px-4 py-3.5 transition-colors hover:bg-slate-50"
                 >
                   <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-indigo-50 text-indigo-600">

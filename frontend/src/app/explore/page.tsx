@@ -3,18 +3,17 @@
 /**
  * Explore — layar utama setelah masuk.
  *
- * Halaman ini hanya mengurus tiga hal: memastikan ada sesi, mengambil data
- * seperlunya, dan menyerahkannya ke ExploreView. Yang menentukan tampilan mana
- * yang muncul adalah `explore_state()` — satu sumber kebenaran; jangan
- * menyimpulkannya dari data lain, karena dua sumber untuk hal yang sama adalah
- * cara tercepat membuat layar ini salah tampil.
+ * Halaman ini hanya mengurus dua hal: mengambil data seperlunya dan
+ * menyerahkannya ke ExploreView. Pemeriksaan sesi dan onboarding diserahkan ke
+ * RequireAuth, yang dipakai seluruh layar aplikasi.
+ *
+ * Yang menentukan tampilan mana yang muncul adalah `explore_state()` — satu
+ * sumber kebenaran; jangan menyimpulkannya dari data lain, karena dua sumber
+ * untuk hal yang sama adalah cara tercepat membuat layar ini salah tampil.
  */
 
 import { useCallback, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
-import type { User } from "@supabase/supabase-js";
-import { supabase } from "@/lib/supabaseClient";
 import {
   getByActivity,
   getByMatch,
@@ -23,26 +22,15 @@ import {
   getTopDemand,
   getWeeklyQuests,
 } from "@/lib/explore";
+import RequireAuth from "@/components/RequireAuth";
 import ExploreView, {
   barisDibutuhkan,
   type ExploreData,
 } from "@/components/explore/ExploreView";
 
-export default function ExplorePage() {
-  const router = useRouter();
-  const [user, setUser] = useState<User | null>(null);
+function ExploreIsi() {
   const [memuat, setMemuat] = useState(true);
   const [data, setData] = useState<ExploreData | null>(null);
-
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session?.user) {
-        router.replace("/login");
-        return;
-      }
-      setUser(session.user);
-    });
-  }, [router]);
 
   const muat = useCallback(async () => {
     const state = await getExploreState();
@@ -66,8 +54,8 @@ export default function ExplorePage() {
   }, []);
 
   useEffect(() => {
-    if (user) void muat();
-  }, [user, muat]);
+    void muat();
+  }, [muat]);
 
   if (memuat) {
     return (
@@ -100,4 +88,12 @@ export default function ExplorePage() {
   }
 
   return <ExploreView data={data} />;
+}
+
+export default function ExplorePage() {
+  return (
+    <RequireAuth pesan="Menyiapkan Explore…">
+      <ExploreIsi />
+    </RequireAuth>
+  );
 }

@@ -29,6 +29,7 @@ import SkillGapSheet from "@/components/profesi/SkillGapSheet";
 import AiCard, { AiInfoSheet } from "@/components/profesi/AiCard";
 import { KartuDemand, KartuEstimasi, DaftarSubIndustri } from "@/components/profesi/InfoCards";
 import { Blok, BarisDuaKolom, BarisIsi, LihatSemua } from "@/components/profesi/Listing";
+import { ROUTES } from "@/lib/routes";
 import {
   getCareerCompetency,
   getCareerInsight,
@@ -105,7 +106,7 @@ export default function ProfesiDetail({
       setGalat(hasil.pesan ?? "Gagal memilih profesi ini. Coba lagi.");
       return;
     }
-    router.push("/roadmap");
+    router.push(ROUTES.roadmap);
   }, [detail.career_id, router]);
 
   const bukaGap = (t: "hard" | "soft" | "tools") => {

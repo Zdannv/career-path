@@ -7,6 +7,7 @@ import { MailSearch, TriangleAlert, TimerReset, Undo2 } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { siteUrl } from "@/lib/siteUrl";
 import AuthPageShell from "@/components/AuthPageShell";
+import { ROUTES } from "@/lib/routes";
 
 /** Seconds the user has to wait before another verification email can be sent. */
 const RESEND_COOLDOWN_SECONDS = 90;
@@ -143,7 +144,7 @@ export default function VerifikasiContent({ email }: { email: string }) {
               only the desktop card puts them inline and right-aligned. */}
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-end">
             <Link
-              href="/"
+              href={ROUTES.landing}
               className="order-2 lg:order-1 inline-flex items-center justify-center gap-2 text-sm font-semibold text-slate-900 hover:text-[#7033FF] transition-colors cursor-pointer lg:mr-3"
             >
               <Undo2 className="w-4 h-4" />

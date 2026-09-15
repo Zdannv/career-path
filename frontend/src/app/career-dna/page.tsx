@@ -3,17 +3,15 @@
 /**
  * Career DNA (Discovery).
  *
- * Halaman ini hanya mengurus tiga hal: memastikan ada sesi, memuat opsi dan
- * progres, dan menyerahkan sisanya ke DnaFlow. Kalau DNA-nya sudah selesai,
+ * Halaman ini hanya mengurus dua hal: memuat opsi dan progres, lalu
+ * menyerahkan sisanya ke DnaFlow. Sesi dijaga RequireAuth. Kalau DNA-nya sudah
+ * selesai,
  * pengguna dibawa langsung ke layar penutup — bukan disuruh mengisi ulang dari
  * langkah satu.
  */
 
 import { useCallback, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
-import type { User } from "@supabase/supabase-js";
-import { supabase } from "@/lib/supabaseClient";
 import {
   completeDna,
   getDnaProgress,
@@ -21,26 +19,15 @@ import {
   saveDnaStep,
   type DnaLayerStep,
 } from "@/lib/careerDna";
+import RequireAuth from "@/components/RequireAuth";
 import DnaFlow from "@/components/career-dna/DnaFlow";
 
-export default function CareerDnaPage() {
-  const router = useRouter();
-  const [user, setUser] = useState<User | null>(null);
+function CareerDnaIsi() {
   const [memuat, setMemuat] = useState(true);
   const [steps, setSteps] = useState<DnaLayerStep[]>([]);
   const [picks, setPicks] = useState<Record<string, string[]>>({});
   const [reached, setReached] = useState(1);
   const [sudahSelesai, setSudahSelesai] = useState(false);
-
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session?.user) {
-        router.replace("/login");
-        return;
-      }
-      setUser(session.user);
-    });
-  }, [router]);
 
   const muat = useCallback(async () => {
     const [s, p] = await Promise.all([getDnaSteps(), getDnaProgress()]);
@@ -52,8 +39,8 @@ export default function CareerDnaPage() {
   }, []);
 
   useEffect(() => {
-    if (user) void muat();
-  }, [user, muat]);
+    void muat();
+  }, [muat]);
 
   if (memuat) {
     return (
@@ -99,5 +86,13 @@ export default function CareerDnaPage() {
         return error;
       }}
     />
+  );
+}
+
+export default function CareerDnaPage() {
+  return (
+    <RequireAuth pesan="Menyiapkan Career DNA…">
+      <CareerDnaIsi />
+    </RequireAuth>
   );
 }

@@ -12,6 +12,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Search, Loader2, SlidersHorizontal } from "lucide-react";
 import { searchCareerCards, type CareerCard } from "@/lib/explore";
+import { ROUTES } from "@/lib/routes";
 
 function inisial(nama: string | null): string {
   if (!nama) return "N";
@@ -124,7 +125,7 @@ export default function GreetingHeader({ name }: { name: string | null }) {
           "saya tahu nama profesinya", sedangkan menjelajah dengan filter gaji,
           jenjang, dan atribut keahlian butuh ruang satu layar penuh. */}
       <Link
-        href="/explore/cari"
+        href={ROUTES.exploreCari}
         aria-label="Cari dengan filter"
         className="grid size-11 shrink-0 place-items-center rounded-full border border-slate-200 bg-white text-slate-600 transition-colors hover:bg-slate-50"
       >

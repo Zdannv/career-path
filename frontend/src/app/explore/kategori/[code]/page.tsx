@@ -5,26 +5,20 @@
 import { useCallback, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
-import { supabase } from "@/lib/supabaseClient";
 import { getFamilyDetail, type FamilyDetail } from "@/lib/careerDetail";
+import { ROUTES } from "@/lib/routes";
+import RequireAuth from "@/components/RequireAuth";
 import KategoriDetail from "@/components/profesi/KategoriDetail";
 
-export default function Page() {
+function Isi({ code }: { code: string }) {
   const router = useRouter();
-  const params = useParams<{ code: string }>();
-  const code = params?.code ?? "";
   const [detail, setDetail] = useState<FamilyDetail | null>(null);
   const [memuat, setMemuat] = useState(true);
 
   const muat = useCallback(async () => {
-    const { data } = await supabase.auth.getSession();
-    if (!data.session?.user) {
-      router.replace("/login");
-      return;
-    }
-    setDetail(await getFamilyDetail(decodeURIComponent(code)));
+    setDetail(await getFamilyDetail(code));
     setMemuat(false);
-  }, [code, router]);
+  }, [code]);
 
   useEffect(() => {
     void muat();
@@ -44,7 +38,7 @@ export default function Page() {
       <div className="flex min-h-[70vh] flex-col items-center justify-center gap-3 px-6 text-center">
         <p className="text-[15px] font-semibold text-slate-900">Kategori tidak ditemukan</p>
         <button
-          onClick={() => router.push("/explore")}
+          onClick={() => router.push(ROUTES.explore)}
           className="mt-1 rounded-full bg-violet-600 px-5 py-2.5 text-[13px] font-semibold text-white transition-colors hover:bg-violet-700"
         >
           Kembali ke Explore
@@ -54,4 +48,13 @@ export default function Page() {
   }
 
   return <KategoriDetail detail={detail} />;
+}
+
+export default function Page() {
+  const params = useParams<{ code: string }>();
+  return (
+    <RequireAuth pesan="Membuka kategori…">
+      <Isi code={decodeURIComponent(params?.code ?? "")} />
+    </RequireAuth>
+  );
 }

@@ -31,6 +31,7 @@ import GreetingHeader from "@/components/explore/GreetingHeader";
 import JourneyCard from "@/components/explore/JourneyCard";
 import PromoBanner from "@/components/explore/PromoBanner";
 import QuestWeek from "@/components/explore/QuestWeek";
+import { ROUTES } from "@/lib/routes";
 
 export type BarisKode = "demand" | "study" | "match" | "activity";
 
@@ -168,19 +169,19 @@ export default function ExploreView({
               <JourneyCard
                 careerName={state.career_name}
                 percent={Math.round(Number(state.percent_done ?? 0))}
-                href="/roadmap"
+                href={ROUTES.roadmap}
               />
             ) : (
               // Career Discovery hanya mengajak yang benar-benar belum mulai.
               // Yang pengisiannya tertunda di tengah jalan tidak perlu diajak
               // dari awal — untuknya ada banner Career DNA di bawah.
               !state.has_dna &&
-              !state.dna_started && <PromoBanner variant="discovery" href="/career-dna" priority />
+              !state.dna_started && <PromoBanner variant="discovery" href={ROUTES.careerDna} priority />
             )}
             {!state.has_dna && (state.has_career || state.dna_started) && (
               <PromoBanner
                 variant="dna"
-                href="/career-dna"
+                href={ROUTES.careerDna}
                 overrides={
                   state.dna_started
                     ? {
@@ -194,7 +195,7 @@ export default function ExploreView({
             {/* Di desktop banner ini menutup kolom kiri, sesuai mockup. Di layar
                 sempit ia pindah ke ujung bawah isi supaya tidak menyela deretan
                 kartu di paruh atas layar. */}
-            <PromoBanner variant="insights" href="/career-insights" className="hidden lg:block" />
+            <PromoBanner variant="insights" href={ROUTES.careerInsights} className="hidden lg:block" />
           </div>
         </div>
 
@@ -204,7 +205,7 @@ export default function ExploreView({
           )}
           {barisTerpilih.map((k) => baris[k])}
           <div className="px-4 pb-8 pt-2 sm:px-6 lg:hidden">
-            <PromoBanner variant="insights" href="/career-insights" />
+            <PromoBanner variant="insights" href={ROUTES.careerInsights} />
           </div>
         </main>
       </div>

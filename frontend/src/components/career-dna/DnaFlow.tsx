@@ -24,6 +24,7 @@ import OptionList from "@/components/career-dna/OptionList";
 import ReviewList from "@/components/career-dna/ReviewList";
 import SaveProgressDialog from "@/components/career-dna/SaveProgressDialog";
 import StepHeaderBar, { type StepMeta } from "@/components/career-dna/StepHeaderBar";
+import { ROUTES } from "@/lib/routes";
 
 type Layar = "intro" | "langkah" | "selesai";
 
@@ -210,7 +211,7 @@ export default function DnaFlow({
             ) : (
               <button
                 type="button"
-                onClick={() => router.push("/explore")}
+                onClick={() => router.push(ROUTES.explore)}
                 className="hidden items-center justify-center gap-2 rounded-full py-3 text-[13.5px] font-semibold text-slate-600 transition-colors hover:bg-slate-100 lg:inline-flex lg:px-5"
               >
                 <X className="size-4" aria-hidden />
@@ -228,7 +229,7 @@ export default function DnaFlow({
           onConfirm={async () => {
             const ok = await simpanLalu(step);
             setDialog(false);
-            if (ok) router.push("/explore");
+            if (ok) router.push(ROUTES.explore);
           }}
         />
       )}
@@ -255,7 +256,7 @@ function Kerangka({
     <div className="flex min-h-screen flex-col bg-white">
       {/* Ponsel dan tablet */}
       <header className="sticky top-0 z-20 flex items-center justify-between border-b border-slate-200 bg-white px-4 py-3.5 lg:hidden">
-        <Link href="/explore" className="flex items-center gap-3 text-slate-900">
+        <Link href={ROUTES.explore} className="flex items-center gap-3 text-slate-900">
           <ArrowLeft className="size-4.5" aria-hidden />
           <span className="text-[14px] font-bold">Career DNA</span>
         </Link>
@@ -278,7 +279,7 @@ function Kerangka({
       >
         <ol className="mx-auto flex max-w-[1160px] items-center gap-2 text-[13px] text-slate-500">
           <li>
-            <Link href="/explore" aria-label="Explore" className="grid place-items-center text-slate-500 hover:text-slate-800">
+            <Link href={ROUTES.explore} aria-label="Explore" className="grid place-items-center text-slate-500 hover:text-slate-800">
               <Home className="size-4" aria-hidden />
             </Link>
           </li>

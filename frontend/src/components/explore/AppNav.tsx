@@ -12,13 +12,14 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Compass, Map, Route, ClipboardList, LineChart } from "lucide-react";
 import NavikaMark from "@/components/explore/NavikaMark";
+import { ROUTES } from "@/lib/routes";
 
 export const TUJUAN = [
-  { href: "/explore", label: "Explore", icon: Compass },
-  { href: "/roadmap", label: "Roadmap", icon: Map },
-  { href: "/journey", label: "Journey", icon: Route },
-  { href: "/quest", label: "Quest", icon: ClipboardList },
-  { href: "/progress", label: "Progress", icon: LineChart },
+  { href: ROUTES.explore, label: "Explore", icon: Compass },
+  { href: ROUTES.roadmap, label: "Roadmap", icon: Map },
+  { href: ROUTES.journey, label: "Journey", icon: Route },
+  { href: ROUTES.quest, label: "Quest", icon: ClipboardList },
+  { href: ROUTES.progress, label: "Progress", icon: LineChart },
 ] as const;
 
 function aktif(pathname: string, href: string): boolean {
@@ -30,7 +31,7 @@ export function AppTopNav() {
   return (
     <header className="sticky top-0 z-30 hidden border-b border-slate-200 bg-white/95 backdrop-blur lg:block">
       <div className="mx-auto flex h-16 max-w-[1440px] items-center gap-6 px-8">
-        <Link href="/explore" className="flex items-center gap-3">
+        <Link href={ROUTES.explore} className="flex items-center gap-3">
           <NavikaMark className="h-7 w-[21px] shrink-0 text-violet-600" />
           <span className="text-[17px] font-bold tracking-tight text-slate-900">Navika</span>
           <span className="h-6 w-px bg-slate-200" aria-hidden />

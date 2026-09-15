@@ -12,6 +12,7 @@
 import Link from "next/link";
 import { ArrowLeft, Hammer } from "lucide-react";
 import { AppBottomNav, AppTopNav } from "@/components/explore/AppNav";
+import { ROUTES } from "@/lib/routes";
 
 export default function SoonScreen({ title, note }: { title: string; note: string }) {
   return (
@@ -24,7 +25,7 @@ export default function SoonScreen({ title, note }: { title: string; note: strin
         <h1 className="text-[18px] font-bold tracking-tight text-slate-900">{title}</h1>
         <p className="max-w-sm text-[13.5px] leading-relaxed text-slate-500">{note}</p>
         <Link
-          href="/explore"
+          href={ROUTES.explore}
           className="mt-2 inline-flex items-center gap-2 rounded-full border border-slate-200 px-4 py-2 text-[13px] font-semibold text-slate-700 transition-colors hover:bg-slate-50"
         >
           <ArrowLeft className="size-4" aria-hidden />
