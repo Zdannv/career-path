@@ -8,9 +8,11 @@
  */
 
 import { useState } from "react";
-import { Check, ChevronDown, Info, PieChart } from "lucide-react";
+import Link from "next/link";
+import { ArrowRight, Check, ChevronDown, Info, PieChart } from "lucide-react";
 import MatchGauge from "@/components/profesi/MatchGauge";
 import { labelBand, type Alasan } from "@/lib/careerDetail";
+import { ROUTES } from "@/lib/routes";
 
 function TeksTebal({ teks }: { teks: string }) {
   // Database mengirim <b> di tengah kalimat. Dipecah manual, bukan
@@ -112,10 +114,22 @@ export default function MatchBlock({
         <LencanaBand skor={skor} band={band} />
       </div>
 
+      {/* Skor null berarti Career DNA belum selesai — bukan berarti tidak cocok.
+          Sebelum 0032 keadaan ini muncul sebagai "0% Belum Direkomendasikan",
+          yang menuduh profesinya padahal yang kurang datanya. */}
       {skor == null && (
-        <p className="mt-3 max-w-xs text-center text-[12.5px] leading-relaxed text-slate-500">
-          Selesaikan Career DNA dulu untuk melihat seberapa cocok profesi ini denganmu.
-        </p>
+        <div className="mt-3 flex flex-col items-center gap-2.5">
+          <p className="max-w-xs text-center text-[12.5px] leading-relaxed text-slate-500">
+            Profesi ini belum dinilai karena Career DNA kamu belum selesai diisi.
+          </p>
+          <Link
+            href={ROUTES.careerDna}
+            className="inline-flex items-center gap-1.5 rounded-full bg-violet-600 px-4 py-2 text-[12.5px] font-semibold text-white transition-colors hover:bg-violet-700"
+          >
+            Isi Career DNA
+            <ArrowRight className="size-3.5" aria-hidden />
+          </Link>
+        </div>
       )}
 
       {alasan.length > 0 && ringkas && !buka && (
