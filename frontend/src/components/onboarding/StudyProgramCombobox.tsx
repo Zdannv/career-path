@@ -1,6 +1,14 @@
 "use client";
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import { createPortal } from "react-dom";
 import { Search, ChevronsUpDown, Check } from "lucide-react";
 import { searchStudyPrograms, type StudyProgram } from "@/lib/education";
 
@@ -36,10 +44,25 @@ const POPULAR = [
  * kecil ia naik sebagai bottom sheet dengan latar gelap. Dua-duanya memakai
  * daftar yang sama persis — yang berubah cuma cara munculnya, sesuai desain.
  *
+ * Popover desktop dirender lewat portal ke <body>, bukan sebagai anak pemicu.
+ * Sebelumnya ia `absolute` di dalam kartu onboarding, dan kartu itu memakai
+ * `lg:overflow-hidden` demi sudut membulatnya — jadi panelnya terpotong persis
+ * di tepi kartu dan daftar prodinya nyaris tak terlihat. Portal membuatnya
+ * kebal terhadap `overflow` induk mana pun; posisinya dihitung dari letak
+ * pemicu, dan ia membalik ke atas kalau ruang di bawah tidak cukup.
+ *
  * Daftar di database berisi 243 nama, bukan ~29.000 prodi per kampus dari
  * PDDikti. Jadi user pasti akan menemui prodi yang tidak ada, dan itu bukan
  * kasus tepi: "pakai yang saya ketik" adalah opsi setara, bukan jalan darurat.
  */
+/** Letak dan ukuran popover desktop, dihitung dari kotak pemicu. */
+type PosisiPopover = { left: number; width: number; top: number; maxHeight: number };
+
+/** Tinggi panel yang diinginkan; dipakai untuk memutuskan buka ke atas atau bawah. */
+const TINGGI_IDEAL = 340;
+const JARAK = 8;
+const TEPI = 12;
+
 export default function StudyProgramCombobox({
   value,
   onChange,
@@ -52,6 +75,9 @@ export default function StudyProgramCombobox({
   const [loading, setLoading] = useState(false);
   const reqId = useRef(0);
   const rootRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const [posisi, setPosisi] = useState<PosisiPopover | null>(null);
 
   // Muat daftar terpopuler sekali saat panel pertama dibuka.
   useEffect(() => {
@@ -109,7 +135,12 @@ export default function StudyProgramCombobox({
   useEffect(() => {
     if (!open) return;
     const onDown = (e: MouseEvent) => {
-      if (rootRef.current && !rootRef.current.contains(e.target as Node)) setOpen(false);
+      const t = e.target as Node;
+      // Panel desktop hidup di portal, di luar rootRef — keduanya harus
+      // diperiksa, kalau tidak panel menutup sendiri saat diklik.
+      if (rootRef.current?.contains(t)) return;
+      if (panelRef.current?.contains(t)) return;
+      setOpen(false);
     };
     const onEsc = (e: KeyboardEvent) => {
       if (e.key === "Escape") setOpen(false);
@@ -121,6 +152,49 @@ export default function StudyProgramCombobox({
       document.removeEventListener("keydown", onEsc);
     };
   }, [open]);
+
+  /**
+   * Menghitung letak popover dari kotak pemicu.
+   *
+   * Dipakai lewat useLayoutEffect supaya panel tidak sempat tergambar di posisi
+   * salah lalu melompat. Dihitung ulang saat menggulir atau mengubah ukuran
+   * jendela: koordinatnya fixed terhadap viewport, jadi tanpa itu panel akan
+   * tertinggal di tempat lamanya.
+   */
+  const hitungPosisi = useCallback(() => {
+    const el = triggerRef.current;
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    const ruangBawah = window.innerHeight - r.bottom - JARAK - TEPI;
+    const ruangAtas = r.top - JARAK - TEPI;
+
+    // Buka ke bawah selama muat; kalau tidak, pilih sisi yang lebih lapang.
+    const keBawah = ruangBawah >= Math.min(TINGGI_IDEAL, ruangAtas) || ruangBawah >= 240;
+    const maxHeight = Math.max(180, Math.min(TINGGI_IDEAL, keBawah ? ruangBawah : ruangAtas));
+
+    setPosisi({
+      left: Math.max(TEPI, Math.min(r.left, window.innerWidth - r.width - TEPI)),
+      width: r.width,
+      top: keBawah ? r.bottom + JARAK : r.top - JARAK - maxHeight,
+      maxHeight,
+    });
+  }, []);
+
+  useLayoutEffect(() => {
+    if (!open) {
+      setPosisi(null);
+      return;
+    }
+    hitungPosisi();
+    // capture: true supaya gulir di dalam kartu ikut tertangkap, bukan cuma
+    // gulir halaman.
+    window.addEventListener("scroll", hitungPosisi, true);
+    window.addEventListener("resize", hitungPosisi);
+    return () => {
+      window.removeEventListener("scroll", hitungPosisi, true);
+      window.removeEventListener("resize", hitungPosisi);
+    };
+  }, [open, hitungPosisi]);
 
   /** Hasil pencarian dikelompokkan per rumpun, mengikuti desain. */
   const grouped = useMemo(() => {
@@ -162,8 +236,11 @@ export default function StudyProgramCombobox({
     </li>
   );
 
-  const panel = (
-    <div className="flex max-h-[60vh] flex-col overflow-hidden sm:max-h-[340px]">
+  const panel = (maxHeight?: number) => (
+    <div
+      className="flex max-h-[60vh] flex-col overflow-hidden"
+      style={maxHeight ? { maxHeight } : undefined}
+    >
       <div className="relative border-b border-slate-100 px-3 py-2.5">
         <Search className="pointer-events-none absolute left-6 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
         <input
@@ -225,6 +302,7 @@ export default function StudyProgramCombobox({
   return (
     <div ref={rootRef} className="relative max-w-md">
       <button
+        ref={triggerRef}
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-haspopup="listbox"
@@ -243,16 +321,32 @@ export default function StudyProgramCombobox({
 
       {open && (
         <>
-          {/* Mobile: bottom sheet berlatar gelap. */}
+          {/* Mobile: bottom sheet berlatar gelap. Sudah fixed, jadi tidak
+              terpotong induk mana pun — tidak perlu portal. */}
           <div className="fixed inset-0 z-40 bg-slate-900/60 sm:hidden" aria-hidden />
           <div className="fixed inset-x-0 bottom-0 z-50 rounded-t-2xl bg-white shadow-2xl sm:hidden">
-            {panel}
+            {panel()}
           </div>
 
-          {/* sm ke atas: popover menempel di pemicu. */}
-          <div className="absolute left-0 right-0 top-full z-50 mt-2 hidden overflow-hidden rounded-xl bg-white shadow-lg ring-1 ring-slate-200 sm:block">
-            {panel}
-          </div>
+          {/* sm ke atas: popover di portal, diposisikan dari kotak pemicu. */}
+          {posisi &&
+            typeof document !== "undefined" &&
+            createPortal(
+              <div
+                ref={panelRef}
+                role="listbox"
+                className="fixed z-[60] hidden overflow-hidden rounded-xl bg-white shadow-lg ring-1 ring-slate-200 sm:block"
+                style={{
+                  left: posisi.left,
+                  top: posisi.top,
+                  width: posisi.width,
+                  maxHeight: posisi.maxHeight,
+                }}
+              >
+                {panel(posisi.maxHeight)}
+              </div>,
+              document.body,
+            )}
         </>
       )}
     </div>
