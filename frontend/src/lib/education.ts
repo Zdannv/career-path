@@ -187,6 +187,18 @@ export type EducationInput = {
  * kalau user mundur dan mengganti jenjang dari SMK ke SMA, jurusan SMK-nya
  * harus ikut hilang. Tanpa ini, CHECK constraint di database akan menolak
  * simpannya dan user melihat error yang tidak dia mengerti.
+ *
+ * UPSERT, bukan UPDATE. Sebelumnya fungsi ini memakai
+ * `update(...).eq("user_id", userId)` dengan asumsi baris profil sudah dibuat
+ * trigger `handle_new_user` saat pendaftaran. Kalau baris itu tidak ada —
+ * akun yang dibuat sebelum trigger-nya terpasang, misalnya — UPDATE mengenai
+ * NOL baris dan Postgres TIDAK menganggapnya error. Onboarding lalu tampak
+ * berhasil, layar "Yay, data kamu tersimpan" muncul, padahal
+ * onboarding_completed_at tidak pernah terisi; penjaga rute memulangkan
+ * pengguna ke onboarding, dan ia terjebak di lingkaran itu selamanya.
+ *
+ * Karena itu baris hasilnya diminta kembali dan diperiksa: gagal simpan
+ * sekarang muncul sebagai pesan error di layar, bukan sebagai lingkaran diam.
  */
 export async function saveEducation(userId: string, input: EducationInput): Promise<void> {
   const kind = majorKindForLevel(input.level);
@@ -208,8 +220,18 @@ export async function saveEducation(userId: string, input: EducationInput): Prom
     onboarding_completed_at: new Date().toISOString(),
   };
 
-  const { error } = await supabase.from("profiles").update(payload).eq("user_id", userId);
+  const { data, error } = await supabase
+    .from("profiles")
+    .upsert({ user_id: userId, ...payload }, { onConflict: "user_id" })
+    .select("user_id, onboarding_completed_at")
+    .maybeSingle();
+
   if (error) throw error;
+  if (!data?.onboarding_completed_at) {
+    throw new Error(
+      "Data pendidikan tidak tersimpan. Coba lagi; kalau tetap gagal, keluar lalu masuk kembali."
+    );
+  }
 }
 
 /** Ringkasan untuk layar Review (Step 3). */
