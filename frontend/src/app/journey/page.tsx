@@ -1,10 +1,14 @@
+import { Suspense } from "react";
 import RequireAuth from "@/components/RequireAuth";
-import SoonScreen from "@/components/explore/SoonScreen";
+import JourneyView from "@/components/journey/JourneyView";
 
 export default function Page() {
   return (
     <RequireAuth>
-      <SoonScreen title="Journey" note="Layar journey belum dibangun." />
+      {/* useSearchParams menuntut batas Suspense saat halaman dipra-render. */}
+      <Suspense fallback={<div className="min-h-screen bg-white" />}>
+        <JourneyView />
+      </Suspense>
     </RequireAuth>
   );
 }
