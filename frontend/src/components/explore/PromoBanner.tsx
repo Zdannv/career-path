@@ -11,17 +11,13 @@
  * teks sungguhan. Selain tajam di ukuran berapa pun, teksnya jadi bisa dipilih,
  * dibaca pembaca layar, dan diubah tanpa menunggu ekspor ulang dari desainer.
  *
- * Career Insights masih memakai gambar utuh karena asetnya membawa teks —
- * wordmark bergradien yang tidak bisa ditiru dengan CSS begitu saja. Ia dipasang
- * dari berkas 734 piksel supaya tetap tajam.
+ * Banner Career Insights dihapus dari Explore atas permintaan tim.
  */
 
-import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 
-type ArtBanner = {
-  jenis: "art";
+type Banner = {
   /** Ilustrasi untuk wadah sempit: ponsel dan kolom kiri desktop. */
   art: string;
   /** Ilustrasi untuk wadah lebar: tablet, tempat banner memenuhi lebar layar. */
@@ -34,17 +30,8 @@ type ArtBanner = {
   textW: string;
 };
 
-type ImageBanner = {
-  jenis: "image";
-  src: string;
-  width: number;
-  height: number;
-  alt: string;
-};
-
-export const BANNERS: Record<string, ArtBanner | ImageBanner> = {
+export const BANNERS: Record<string, Banner> = {
   discovery: {
-    jenis: "art",
     art: "/explore/discovery-art.png",
     artWide: "/explore/discovery-art-wide.png",
     textW: "max-w-[80%] sm:max-w-[62%]",
@@ -54,7 +41,6 @@ export const BANNERS: Record<string, ArtBanner | ImageBanner> = {
     cta: "Mulai Career Discovery",
   },
   dna: {
-    jenis: "art",
     art: "/explore/dna-art.png",
     artWide: "/explore/dna-art-wide.png",
     textW: "max-w-[76%] sm:max-w-[58%]",
@@ -63,20 +49,12 @@ export const BANNERS: Record<string, ArtBanner | ImageBanner> = {
     body: "Lengkapi data minat dan keahlian untuk menyusun rencana belajar yang paling pas.",
     cta: "Personalisasi Sekarang",
   },
-  insights: {
-    jenis: "image",
-    src: "/explore/career-insights.png",
-    width: 734,
-    height: 206,
-    alt: "Career Insights — cari tahu prediksi karier menjanjikan 10 tahun ke depan yang minim tergeser oleh teknologi dan AI.",
-  },
 };
 
 type Props = {
   variant: keyof typeof BANNERS;
   href: string;
   className?: string;
-  priority?: boolean;
   /**
    * Menimpa teks banner. Dipakai banner Career DNA saat pengisiannya sudah
    * berjalan sebagian: eyebrow-nya menyebut langkah keberapa dan tombolnya
@@ -85,27 +63,8 @@ type Props = {
   overrides?: { eyebrow?: string; cta?: string };
 };
 
-export default function PromoBanner({ variant, href, className = "", priority = false, overrides }: Props) {
+export default function PromoBanner({ variant, href, className = "", overrides }: Props) {
   const b = BANNERS[variant];
-
-  if (b.jenis === "image") {
-    return (
-      <Link
-        href={href}
-        className={`block overflow-hidden rounded-2xl transition-opacity hover:opacity-95 ${className}`}
-      >
-        <Image
-          src={b.src}
-          alt={b.alt}
-          width={b.width}
-          height={b.height}
-          priority={priority}
-          sizes="(min-width: 1024px) 384px, 100vw"
-          className="h-auto w-full"
-        />
-      </Link>
-    );
-  }
 
   return (
     <Link

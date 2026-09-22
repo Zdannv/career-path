@@ -23,6 +23,7 @@ import {
   getWeeklyQuests,
 } from "@/lib/explore";
 import RequireAuth from "@/components/RequireAuth";
+import { ambilRoadmapState } from "@/lib/roadmapJourney";
 import ExploreView, {
   barisDibutuhkan,
   type ExploreData,
@@ -41,15 +42,19 @@ function ExploreIsi() {
     }
 
     const perlu = barisDibutuhkan(state);
-    const [demand, study, match, activity, quests] = await Promise.all([
+    const [demand, study, match, activity, quests, roadmap] = await Promise.all([
       perlu.has("demand") ? getTopDemand(12) : Promise.resolve([]),
       perlu.has("study") ? getByStudy(12) : Promise.resolve([]),
       perlu.has("match") ? getByMatch(12) : Promise.resolve([]),
       perlu.has("activity") ? getByActivity(12) : Promise.resolve([]),
       state.has_career ? getWeeklyQuests(3) : Promise.resolve([]),
+      // Gambar kartu profesi mengikuti tahap Journey yang sedang berjalan:
+      // tahap pertama yang belum selesai, sama dengan yang dibuka Journey.
+      state.has_career ? ambilRoadmapState().catch(() => null) : Promise.resolve(null),
     ]);
+    const tahap = roadmap?.tahap.find((t) => t.status !== "SELESAI")?.kode ?? null;
 
-    setData({ state, demand, study, match, activity, quests });
+    setData({ state, demand, study, match, activity, quests, tahap });
     setMemuat(false);
   }, []);
 

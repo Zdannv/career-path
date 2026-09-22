@@ -42,6 +42,8 @@ export type ExploreData = {
   match: ScoredCard[];
   activity: ScoredCard[];
   quests: WeeklyQuest[];
+  /** Kode tahap Journey yang sedang berjalan, untuk gambar kartu profesi. */
+  tahap: string | null;
 };
 
 /**
@@ -79,7 +81,7 @@ export default function ExploreView({
   /** Hanya diisi oleh harness verifikasi supaya pilihan barisnya bisa ditebak. */
   hariEpoch?: number;
 }) {
-  const { state, demand, study, match, activity, quests } = data;
+  const { state, demand, study, match, activity, quests, tahap } = data;
 
   const barisTerpilih = useMemo<BarisKode[]>(() => {
     if (state.has_dna && state.has_career) {
@@ -169,14 +171,14 @@ export default function ExploreView({
               <JourneyCard
                 careerName={state.career_name}
                 percent={Math.round(Number(state.percent_done ?? 0))}
-                href={ROUTES.roadmap}
+                tahap={tahap}
               />
             ) : (
               // Career Discovery hanya mengajak yang benar-benar belum mulai.
               // Yang pengisiannya tertunda di tengah jalan tidak perlu diajak
               // dari awal — untuknya ada banner Career DNA di bawah.
               !state.has_dna &&
-              !state.dna_started && <PromoBanner variant="discovery" href={ROUTES.careerDna} priority />
+              !state.dna_started && <PromoBanner variant="discovery" href={ROUTES.careerDna} />
             )}
             {!state.has_dna && (state.has_career || state.dna_started) && (
               <PromoBanner
@@ -192,10 +194,6 @@ export default function ExploreView({
                 }
               />
             )}
-            {/* Di desktop banner ini menutup kolom kiri, sesuai mockup. Di layar
-                sempit ia pindah ke ujung bawah isi supaya tidak menyela deretan
-                kartu di paruh atas layar. */}
-            <PromoBanner variant="insights" href={ROUTES.careerInsights} className="hidden lg:block" />
           </div>
         </div>
 
@@ -204,9 +202,7 @@ export default function ExploreView({
             <QuestWeek quests={quests} total={quests[0]?.total ?? quests.length} />
           )}
           {barisTerpilih.map((k) => baris[k])}
-          <div className="px-4 pb-8 pt-2 sm:px-6 lg:hidden">
-            <PromoBanner variant="insights" href={ROUTES.careerInsights} />
-          </div>
+          <div className="pb-8" />
         </main>
       </div>
 
