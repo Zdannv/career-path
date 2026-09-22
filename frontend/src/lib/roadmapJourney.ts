@@ -197,20 +197,16 @@ export function rentangTahun(min: number, max: number): string {
 /**
  * Gambar hero per tahap.
  *
- * Tim desain baru mengekspor dua gambar dari lima yang dipakai di Figma, jadi
- * tiga tahap sisanya memakai ulang yang paling dekat temanya. Begitu ekspor
- * lengkap masuk, cukup tambahkan berkasnya di public/journey dan ubah peta ini.
- *
- * eksplorasi.jpg dipotong dari ekspor SVG Figma (1916 px, bingkai 335:128),
- * jadi tetap tajam di layar lebar. pondasi.png masih ekspor 1x (335 px) dan
- * akan terlihat lembut di desktop sampai versi SVG-nya ada.
+ * Dipotong dari ekspor SVG Figma (1916 px, bingkai 335:128) — SVG aslinya
+ * hanya membungkus satu PNG besar, jadi disimpan sebagai JPG ±200 KB alih-alih
+ * SVG 2-3 MB dengan hasil tampilan yang sama.
  */
 export const HERO_TAHAP: Record<string, string> = {
   EKSPLORASI: "/journey/eksplorasi.jpg",
-  PONDASI: "/journey/pondasi.png",
-  KEAHLIAN: "/journey/eksplorasi.jpg",
-  PENGALAMAN: "/journey/pondasi.png",
-  BERKARIER: "/journey/eksplorasi.jpg",
+  PONDASI: "/journey/pondasi.jpg",
+  KEAHLIAN: "/journey/keahlian.jpg",
+  PENGALAMAN: "/journey/pengalaman.jpg",
+  BERKARIER: "/journey/berkarier.jpg",
 };
 
 export function heroTahap(kode: string): string {
