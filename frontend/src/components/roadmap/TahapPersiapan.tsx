@@ -3,11 +3,12 @@
 /**
  * Lini masa lima tahap persiapan.
  *
- * Satu garis vertikal menyambung bulatan tahap. Tahap yang sedang berjalan
- * memakai bulatan ungu pekat dan satu-satunya yang membawa tombol "Tampilkan
- * Journey"; tahap sesudahnya bergembok. Status dan tombolnya tidak dihitung di
- * sini — keduanya datang dari roadmap_state() supaya aturan "tahap aktif
- * adalah tahap pertama yang belum selesai" hanya hidup di satu tempat.
+ * Satu garis vertikal menyambung bulatan tahap. Tahap yang sudah terbuka
+ * memakai bulatan ungu pekat dan membawa tombol "Tampilkan Journey"; tahap
+ * yang belum terbuka bergembok. Status dan tombolnya tidak dihitung di sini —
+ * keduanya datang dari roadmap_state(). Sejak 0037 sebuah tahap terbuka
+ * begitu salah satu jenis quest-nya terbuka, jadi bisa ada lebih dari satu
+ * tahap yang berjalan bersamaan.
  */
 
 import Link from "next/link";

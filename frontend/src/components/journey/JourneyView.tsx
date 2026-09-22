@@ -101,8 +101,9 @@ export default function JourneyView() {
               <Image
                 src={heroTahap(tahap.stage_code)}
                 alt=""
-                width={335}
-                height={128}
+                width={1916}
+                height={732}
+                sizes="(min-width: 42rem) 42rem, 100vw"
                 priority
                 className="h-auto w-full"
               />

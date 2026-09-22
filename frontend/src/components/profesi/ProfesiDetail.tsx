@@ -20,7 +20,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight, FileText, Loader2, ShieldCheck } from "lucide-react";
+import { ArrowRight, FileText, Loader2, Lock, ShieldCheck } from "lucide-react";
 import DetailHeader from "@/components/profesi/DetailHeader";
 import MatchBlock from "@/components/profesi/MatchBlock";
 import StickyCta from "@/components/profesi/StickyCta";
@@ -31,6 +31,7 @@ import { KartuDemand, KartuEstimasi, DaftarSubIndustri } from "@/components/prof
 import { Blok, BarisDuaKolom, BarisIsi, LihatSemua } from "@/components/profesi/Listing";
 import { ROUTES } from "@/lib/routes";
 import {
+  ambilKunciProfesi,
   getCareerCompetency,
   getCareerInsight,
   gajiPanjang,
@@ -38,6 +39,7 @@ import {
   type CareerCompetency,
   type CareerDetail,
   type CareerInsight,
+  type KunciProfesi,
   type SkillGap,
 } from "@/lib/careerDetail";
 
@@ -96,6 +98,19 @@ export default function ProfesiDetail({
       });
     }
   }, [tab, komp, insight, detail.career_id]);
+
+  const [kunci, setKunci] = useState<KunciProfesi | null>(null);
+  useEffect(() => {
+    let batal = false;
+    void ambilKunciProfesi().then((k) => {
+      if (!batal) setKunci(k);
+    });
+    return () => {
+      batal = true;
+    };
+  }, []);
+  // Sudah berprogres di profesi lain: tombol pilih tidak ditawarkan.
+  const terkunciLain = !!kunci?.terkunci && kunci.career_id !== detail.career_id;
 
   const pilih = useCallback(async () => {
     setMemilih(true);
@@ -350,12 +365,27 @@ export default function ProfesiDetail({
         {galat && (
           <p className="mt-6 rounded-xl bg-rose-50 px-4 py-3 text-[12.5px] text-rose-700">{galat}</p>
         )}
+
+        {terkunciLain && (
+          <p className="mt-6 flex items-start gap-2 rounded-xl bg-slate-100 px-4 py-3 text-[12.5px] leading-relaxed text-slate-600">
+            <Lock className="mt-0.5 size-3.5 shrink-0" aria-hidden />
+            Kamu sedang menjalani profesi {kunci?.career_name} dan sudah punya progres di sana, jadi
+            profesi belum bisa diganti.
+          </p>
+        )}
       </main>
 
       <StickyCta
-        label={detail.is_pilihan ? "Lanjutkan Roadmap" : "Pilih Profesi ini"}
+        label={
+          detail.is_pilihan
+            ? "Lanjutkan Roadmap"
+            : terkunciLain
+              ? "Profesi pilihanmu sudah terkunci"
+              : "Pilih Profesi ini"
+        }
         onClick={pilih}
         sedang={memilih}
+        nonaktif={terkunciLain && !detail.is_pilihan}
       />
 
       <SkillGapSheet

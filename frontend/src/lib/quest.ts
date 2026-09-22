@@ -44,6 +44,19 @@ export type KartuGrup = {
   n_diambil: number;
 };
 
+/** Jenis quest yang belum terbuka, untuk pratinjau "Quest berikutnya". */
+export type JenisTerkunci = {
+  jenis: JenisGrup;
+  label: string;
+  /** Nama tahap Journey tempat jenis ini berada. */
+  tahap: string;
+  ikon: string;
+  tone: ToneGrup;
+  n_quest: number;
+  n_grup: number;
+  alasan: string | null;
+};
+
 export type QuestBeranda = {
   career_id: number | null;
   career_name: string | null;
@@ -51,6 +64,7 @@ export type QuestBeranda = {
   eksplorasi_selesai: boolean;
   semua_selesai: boolean;
   grup: KartuGrup[];
+  terkunci: JenisTerkunci[];
 };
 
 export type StatusQuest = "BELUM" | "DIAMBIL" | "SELESAI";

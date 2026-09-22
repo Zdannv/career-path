@@ -11,16 +11,21 @@
  *
  * Selama Eksplorasi belum selesai, hero-nya banner "Selesaikan quest untuk
  * unlock stage berikutnya" seperti desain A01; setelahnya ilustrasi biasa.
+ *
+ * Di bawahnya ada pratinjau "Quest berikutnya": jenis yang masih terkunci,
+ * berapa quest-nya, dan apa syarat membukanya. Ini tambahan di luar desain —
+ * tanpa itu pengguna baru hanya melihat dua quest Eksplorasi dan mengira
+ * isinya memang cuma dua.
  */
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowUpRight, NotepadText } from "lucide-react";
+import { ArrowUpRight, Lock, NotepadText } from "lucide-react";
 import { AppBottomNav, AppTopNav } from "@/components/explore/AppNav";
 import IkonGrup from "@/components/quest/IkonGrup";
 import TipsBanner from "@/components/quest/TipsBanner";
-import { ambilBeranda, type KartuGrup, type QuestBeranda } from "@/lib/quest";
+import { ambilBeranda, type JenisTerkunci, type KartuGrup, type QuestBeranda } from "@/lib/quest";
 import { ROUTES, questGrupPath } from "@/lib/routes";
 
 function Kartu({ g }: { g: KartuGrup }) {
@@ -54,6 +59,29 @@ function Kartu({ g }: { g: KartuGrup }) {
           </div>
         </div>
       </article>
+    </li>
+  );
+}
+
+function KartuTerkunci({ j }: { j: JenisTerkunci }) {
+  const satuan = j.n_grup > 1 ? ` dari ${j.n_grup} ${j.label.toLowerCase()}` : "";
+  return (
+    <li className="flex gap-3.5 rounded-2xl border border-dashed border-slate-200 p-3.5">
+      <span className="opacity-50 grayscale">
+        <IkonGrup ikon={j.ikon} tone={j.tone} />
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className="text-[12.5px] font-medium text-slate-400">Tahap {j.tahap}</p>
+        <h3 className="mt-0.5 text-[15.5px] font-semibold text-slate-500">
+          {j.label} · {j.n_quest} Quest{satuan}
+        </h3>
+        {j.alasan && (
+          <p className="mt-1.5 flex items-start gap-1.5 text-[12.5px] leading-snug text-slate-500">
+            <Lock className="mt-0.5 size-3.5 shrink-0" aria-hidden />
+            {j.alasan}
+          </p>
+        )}
+      </div>
     </li>
   );
 }
@@ -120,8 +148,9 @@ export default function QuestView() {
                 <Image
                   src="/quest/header.jpg"
                   alt=""
-                  width={1005}
-                  height={384}
+                  width={1916}
+                  height={732}
+                  sizes="(min-width: 42rem) 42rem, 100vw"
                   priority
                   className="h-auto w-full rounded-[20px]"
                 />
@@ -153,6 +182,21 @@ export default function QuestView() {
                   <Kartu key={`${g.jenis}:${g.kode}`} g={g} />
                 ))}
               </ul>
+            )}
+
+            {data.terkunci.length > 0 && (
+              <section className="mt-8">
+                <h2 className="text-[16px] font-bold tracking-tight text-slate-900">Quest berikutnya</h2>
+                <p className="mt-0.5 text-[13px] text-slate-500">
+                  {data.terkunci.reduce((n, j) => n + j.n_quest, 0)} quest lagi terbuka bertahap
+                  seiring progresmu.
+                </p>
+                <ul className="mt-3 space-y-2.5">
+                  {data.terkunci.map((j) => (
+                    <KartuTerkunci key={j.jenis} j={j} />
+                  ))}
+                </ul>
+              </section>
             )}
           </>
         )}

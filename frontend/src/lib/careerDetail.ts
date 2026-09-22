@@ -273,7 +273,24 @@ export async function countCareers(f: Filter): Promise<number> {
 /** Memulai roadmap profesi ini — tombol "Pilih Profesi ini". */
 export async function pilihProfesi(id: number): Promise<{ ok: boolean; pesan?: string }> {
   const { error } = await supabase.rpc("start_roadmap", { p_career_id: id });
-  return error ? { ok: false, pesan: error.message } : { ok: true };
+  // Pesan dari database berbentuk "start_roadmap: <kalimat>"; nama fungsinya
+  // tidak perlu dibaca pengguna.
+  return error ? { ok: false, pesan: error.message.replace(/^start_roadmap:\s*/, "") } : { ok: true };
+}
+
+export type KunciProfesi = { career_id: number; career_name: string; terkunci: boolean };
+
+/**
+ * Profesi pilihan dan apakah sudah terkunci (0037).
+ *
+ * Untuk MVP, profesi tidak bisa diganti setelah ada progres — quest diambil,
+ * item Journey ditandai. Database yang menolak; ini hanya supaya tombolnya
+ * tidak menawarkan sesuatu yang pasti gagal.
+ */
+export async function ambilKunciProfesi(): Promise<KunciProfesi | null> {
+  const { data, error } = await supabase.rpc("profesi_terkunci").maybeSingle();
+  if (error) return null;
+  return (data as KunciProfesi) ?? null;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
