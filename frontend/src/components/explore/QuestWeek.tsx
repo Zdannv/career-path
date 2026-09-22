@@ -1,39 +1,35 @@
 "use client";
 
 /**
- * "Quest minggu ini" — tiga langkah berikutnya di roadmap yang sedang dijalani.
+ * "Quest minggu ini" — quest yang bisa dikerjakan sekarang, satu per jenis.
  *
- * Yang ditampilkan quest, bukan langkah di dalamnya, supaya angka progres di
- * sini dan di layar Roadmap dihitung dari hal yang sama.
+ * Datanya dari quest_minggu_ini (0036), sumber yang sama dengan layar Quest,
+ * jadi yang terlihat di sini selalu ada di sana. Angka di judul adalah jumlah
+ * quest yang benar-benar bisa dikerjakan saat ini, bukan tebakan.
  */
 
 import Link from "next/link";
-import { ArrowRight, BookOpen, Compass, FileCheck2, PlayCircle, Wrench } from "lucide-react";
+import {
+  ArrowRight,
+  ChartNoAxesColumn,
+  ChevronsRight,
+  Compass,
+  NotebookPen,
+  Route,
+  UsersRound,
+} from "lucide-react";
 import type { WeeklyQuest } from "@/lib/explore";
-import { ROUTES } from "@/lib/routes";
+import { rentangMenit } from "@/lib/quest";
+import { ROUTES, questGrupPath } from "@/lib/routes";
 
-const IKON: Record<string, typeof BookOpen> = {
-  HARD_SKILL: Wrench,
-  AKTIVITAS: PlayCircle,
-  EDUKASI: BookOpen,
-  PENGALAMAN: Compass,
-  KARIER: FileCheck2,
-  LANJUT: Compass,
+const IKON: Record<string, typeof Compass> = {
+  EKSPLORASI: Compass,
+  SOFT_SKILL: UsersRound,
+  HARD_SKILL: NotebookPen,
+  TOOL: ChartNoAxesColumn,
+  PENGALAMAN: ChevronsRight,
+  BERKARIER: Route,
 };
-
-/**
- * Dibulatkan ke setengah jam terdekat.
- *
- * Angka aslinya penjumlahan estimasi tiap langkah, jadi keluar "3,7 jam" —
- * presisi yang tidak pantas untuk sebuah perkiraan, dan lebih sulit dibaca
- * sekilas daripada "3,5 jam".
- */
-function durasi(menit: number): string {
-  if (!menit) return "Durasi belum dihitung";
-  if (menit < 60) return `${menit} menit`;
-  const jam = Math.round(menit / 30) / 2;
-  return `${String(jam).replace(".", ",")} jam`;
-}
 
 export default function QuestWeek({ quests, total }: { quests: WeeklyQuest[]; total: number }) {
   if (quests.length === 0) return null;
@@ -43,7 +39,7 @@ export default function QuestWeek({ quests, total }: { quests: WeeklyQuest[]; to
       <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
         <div className="flex items-center justify-between gap-4 bg-slate-100/80 px-4 py-3">
           <h2 className="text-[16px] font-bold tracking-tight text-slate-900">
-            Quest minggu ini ({total}+)
+            Quest minggu ini ({total})
           </h2>
           <Link
             href={ROUTES.quest}
@@ -56,22 +52,25 @@ export default function QuestWeek({ quests, total }: { quests: WeeklyQuest[]; to
 
         <ul className="divide-y divide-slate-100">
           {quests.map((q) => {
-            const Ikon = IKON[q.quest_kind] ?? BookOpen;
+            const Ikon = IKON[q.jenis] ?? Compass;
+            const durasi = rentangMenit(q.min_menit, q.max_menit);
             return (
-              <li key={q.activity_id}>
+              <li key={q.quest_key}>
                 <Link
-                  href={ROUTES.quest}
+                  href={questGrupPath(q.slug, q.kode)}
                   className="flex items-center gap-3 px-4 py-3.5 transition-colors hover:bg-slate-50"
                 >
                   <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-indigo-50 text-indigo-600">
                     <Ikon className="size-4" aria-hidden />
                   </span>
                   <span className="min-w-0 flex-1">
-                    <span className="block text-[13.5px] font-medium leading-snug text-slate-900">
-                      {q.quest_title}
+                    <span className="line-clamp-2 text-[13.5px] font-medium leading-snug text-slate-900">
+                      {q.teks}
                     </span>
                     <span className="mt-0.5 block text-[12px] text-slate-500">
-                      {durasi(q.est_minutes)}
+                      {q.label}
+                      {durasi && ` · ${durasi}`}
+                      {q.status === "DIAMBIL" && " · sedang dikerjakan"}
                     </span>
                   </span>
                   <span className="shrink-0 text-[13px] font-bold text-slate-900">

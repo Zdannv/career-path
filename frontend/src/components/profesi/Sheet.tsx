@@ -17,6 +17,7 @@ export default function Sheet({
   onTutup,
   judul,
   penuh = false,
+  garis = true,
   footer,
   children,
 }: {
@@ -24,6 +25,8 @@ export default function Sheet({
   onTutup: () => void;
   judul: string;
   penuh?: boolean;
+  /** Garis di bawah judul. Lembar konfirmasi Quest tampil tanpa garis. */
+  garis?: boolean;
   footer?: React.ReactNode;
   children: React.ReactNode;
 }) {
@@ -57,7 +60,9 @@ export default function Sheet({
           penuh ? "h-[100dvh] rounded-none sm:h-[92dvh] sm:rounded-t-2xl" : "max-h-[85dvh] rounded-t-2xl"
         }`}
       >
-        <div className="flex items-center gap-3 border-b border-slate-200 px-4 py-3.5 sm:px-6">
+        <div
+          className={`flex items-center gap-3 px-4 py-3.5 sm:px-6 ${garis ? "border-b border-slate-200" : "pt-5"}`}
+        >
           {penuh ? (
             <>
               <button

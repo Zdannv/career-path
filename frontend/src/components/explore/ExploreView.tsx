@@ -201,7 +201,7 @@ export default function ExploreView({
 
         <main className="min-w-0 flex-1">
           {state.has_career && quests.length > 0 && (
-            <QuestWeek quests={quests} total={quests.length + 5} />
+            <QuestWeek quests={quests} total={quests[0]?.total ?? quests.length} />
           )}
           {barisTerpilih.map((k) => baris[k])}
           <div className="px-4 pb-8 pt-2 sm:px-6 lg:hidden">

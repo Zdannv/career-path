@@ -10,6 +10,7 @@
  */
 
 import { supabase } from "@/lib/supabaseClient";
+import { ambilQuestMingguIni, type QuestMingguIni } from "@/lib/quest";
 
 export type CareerCard = {
   career_id: number;
@@ -52,16 +53,11 @@ export type ExploreState = {
   top_activity: string | null;
 };
 
-export type WeeklyQuest = {
-  activity_id: number;
-  quest_title: string;
-  tier_code: string | null;
-  tier_emoji: string | null;
-  quest_kind: string;
-  xp: number;
-  est_minutes: number;
-  stage_order: number;
-};
+/**
+ * "Quest minggu ini" memakai sumber yang sama dengan layar Quest (0036):
+ * quest yang bisa dikerjakan sekarang, satu per jenis.
+ */
+export type WeeklyQuest = QuestMingguIni;
 
 /**
  * Keadaan layar. Empat tampilan Explore ditentukan dua boolean saja, dan
@@ -94,8 +90,9 @@ export async function getByActivity(limit = 12): Promise<ScoredCard[]> {
 }
 
 export async function getWeeklyQuests(limit = 3): Promise<WeeklyQuest[]> {
-  const { data } = await supabase.rpc("explore_weekly_quests", { p_limit: limit });
-  return (data as WeeklyQuest[]) ?? [];
+  // Kartu Explore tidak boleh menggagalkan seluruh halaman kalau RPC quest
+  // belum dipasang di database; cukup tidak tampil.
+  return ambilQuestMingguIni(limit).catch(() => []);
 }
 
 export async function searchCareerCards(query: string, limit = 20): Promise<CareerCard[]> {

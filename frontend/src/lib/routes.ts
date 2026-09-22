@@ -41,6 +41,10 @@ export const kategoriPath = (familyCode: string) =>
   `/explore/kategori/${encodeURIComponent(familyCode)}`;
 export const daftarBarisPath = (slug: string) => `/explore/daftar/${slug}`;
 
+/** Isi satu grup quest. `jenis` adalah slug jenis grup dari database. */
+export const questGrupPath = (jenis: string, kode: string) =>
+  `${ROUTES.quest}/${jenis}/${encodeURIComponent(kode)}`;
+
 /**
  * Tujuan setelah onboarding selesai, dan setelah login bagi yang sudah
  * onboarding. Dulu "/student" (CareerPath AI lama), lalu "/dashboard" yang
