@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { GraduationCap, BookMarked, AlertCircle, ArrowRight } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { HOME_AFTER_ONBOARDING, ROUTES } from "@/lib/routes";
+import { sudahOnboarding } from "@/lib/postAuth";
 import AuthBrandHeader from "@/components/AuthBrandHeader";
 import ProgressHeader from "@/components/onboarding/ProgressHeader";
 import ChipGroup, { type ChipOption } from "@/components/onboarding/ChipGroup";
@@ -94,6 +95,13 @@ export default function OnboardingPage() {
         router.replace(`${ROUTES.login}?next=${encodeURIComponent(ROUTES.onboarding)}`);
         return;
       }
+      // Link verifikasi email mendarat di sini. Yang sudah pernah menuntaskan
+      // onboarding tidak perlu mengisinya lagi — langsung ke layar utama.
+      if (await sudahOnboarding(data.session.user.id)) {
+        router.replace(HOME_AFTER_ONBOARDING);
+        return;
+      }
+      if (!alive) return;
       setUserId(data.session.user.id);
 
       try {
