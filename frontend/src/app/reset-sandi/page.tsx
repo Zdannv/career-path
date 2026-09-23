@@ -6,6 +6,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Lock, X, AlertCircle, Loader2 } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
+import { pesanAuth } from "@/lib/pesanAuth";
 import AuthBrandHeader from "@/components/AuthBrandHeader";
 import AuthPageShell from "@/components/AuthPageShell";
 import AuthField from "@/components/AuthField";
@@ -82,7 +83,7 @@ export default function ResetSandiPage() {
     try {
       const { error } = await supabase.auth.updateUser({ password });
       if (error) {
-        setFormError(error.message);
+        setFormError(pesanAuth(error));
         return;
       }
       setDone(true);

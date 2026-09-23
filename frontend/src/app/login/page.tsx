@@ -6,6 +6,7 @@ import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Mail, Lock, AlertCircle } from "lucide-react";
 import { supabase, setRememberMe } from "@/lib/supabaseClient";
+import { pesanAuth } from "@/lib/pesanAuth";
 import { postLoginDestination } from "@/lib/postAuth";
 import { ROUTES } from "@/lib/routes";
 import AuthBrandHeader from "@/components/AuthBrandHeader";
@@ -65,13 +66,7 @@ function LoginForm() {
       });
 
       if (error) {
-        setFormError(
-          /invalid login credentials/i.test(error.message)
-            ? "Email atau kata sandi salah."
-            : /email not confirmed/i.test(error.message)
-              ? "Email Kamu belum diverifikasi. Cek inbox untuk link verifikasi."
-              : error.message
-        );
+        setFormError(pesanAuth(error));
         return;
       }
 

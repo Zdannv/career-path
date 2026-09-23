@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { Mail, Undo2, AlertCircle } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
+import { pesanAuth } from "@/lib/pesanAuth";
 import { siteUrl } from "@/lib/siteUrl";
 import AuthBrandHeader from "@/components/AuthBrandHeader";
 import AuthPageShell from "@/components/AuthPageShell";
@@ -33,7 +34,7 @@ export default function LupaSandiPage() {
         redirectTo: siteUrl("/reset-sandi"),
       });
       if (error) {
-        setFormError(error.message);
+        setFormError(pesanAuth(error));
         return false;
       }
       return true;

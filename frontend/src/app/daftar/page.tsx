@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Mail, Lock, AlertCircle } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
+import { pesanAuth } from "@/lib/pesanAuth";
 import { siteUrl } from "@/lib/siteUrl";
 import AuthBrandHeader from "@/components/AuthBrandHeader";
 import AuthPageShell from "@/components/AuthPageShell";
@@ -74,7 +75,7 @@ export default function DaftarPage() {
         if (/already registered|already exists/i.test(error.message)) {
           setEmailTaken(true);
         } else {
-          setFormError(error.message);
+          setFormError(pesanAuth(error));
         }
         return;
       }

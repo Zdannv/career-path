@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { MailSearch, TriangleAlert, TimerReset, Undo2 } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
+import { pesanAuth } from "@/lib/pesanAuth";
 import { siteUrl } from "@/lib/siteUrl";
 import AuthPageShell from "@/components/AuthPageShell";
 import { ROUTES } from "@/lib/routes";
@@ -51,7 +52,7 @@ export default function VerifikasiContent({ email }: { email: string }) {
         options: { emailRedirectTo: siteUrl("/onboarding") },
       });
       if (error) {
-        setNotice(error.message);
+        setNotice(pesanAuth(error));
         return;
       }
       setNotice("Email verifikasi sudah dikirim ulang. Cek inbox Kamu.");
