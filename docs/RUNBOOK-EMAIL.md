@@ -45,11 +45,19 @@ Belum punya domain? Sementara bisa pakai domain uji coba milik penyedia
 
 ### 2. Ambil kredensial SMTP
 
-Di penyedia, buka menu SMTP lalu buat kredensial. Yang dibutuhkan:
+Host, username, dan password semuanya datang dari penyedia — tidak ada yang
+boleh dikarang sendiri. Port selalu `587` (STARTTLS), bukan 25.
 
-- Host, misalnya `smtp.resend.com` atau `smtp-relay.brevo.com`
-- Port `587` (STARTTLS) — pakai ini, bukan 25
-- Username dan password
+| Penyedia | Host | Username | Password |
+|---|---|---|---|
+| Resend | `smtp.resend.com` | `resend` (harfiah, memang kata itu) | API key, diawali `re_` |
+| Brevo | `smtp-relay.brevo.com` | login SMTP berbentuk `xxxxxx@smtp-brevo.com` | SMTP key dari menu SMTP & API |
+| Mailgun | `smtp.mailgun.org` | `postmaster@mg.domainmu.com` | password SMTP di halaman domain |
+| Amazon SES | `email-smtp.<region>.amazonaws.com` | hasil "Create SMTP credentials" | dari langkah yang sama |
+
+Di Resend, kuncinya dibuat di **API Keys → Create API Key** dan hanya tampil
+sekali. Supabase juga menyembunyikannya setelah disimpan, jadi simpan salinannya
+di pengelola kata sandi, bukan di catatan atau chat.
 
 ### 3. Pasang di Supabase
 
