@@ -32,6 +32,7 @@ export const ROUTES = {
   journey: "/journey",
   quest: "/quest",
   progress: "/progress",
+  pencapaian: "/progress/pencapaian",
   careerInsights: "/career-insights",
 } as const;
 

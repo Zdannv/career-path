@@ -1,10 +1,10 @@
 import RequireAuth from "@/components/RequireAuth";
-import SoonScreen from "@/components/explore/SoonScreen";
+import ProgressView from "@/components/progress/ProgressView";
 
 export default function Page() {
   return (
     <RequireAuth>
-      <SoonScreen title="Progress" note="Layar progress belum dibangun." />
+      <ProgressView />
     </RequireAuth>
   );
 }
