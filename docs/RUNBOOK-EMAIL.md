@@ -90,69 +90,24 @@ Kalau emailnya masuk spam, periksa lagi status SPF/DKIM di langkah 1.
 **Dashboard → Authentication → Email Templates**
 
 Template bawaannya berbahasa Inggris dan tanpa merek: "Confirm your email
-address / Follow the link below…" — persis seperti yang masuk ke inbox
-sekarang. Di bawah ini gantinya dalam bahasa Indonesia.
+address / Follow the link below…". Gantinya ada di repo, tinggal salin seluruh
+isi berkasnya ke kolom Message body:
 
-Variabel yang tersedia: `{{ .ConfirmationURL }}`, `{{ .Email }}`,
+| Template di Supabase | Berkas | Subject |
+|---|---|---|
+| Confirm signup | `docs/email/confirm-signup.html` | Verifikasi email Navika kamu |
+| Reset password | `docs/email/reset-password.html` | Atur ulang kata sandi Navika |
+
+Keduanya memakai tabel dan gaya inline, bukan flexbox atau `<style>`: Gmail,
+Outlook, dan aplikasi email bawaan HP membuang stylesheet dan tidak mengenal
+layout modern. Tidak ada gambar sama sekali, jadi tampilannya utuh walau
+penerima memblokir gambar — yang biasa dilakukan Gmail untuk pengirim baru.
+
+Variabel yang boleh dipakai: `{{ .ConfirmationURL }}`, `{{ .Email }}`,
 `{{ .SiteURL }}`, `{{ .Token }}`.
 
-### Confirm signup
-
-Subject: `Verifikasi email Navika kamu`
-
-```html
-<div style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif;max-width:480px;margin:0 auto;padding:32px 24px;color:#0f172a">
-  <p style="font-size:18px;font-weight:700;margin:0 0 4px">Navika</p>
-  <p style="font-size:13px;color:#64748b;margin:0 0 28px">Career path journey</p>
-
-  <h1 style="font-size:22px;line-height:1.3;margin:0 0 12px">Satu langkah lagi, ya</h1>
-  <p style="font-size:15px;line-height:1.6;color:#475569;margin:0 0 24px">
-    Tekan tombol di bawah untuk memastikan email ini benar milikmu. Setelah itu
-    kamu bisa langsung mulai menyusun rencana kariermu.
-  </p>
-
-  <a href="{{ .ConfirmationURL }}"
-     style="display:inline-block;background:#7033FF;color:#fff;text-decoration:none;font-size:15px;font-weight:600;padding:13px 28px;border-radius:999px">
-    Verifikasi email
-  </a>
-
-  <p style="font-size:13px;line-height:1.6;color:#64748b;margin:28px 0 0">
-    Tautan ini berlaku 24 jam. Kalau tombolnya tidak bisa ditekan, salin alamat
-    ini ke peramban:<br>
-    <span style="color:#7033FF;word-break:break-all">{{ .ConfirmationURL }}</span>
-  </p>
-  <p style="font-size:13px;line-height:1.6;color:#94a3b8;margin:20px 0 0">
-    Bukan kamu yang mendaftar? Abaikan saja email ini, tidak ada akun yang dibuat.
-  </p>
-</div>
-```
-
-### Reset password
-
-Subject: `Atur ulang kata sandi Navika`
-
-```html
-<div style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif;max-width:480px;margin:0 auto;padding:32px 24px;color:#0f172a">
-  <p style="font-size:18px;font-weight:700;margin:0 0 4px">Navika</p>
-  <p style="font-size:13px;color:#64748b;margin:0 0 28px">Career path journey</p>
-
-  <h1 style="font-size:22px;line-height:1.3;margin:0 0 12px">Atur ulang kata sandimu</h1>
-  <p style="font-size:15px;line-height:1.6;color:#475569;margin:0 0 24px">
-    Kami menerima permintaan mengganti kata sandi untuk {{ .Email }}. Tekan
-    tombol di bawah untuk membuat yang baru.
-  </p>
-
-  <a href="{{ .ConfirmationURL }}"
-     style="display:inline-block;background:#7033FF;color:#fff;text-decoration:none;font-size:15px;font-weight:600;padding:13px 28px;border-radius:999px">
-    Buat kata sandi baru
-  </a>
-
-  <p style="font-size:13px;line-height:1.6;color:#94a3b8;margin:28px 0 0">
-    Bukan kamu yang meminta? Abaikan email ini — kata sandimu tidak berubah
-    sampai tautan di atas dibuka.
-  </p>
-</div>
-```
+Untuk melihat hasilnya sebelum dipasang, salin berkasnya, ganti
+`{{ .ConfirmationURL }}` dengan alamat apa saja, lalu buka di peramban.
 
 ## Yang tetap harus benar
 
