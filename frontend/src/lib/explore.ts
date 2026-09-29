@@ -39,6 +39,8 @@ export type ScoredCard = CareerCard & {
 
 export type ExploreState = {
   full_name: string | null;
+  /** URL avatar dari bucket "avatars". NULL berarti dipakai inisial nama. */
+  avatar_url: string | null;
   has_career: boolean;
   /** Career DNA SELESAI — bukan sekadar ada pilihan tersimpan. */
   has_dna: boolean;

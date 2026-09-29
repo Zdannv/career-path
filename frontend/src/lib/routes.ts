@@ -34,6 +34,7 @@ export const ROUTES = {
   progress: "/progress",
   pencapaian: "/progress/pencapaian",
   careerInsights: "/career-insights",
+  profil: "/profile",
 } as const;
 
 /** Detail profesi, kategori, dan daftar per baris — path-nya bergantung id. */
@@ -76,6 +77,8 @@ export const CHROMELESS_ROUTES: string[] = [
  * membingungkan.
  */
 export const APP_SHELL_ROUTES: string[] = [
+  // Profil membawa bar atasnya sendiri dan tidak punya bar bawah.
+  ROUTES.profil,
   ROUTES.explore,
   ROUTES.roadmap,
   ROUTES.journey,

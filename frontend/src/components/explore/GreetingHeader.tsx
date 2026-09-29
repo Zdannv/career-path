@@ -9,18 +9,20 @@
  */
 
 import { useEffect, useRef, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { Search, Loader2, SlidersHorizontal } from "lucide-react";
 import { searchCareerCards, type CareerCard } from "@/lib/explore";
+import { inisial } from "@/lib/profil";
 import { ROUTES } from "@/lib/routes";
 
-function inisial(nama: string | null): string {
-  if (!nama) return "N";
-  const p = nama.trim().split(/\s+/);
-  return ((p[0]?.[0] ?? "") + (p.length > 1 ? (p[p.length - 1][0] ?? "") : "")).toUpperCase() || "N";
-}
-
-export default function GreetingHeader({ name }: { name: string | null }) {
+export default function GreetingHeader({
+  name,
+  avatarUrl,
+}: {
+  name: string | null;
+  avatarUrl: string | null;
+}) {
   const [q, setQ] = useState("");
   const [hasil, setHasil] = useState<CareerCard[]>([]);
   const [mencari, setMencari] = useState(false);
@@ -68,12 +70,27 @@ export default function GreetingHeader({ name }: { name: string | null }) {
             Teruslah belajar dan capai profesi impianmu!
           </p>
         </div>
-        <span
-          className="grid size-10 shrink-0 place-items-center rounded-full bg-violet-200 text-[13px] font-bold text-violet-800"
-          aria-hidden
+        {/* Avatar adalah satu-satunya pintu ke layar Profile, sesuai desain. */}
+        <Link
+          href={ROUTES.profil}
+          aria-label="Buka profil"
+          className="shrink-0 rounded-full transition-transform hover:scale-105"
         >
-          {inisial(name)}
-        </span>
+          {avatarUrl ? (
+            <Image
+              src={avatarUrl}
+              alt=""
+              width={40}
+              height={40}
+              unoptimized
+              className="size-10 rounded-full object-cover"
+            />
+          ) : (
+            <span className="grid size-10 place-items-center rounded-full bg-violet-200 text-[13px] font-bold text-violet-800">
+              {inisial(name)}
+            </span>
+          )}
+        </Link>
       </div>
 
       <div className="flex items-center gap-2">

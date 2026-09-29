@@ -166,7 +166,7 @@ export default function ExploreView({
             menempel saat digulir di desktop. */}
         <div className="bg-[#E7EAF2] px-4 py-5 sm:px-6 lg:sticky lg:top-24 lg:w-[380px] lg:shrink-0 lg:rounded-2xl lg:px-5">
           <div className="flex flex-col gap-4">
-            <GreetingHeader name={state.full_name} />
+            <GreetingHeader name={state.full_name} avatarUrl={state.avatar_url} />
             {state.has_career && state.career_name ? (
               <JourneyCard
                 careerName={state.career_name}
