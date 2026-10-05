@@ -43,10 +43,10 @@ export default function SaveProgressDialog({ onCancel, onConfirm, menyimpan = fa
 
         <div className="flex flex-col items-center gap-1 px-6 py-5 text-center">
           <Image
-            src="/career-dna/save-progress.png"
+            src="/career-dna/save-progress.webp"
             alt=""
-            width={292}
-            height={121}
+            width={800}
+            height={800}
             className="h-auto w-[170px]"
             aria-hidden
           />

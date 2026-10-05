@@ -194,6 +194,14 @@ export default function ExploreView({
                 }
               />
             )}
+
+            {/* Di desktop banner ini menutup kolom kiri; di layar sempit ia
+                pindah ke ujung bawah isi supaya tidak menyela deretan kartu. */}
+            <PromoBanner
+              variant="artikel"
+              href={ROUTES.careerInsights}
+              className="hidden lg:block"
+            />
           </div>
         </div>
 
@@ -202,7 +210,9 @@ export default function ExploreView({
             <QuestWeek quests={quests} total={quests[0]?.total ?? quests.length} />
           )}
           {barisTerpilih.map((k) => baris[k])}
-          <div className="pb-8" />
+          <div className="px-4 pb-8 pt-2 sm:px-6 lg:hidden">
+            <PromoBanner variant="artikel" href={ROUTES.careerInsights} />
+          </div>
         </main>
       </div>
 

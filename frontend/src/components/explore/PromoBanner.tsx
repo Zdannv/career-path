@@ -11,13 +11,18 @@
  * teks sungguhan. Selain tajam di ukuran berapa pun, teksnya jadi bisa dipilih,
  * dibaca pembaca layar, dan diubah tanpa menunggu ekspor ulang dari desainer.
  *
- * Banner Career Insights dihapus dari Explore atas permintaan tim.
+ * Banner Career Insights dihapus dari Explore atas permintaan tim, lalu
+ * digantikan banner "Artikel & Tips" dari desain terbaru. Isi artikelnya
+ * sendiri belum ada, jadi tombolnya mengarah ke layar "segera hadir" — bukan
+ * ke halaman kosong yang terlihat rusak.
  */
 
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 
 type Banner = {
+  /** Warna latar kartu; ilustrasi dipudarkan ke warna ini di sisi kiri. */
+  bg: string;
   /** Ilustrasi untuk wadah sempit: ponsel dan kolom kiri desktop. */
   art: string;
   /** Ilustrasi untuk wadah lebar: tablet, tempat banner memenuhi lebar layar. */
@@ -25,6 +30,7 @@ type Banner = {
   eyebrow: string;
   title: string;
   body: string;
+  /** Kosong berarti kartu tanpa tombol — seluruh kartunya yang bisa ditekan. */
   cta: string;
   /** Lebar kolom teks — sisanya dibiarkan kosong untuk ilustrasi di kanan. */
   textW: string;
@@ -32,6 +38,7 @@ type Banner = {
 
 export const BANNERS: Record<string, Banner> = {
   discovery: {
+    bg: "#EFEBFB",
     art: "/explore/discovery-art.webp",
     artWide: "/explore/discovery-art-wide.webp",
     textW: "max-w-[80%] sm:max-w-[62%]",
@@ -41,6 +48,7 @@ export const BANNERS: Record<string, Banner> = {
     cta: "Mulai Career Discovery",
   },
   dna: {
+    bg: "#EFEBFB",
     art: "/explore/dna-art.webp",
     artWide: "/explore/dna-art-wide.webp",
     textW: "max-w-[76%] sm:max-w-[58%]",
@@ -48,6 +56,16 @@ export const BANNERS: Record<string, Banner> = {
     title: "Selangkah lagi!",
     body: "Lengkapi data minat dan keahlian untuk menyusun rencana belajar yang paling pas.",
     cta: "Personalisasi Sekarang",
+  },
+  artikel: {
+    bg: "#E3EDFB",
+    art: "/explore/artikel-tips.webp",
+    artWide: "/explore/artikel-tips.webp",
+    textW: "max-w-[72%] sm:max-w-[54%]",
+    eyebrow: "Artikel & Tips",
+    title: "Rekomendasi Karier 10 tahun ke depan",
+    body: "Cari tau prediksi karier menjanjikan 10 tahun ke depan yang minim tergeser oleh teknologi dan AI.",
+    cta: "",
   },
 };
 
@@ -69,7 +87,8 @@ export default function PromoBanner({ variant, href, className = "", overrides }
   return (
     <Link
       href={href}
-      className={`group relative block min-h-[200px] overflow-hidden rounded-2xl bg-[#EFEBFB] transition-opacity hover:opacity-95 sm:min-h-[180px] lg:min-h-[200px] ${className}`}
+      style={{ backgroundColor: b.bg }}
+      className={`group relative block min-h-[200px] overflow-hidden rounded-2xl transition-opacity hover:opacity-95 sm:min-h-[180px] lg:min-h-[200px] ${className}`}
     >
       {/* Dua berkas untuk satu ilustrasi karena wadahnya berubah bentuk:
           4:1 saat memenuhi lebar tablet, 1,7:1 di ponsel dan di kolom kiri
@@ -86,7 +105,8 @@ export default function PromoBanner({ variant, href, className = "", overrides }
         aria-hidden
       />
       <div
-        className="absolute inset-0 bg-gradient-to-r from-[#EFEBFB] via-[#EFEBFB]/85 to-transparent"
+        className="absolute inset-0"
+        style={{ backgroundImage: `linear-gradient(to right, ${b.bg}, ${b.bg}d9 55%, transparent)` }}
         aria-hidden
       />
 
@@ -98,10 +118,12 @@ export default function PromoBanner({ variant, href, className = "", overrides }
         <p className="text-[12.5px] leading-relaxed text-slate-600">{b.body}</p>
         {/* Tombolnya harus tetap satu baris: di kolom kiri desktop yang cuma 340px,
             "Mulai Career Discovery" pecah jadi dua baris dan bentuk pilnya rusak. */}
-        <span className="mt-3 inline-flex w-fit items-center gap-2 whitespace-nowrap rounded-full bg-violet-600 px-4 py-2 text-[12px] font-semibold text-white transition-colors group-hover:bg-violet-700 sm:text-[12.5px]">
-          {overrides?.cta ?? b.cta}
-          <ArrowRight className="size-3.5" aria-hidden />
-        </span>
+        {(overrides?.cta ?? b.cta) && (
+          <span className="mt-3 inline-flex w-fit items-center gap-2 whitespace-nowrap rounded-full bg-violet-600 px-4 py-2 text-[12px] font-semibold text-white transition-colors group-hover:bg-violet-700 sm:text-[12.5px]">
+            {overrides?.cta ?? b.cta}
+            <ArrowRight className="size-3.5" aria-hidden />
+          </span>
+        )}
       </div>
     </Link>
   );

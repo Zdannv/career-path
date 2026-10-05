@@ -333,10 +333,10 @@ export default function ProfesiDetail({
                   className="relative overflow-hidden rounded-2xl border border-violet-100 bg-violet-50 p-4 text-left"
                 >
                   <Image
-                    src="/profesi/skill-gap-banner.png"
+                    src="/profesi/skill-gap-banner.webp"
                     alt=""
-                    width={341}
-                    height={164}
+                    width={1200}
+                    height={675}
                     className="pointer-events-none absolute -right-6 bottom-0 h-[86%] w-auto object-contain"
                   />
                   <div className="relative max-w-[64%]">
