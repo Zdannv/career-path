@@ -76,8 +76,8 @@ export default function VerifikasiContent({ email }: { email: string }) {
               <Image
                 src="/auth/verify-email.webp"
                 alt="Email verifikasi terkirim"
-                width={200}
-                height={200}
+                width={460}
+                height={389}
                 className="w-[180px] h-auto"
                 priority
               />

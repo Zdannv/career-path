@@ -149,8 +149,8 @@ export default function LandingPage() {
             <Image
               src="/landing/hero-roadmap.webp"
               alt="Ilustrasi roadmap karier"
-              width={1000}
-              height={1333}
+              width={997}
+              height={1240}
               className="w-full h-auto"
               priority
             />

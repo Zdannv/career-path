@@ -14,8 +14,8 @@ export default function DoneScreen() {
         <Image
           src="/career-dna/done.webp"
           alt=""
-          width={320}
-          height={320}
+          width={351}
+          height={390}
           priority
           className="mx-auto h-auto w-[240px]"
           aria-hidden

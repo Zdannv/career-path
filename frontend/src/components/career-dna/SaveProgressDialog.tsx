@@ -45,8 +45,8 @@ export default function SaveProgressDialog({ onCancel, onConfirm, menyimpan = fa
           <Image
             src="/career-dna/save-progress.webp"
             alt=""
-            width={800}
-            height={800}
+            width={723}
+            height={701}
             className="h-auto w-[170px]"
             aria-hidden
           />

@@ -133,8 +133,8 @@ export default function ResetSandiPage() {
                 <Image
                   src="/auth/reset-password.webp"
                   alt="Buat kata sandi baru"
-                  width={200}
-                  height={200}
+                  width={405}
+                  height={371}
                   className="w-[160px] h-auto"
                   priority
                 />

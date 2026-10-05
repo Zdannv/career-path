@@ -77,8 +77,8 @@ export default function LupaSandiPage() {
           <Image
             src="/auth/forgot-password.webp"
             alt={ILLUSTRATION_ALT}
-            width={335}
-            height={248}
+            width={1005}
+            height={660}
             className="lg:hidden mx-auto w-[280px] sm:w-[335px] h-auto"
             priority
           />

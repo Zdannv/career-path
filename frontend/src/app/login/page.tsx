@@ -169,8 +169,8 @@ function LoginForm() {
         <Image
           src="/auth/login-illustration.webp"
           alt={ILLUSTRATION_ALT}
-          width={688}
-          height={525}
+          width={1376}
+          height={933}
           className="lg:hidden mt-10 w-full h-auto rounded-2xl"
         />
 

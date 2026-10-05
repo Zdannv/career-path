@@ -19,8 +19,8 @@ export default function IntroScreen({
         <Image
           src="/career-dna/intro.webp"
           alt=""
-          width={267}
-          height={340}
+          width={1076}
+          height={1280}
           priority
           className="mx-auto h-auto w-[218px]"
           aria-hidden
