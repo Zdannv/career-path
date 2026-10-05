@@ -197,7 +197,7 @@ export default function LandingPage() {
       </section>
 
       {/* Product Features */}
-      <section className="bg-white py-16 sm:py-20">
+      <section className="bg-white pt-16 sm:pt-20">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <div className="text-xs font-bold uppercase tracking-wide text-indigo-600">Product Features</div>
           <h2 className="mt-2 text-2xl sm:text-3xl font-bold text-slate-900">
@@ -227,22 +227,25 @@ export default function LandingPage() {
             })}
           </div>
 
-          <div className="mt-14 max-w-4xl mx-auto">
-            <Image
-              src="/landing/journey-path.webp"
-              alt="Ilustrasi perjalanan karier"
-              width={1916}
-              height={821}
-              className="w-full h-auto"
-            />
-          </div>
+        </div>
+
+        {/* Ilustrasinya duduk rapat di atas seksi ungu seperti desain: selebar
+            layar di ponsel, dan ikut melebar sampai batas isi di layar besar. */}
+        <div className="mt-10 w-full sm:mt-14 sm:px-6 lg:px-8">
+          <Image
+            src="/landing/journey-path.webp"
+            alt="Ilustrasi perjalanan karier"
+            width={1916}
+            height={783}
+            className="mx-auto h-auto w-full max-w-5xl"
+          />
         </div>
       </section>
 
       {/* Dashboard CTA split */}
       <section className="bg-gradient-to-br from-indigo-600 via-purple-600 to-violet-700 py-16 sm:py-20 text-white">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 grid lg:grid-cols-2 gap-12 items-center">
-          <div className="text-center lg:text-left order-2 lg:order-1">
+          <div className="text-center lg:text-left lg:order-first">
             <div className="inline-flex items-center px-3 py-1 rounded-full bg-white/15 text-white text-xs font-bold">
               Tampilan dashboard-mu
             </div>
@@ -265,7 +268,7 @@ export default function LandingPage() {
             </ul>
           </div>
 
-          <div className="order-1 lg:order-2 max-w-md mx-auto w-full">
+          <div className="max-w-md mx-auto w-full">
             <Image
               src="/landing/phone-mockup.webp"
               alt="Tampilan dashboard Navika"
@@ -299,7 +302,7 @@ export default function LandingPage() {
               tapi bisa dimulai dari hari ini.
             </h2>
             <p className="mt-2 text-sm text-indigo-100">
-              Mulai perjalanan kariermu sekarang. Gratis.
+              Mulai perjalanan kariermu sekarang.
             </p>
           </div>
 
