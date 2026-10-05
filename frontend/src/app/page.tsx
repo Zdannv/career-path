@@ -12,12 +12,23 @@ import {
   TrendingUp,
   Trophy,
   CheckCircle2,
-  Settings,
   Globe,
 } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { postLoginDestination, HOME_AFTER_ONBOARDING } from "@/lib/postAuth";
 import type { User } from "@supabase/supabase-js";
+
+/** lucide-react v1 tidak lagi membawa ikon merek, jadi Instagram digambar di sini. */
+function IkonInstagram({ className = "" }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+         strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden>
+      <rect x="2" y="2" width="20" height="20" rx="5" />
+      <circle cx="12" cy="12" r="4" />
+      <circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
 
 const TARGET_USERS = [
   {
@@ -197,18 +208,20 @@ export default function LandingPage() {
             melalui rekomendasi personal, roadmap terstruktur, dan progres yang mudah dipahami.
           </p>
 
-          <div className="mt-10 grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-5 gap-6">
+          {/* Ponsel: daftar rata kiri dengan ikon sebaris judul, seperti desain.
+              Layar lebar: lima kolom bersebelahan, ikonnya di atas judul. */}
+          <div className="mt-10 grid grid-cols-1 gap-7 text-left sm:grid-cols-3 sm:gap-6 sm:text-center lg:grid-cols-5">
             {PRODUCT_FEATURES.map((feature) => {
               const Icon = feature.icon;
               return (
-                <div key={feature.name} className="flex flex-row sm:flex-col items-center sm:text-center gap-4 sm:gap-0 text-left">
-                  <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 shrink-0">
-                    <Icon className="w-5 h-5" />
+                <div key={feature.name} className="sm:flex sm:flex-col sm:items-center">
+                  <div className="flex items-center gap-2.5 sm:flex-col sm:gap-0">
+                    <Icon className="w-5 h-5 shrink-0 text-indigo-500 sm:mb-3 sm:h-6 sm:w-6" />
+                    <div className="text-base font-bold text-slate-900 sm:text-sm">{feature.name}</div>
                   </div>
-                  <div className="sm:mt-3">
-                    <div className="text-sm font-bold text-slate-900">{feature.name}</div>
-                    <p className="mt-1 text-xs text-slate-500 leading-relaxed">{feature.description}</p>
-                  </div>
+                  <p className="mt-1.5 text-sm text-slate-500 leading-relaxed sm:mt-1 sm:text-xs">
+                    {feature.description}
+                  </p>
                 </div>
               );
             })}
@@ -236,7 +249,7 @@ export default function LandingPage() {
             <h2 className="mt-4 text-2xl sm:text-3xl font-bold text-white leading-tight">
               Fokus pada Langkahmu,
               <br />
-              Kami yang Bantu Arahkan
+              Navika yang Bantu Arahkan
             </h2>
             <p className="mt-3 text-sm text-indigo-100 max-w-md mx-auto lg:mx-0 leading-relaxed">
               Lihat tugas hari ini, milestone berikutnya, dan progress perjalanan kariermu dalam
@@ -264,37 +277,12 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Career Knowledge Graph */}
-      <section className="bg-white py-16 sm:py-20">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 grid lg:grid-cols-2 gap-12 items-center">
-          <div className="text-center lg:text-left">
-            <div className="text-xs font-bold uppercase tracking-wide text-indigo-600">Career Building</div>
-            <h2 className="mt-2 text-2xl sm:text-3xl font-bold text-slate-900 leading-tight">
-              Menggunakan Career
-              <br className="hidden sm:block" /> Knowledge Graph
-            </h2>
-            <p className="mt-3 text-sm text-slate-500 max-w-md mx-auto lg:mx-0 leading-relaxed">
-              Diambil dari berbagai sumber dan semua entitas data saling terhubung untuk
-              menampilkan rekomendasi yang lebih relevan dan akurat.
-            </p>
-          </div>
-
-          <div className="max-w-xs mx-auto w-full">
-            <Image
-              src="/landing/knowledge-graph.png"
-              alt="Ilustrasi Career Knowledge Graph"
-              width={384}
-              height={555}
-              className="w-full h-auto"
-            />
-          </div>
-        </div>
-      </section>
-
       {/* Closing CTA */}
       <section className="px-4 sm:px-6 lg:px-8 pb-16 sm:pb-20">
-        <div className="max-w-6xl mx-auto relative overflow-hidden rounded-3xl bg-gradient-to-r from-indigo-700 via-purple-700 to-indigo-800 px-6 sm:px-10 py-10 sm:py-12 flex flex-col sm:flex-row items-center gap-6 text-center sm:text-left min-h-[220px] sm:min-h-[260px]">
-          <div className="absolute left-0 sm:left-4 bottom-0 w-64 sm:w-96 opacity-95 pointer-events-none hidden sm:block">
+        <div className="max-w-6xl mx-auto overflow-hidden rounded-3xl bg-gradient-to-r from-indigo-700 via-purple-700 to-indigo-800 px-6 sm:px-10 pt-10 sm:py-12 flex flex-col sm:flex-row sm:items-center gap-6 sm:gap-8 text-center sm:text-left">
+          {/* Ilustrasinya jadi anak flex, bukan lapisan melayang: di layar
+              sedang teksnya sempat tertimpa gunung waktu memakai posisi absolut. */}
+          <div className="order-last w-full max-w-xs mx-auto -mb-10 shrink-0 pointer-events-none sm:order-none sm:mx-0 sm:mb-0 sm:-ml-4 sm:w-44 sm:max-w-none sm:self-end lg:w-60">
             <Image
               src="/landing/mountain-glow.webp"
               alt=""
@@ -304,7 +292,7 @@ export default function LandingPage() {
             />
           </div>
 
-          <div className="relative flex-1 sm:pl-40 lg:pl-48">
+          <div className="flex-1">
             <h2 className="text-xl sm:text-2xl font-bold text-white leading-snug">
               Masa depan tidak dibangun dalam semalam,
               <br />
@@ -317,7 +305,7 @@ export default function LandingPage() {
 
           <Link
             href={startJourneyHref}
-            className="relative inline-flex items-center gap-2 px-6 py-3 rounded-full bg-white text-slate-900 text-sm font-bold shadow-md hover:shadow-lg transition-all shrink-0 cursor-pointer border-0 outline-none"
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-white text-slate-900 text-sm font-bold shadow-md hover:shadow-lg transition-all shrink-0 cursor-pointer border-0 outline-none"
           >
             Mulai Gratis
             <ArrowRight className="w-4 h-4 text-slate-900" />
@@ -328,17 +316,24 @@ export default function LandingPage() {
       {/* Footer */}
       <footer className="border-t border-slate-100 py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <Image
-            src="/navika-logo.png"
-            alt="Navika"
-            width={101}
-            height={32}
-            className="h-6 w-auto"
-          />
+          <div className="flex items-center gap-3">
+            <Image
+              src="/navika-logo.png"
+              alt="Navika"
+              width={101}
+              height={32}
+              className="h-6 w-auto"
+            />
+            <span className="h-7 w-px bg-slate-200" aria-hidden />
+            <span className="leading-tight">
+              <span className="block text-[13px] font-semibold text-slate-900">Career path journey</span>
+              <span className="block text-[11px] text-slate-400">Sub1 Studio</span>
+            </span>
+          </div>
 
           <div className="flex items-center gap-4 text-slate-400">
-            <Settings className="w-4 h-4" />
             <Globe className="w-4 h-4" />
+            <IkonInstagram className="w-4 h-4" />
             <p className="text-xs text-slate-400">
               Brewed with creativity and love by Sub1 Studio. &copy; 2026. All rights reserved.
             </p>
