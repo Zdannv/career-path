@@ -134,7 +134,14 @@ export async function hapusAvatarLama(url: string | null): Promise<void> {
   await supabase.storage.from("avatars").remove([url.slice(i + tanda.length)]);
 }
 
-/** "Reina Putri" → "RP". Dipakai kalau avatarnya belum ada. */
+/**
+ * Avatar bawaan dari tim desain, dipakai selama pengguna belum mengunggah
+ * gambarnya sendiri. Sebelumnya dipakai lingkaran berinisial — itu tebakan
+ * saya, bukan desain, dan tidak pernah muncul di mockup mana pun.
+ */
+export const AVATAR_BAWAAN = "/avatar-default.webp";
+
+/** "Reina Putri" → "RP". Masih dipakai sebagai alt text dan cadangan terakhir. */
 export function inisial(nama: string | null): string {
   if (!nama) return "N";
   const p = nama.trim().split(/\s+/);

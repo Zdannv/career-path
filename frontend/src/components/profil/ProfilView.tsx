@@ -32,8 +32,8 @@ import { pesanGalat } from "@/lib/quest";
 import {
   ambilNotifikasi,
   ambilProfil,
+  AVATAR_BAWAAN,
   hapusAvatarLama,
-  inisial,
   periksaAvatar,
   simpanPendidikan,
   simpanProfil,
@@ -317,20 +317,14 @@ export default function ProfilView() {
             <div>
               <Label judul="Avatar" catatan="Ini akan ditampilkan di samping nama Kamu" />
               <div className="mt-3 flex items-center gap-4">
-                {avatar ? (
-                  <Image
-                    src={avatar}
-                    alt=""
-                    width={64}
-                    height={64}
-                    unoptimized
-                    className="size-16 shrink-0 rounded-full object-cover"
-                  />
-                ) : (
-                  <span className="grid size-16 shrink-0 place-items-center rounded-full bg-violet-100 text-[18px] font-bold text-violet-700">
-                    {inisial(data.full_name ?? data.nama_tampil)}
-                  </span>
-                )}
+                <Image
+                  src={avatar ?? AVATAR_BAWAAN}
+                  alt=""
+                  width={64}
+                  height={64}
+                  unoptimized={!!avatar}
+                  className="size-16 shrink-0 rounded-full object-cover"
+                />
 
                 <div className="min-w-0">
                   <button

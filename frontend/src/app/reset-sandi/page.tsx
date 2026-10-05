@@ -131,7 +131,7 @@ export default function ResetSandiPage() {
             <>
               <div className="flex justify-center">
                 <Image
-                  src="/auth/reset-password.png"
+                  src="/auth/reset-password.webp"
                   alt="Buat kata sandi baru"
                   width={200}
                   height={200}
@@ -209,7 +209,7 @@ export default function ResetSandiPage() {
       {done && (
         <AuthDialog
           title="Berhasil!"
-          imageSrc="/auth/reset-password.png"
+          imageSrc="/auth/reset-password.webp"
           imageAlt="Kata sandi berhasil diperbarui"
           heading="Kata sandi berhasil diperbarui."
           description="Sekarang kamu bisa melanjutkan perjalanan kariermu."

@@ -22,17 +22,17 @@ import type { User } from "@supabase/supabase-js";
 const TARGET_USERS = [
   {
     name: "Siswa",
-    image: "/landing/persona-siswa.png",
+    image: "/landing/persona-siswa.webp",
     description: "Cari profesi impianmu yang sesuai dengan minat dan kemampuanmu.",
   },
   {
     name: "Sekolah",
-    image: "/landing/persona-sekolah.png",
+    image: "/landing/persona-sekolah.webp",
     description: "Bantu siswa memahami dan merencanakan arah karier mereka.",
   },
   {
     name: "Professional",
-    image: "/landing/persona-professional.png",
+    image: "/landing/persona-professional.webp",
     description: "Rancang roadmap karier impian atau rintis usaha lewat panduan rencana aksi harian.",
   },
 ];
@@ -147,10 +147,10 @@ export default function LandingPage() {
 
           <div className="w-full max-w-md mx-auto lg:max-w-none">
             <Image
-              src="/landing/hero-roadmap.png"
+              src="/landing/hero-roadmap.webp"
               alt="Ilustrasi roadmap karier"
-              width={748}
-              height={499}
+              width={1000}
+              height={1333}
               className="w-full h-auto"
               priority
             />
@@ -216,10 +216,10 @@ export default function LandingPage() {
 
           <div className="mt-14 max-w-4xl mx-auto">
             <Image
-              src="/landing/journey-path.png"
+              src="/landing/journey-path.webp"
               alt="Ilustrasi perjalanan karier"
-              width={807}
-              height={374}
+              width={1916}
+              height={821}
               className="w-full h-auto"
             />
           </div>
@@ -254,7 +254,7 @@ export default function LandingPage() {
 
           <div className="order-1 lg:order-2 max-w-md mx-auto w-full">
             <Image
-              src="/landing/phone-mockup.png"
+              src="/landing/phone-mockup.webp"
               alt="Tampilan dashboard Navika"
               width={588}
               height={469}
@@ -296,10 +296,10 @@ export default function LandingPage() {
         <div className="max-w-6xl mx-auto relative overflow-hidden rounded-3xl bg-gradient-to-r from-indigo-700 via-purple-700 to-indigo-800 px-6 sm:px-10 py-10 sm:py-12 flex flex-col sm:flex-row items-center gap-6 text-center sm:text-left min-h-[220px] sm:min-h-[260px]">
           <div className="absolute left-0 sm:left-4 bottom-0 w-64 sm:w-96 opacity-95 pointer-events-none hidden sm:block">
             <Image
-              src="/landing/mountain-glow.png"
+              src="/landing/mountain-glow.webp"
               alt=""
-              width={355}
-              height={180}
+              width={1400}
+              height={788}
               className="w-full h-auto"
             />
           </div>

@@ -13,7 +13,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Search, Loader2, SlidersHorizontal } from "lucide-react";
 import { searchCareerCards, type CareerCard } from "@/lib/explore";
-import { inisial } from "@/lib/profil";
+import { AVATAR_BAWAAN, inisial } from "@/lib/profil";
 import { ROUTES } from "@/lib/routes";
 
 export default function GreetingHeader({
@@ -76,20 +76,14 @@ export default function GreetingHeader({
           aria-label="Buka profil"
           className="shrink-0 rounded-full transition-transform hover:scale-105"
         >
-          {avatarUrl ? (
-            <Image
-              src={avatarUrl}
-              alt=""
-              width={40}
-              height={40}
-              unoptimized
-              className="size-10 rounded-full object-cover"
-            />
-          ) : (
-            <span className="grid size-10 place-items-center rounded-full bg-violet-200 text-[13px] font-bold text-violet-800">
-              {inisial(name)}
-            </span>
-          )}
+          <Image
+            src={avatarUrl ?? AVATAR_BAWAAN}
+            alt={`Profil ${inisial(name)}`}
+            width={40}
+            height={40}
+            unoptimized={!!avatarUrl}
+            className="size-10 rounded-full object-cover"
+          />
         </Link>
       </div>
 

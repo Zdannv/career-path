@@ -12,7 +12,7 @@ export default function DoneScreen() {
     <div className="mx-auto w-full max-w-[860px] px-4 py-10 sm:px-6">
       <div className="rounded-2xl bg-slate-50/70 px-6 py-10 text-center">
         <Image
-          src="/career-dna/done.png"
+          src="/career-dna/done.webp"
           alt=""
           width={320}
           height={320}

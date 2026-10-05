@@ -64,7 +64,7 @@ export default function LupaSandiPage() {
           {/* Desktop: artwork fills the left column of the card. */}
           <div className="relative hidden lg:block min-h-[378px]">
             <Image
-              src="/auth/forgot-password-wide.png"
+              src="/auth/forgot-password-wide.webp"
               alt={ILLUSTRATION_ALT}
               fill
               sizes="625px"
@@ -75,7 +75,7 @@ export default function LupaSandiPage() {
 
           {/* Mobile & tablet: artwork sits above the form. */}
           <Image
-            src="/auth/forgot-password.png"
+            src="/auth/forgot-password.webp"
             alt={ILLUSTRATION_ALT}
             width={335}
             height={248}
@@ -138,7 +138,7 @@ export default function LupaSandiPage() {
       {sent && (
         <AuthDialog
           title="Email Terkirim"
-          imageSrc="/auth/verify-email.png"
+          imageSrc="/auth/verify-email.webp"
           imageAlt="Email reset kata sandi terkirim"
           heading="Cek Email Kamu!"
           description="kami telah mengirimkan link email reset kata sandi ke email Kamu."

@@ -17,7 +17,7 @@ export default function IntroScreen({
     <div className="mx-auto w-full max-w-[486px] px-4 py-8 sm:px-0">
       <div className="rounded-2xl bg-slate-50/80 p-6 text-center">
         <Image
-          src="/career-dna/intro.png"
+          src="/career-dna/intro.webp"
           alt=""
           width={267}
           height={340}

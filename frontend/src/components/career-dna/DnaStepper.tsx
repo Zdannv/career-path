@@ -3,10 +3,9 @@
 /**
  * Kolom kiri versi desktop: ilustrasi dan daftar keenam langkah.
  *
- * CATATAN ASET: mockup langkah memakai ilustrasi lain (anak merakit drone di
- * meja) yang tidak ada di folder assets raw. Sementara ini dipakai ilustrasi
- * Career DNA yang tersedia; ganti satu baris di bawah kalau berkasnya sudah
- * dikirim.
+ * Tiap langkah punya ilustrasinya sendiri, sesuai mockup: minat, aktivitas,
+ * keahlian, cara kerja, dan lingkungan kerja. Langkah keenam (Review) tidak
+ * punya ilustrasi sendiri, jadi memakai ilustrasi pembuka Career DNA.
  */
 
 import Image from "next/image";
@@ -20,15 +19,24 @@ type Props = {
   onJump: (order: number) => void;
 };
 
+/** Ilustrasi per langkah; di luar 1-5 dipakai ilustrasi pembuka. */
+function ilustrasi(langkah: number): string {
+  return langkah >= 1 && langkah <= 5
+    ? `/career-dna/step-${langkah}.webp`
+    : "/career-dna/intro.webp";
+}
+
 export default function DnaStepper({ steps, current, reached, onJump }: Props) {
+  const gambar = ilustrasi(current);
   return (
     <aside className="hidden w-[300px] shrink-0 flex-col gap-6 lg:flex">
       <div className="overflow-hidden rounded-2xl bg-violet-50/60">
         <Image
-          src="/career-dna/intro.png"
+          key={gambar}
+          src={gambar}
           alt=""
-          width={267}
-          height={340}
+          width={944}
+          height={474}
           className="h-auto w-full"
           aria-hidden
         />

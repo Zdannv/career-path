@@ -32,8 +32,8 @@ type Banner = {
 
 export const BANNERS: Record<string, Banner> = {
   discovery: {
-    art: "/explore/discovery-art.png",
-    artWide: "/explore/discovery-art-wide.png",
+    art: "/explore/discovery-art.webp",
+    artWide: "/explore/discovery-art-wide.webp",
     textW: "max-w-[80%] sm:max-w-[62%]",
     eyebrow: "Career Discovery",
     title: "Masih bingung mau jadi apa?",
@@ -41,8 +41,8 @@ export const BANNERS: Record<string, Banner> = {
     cta: "Mulai Career Discovery",
   },
   dna: {
-    art: "/explore/dna-art.png",
-    artWide: "/explore/dna-art-wide.png",
+    art: "/explore/dna-art.webp",
+    artWide: "/explore/dna-art-wide.webp",
     textW: "max-w-[76%] sm:max-w-[58%]",
     eyebrow: "Career DNA",
     title: "Selangkah lagi!",

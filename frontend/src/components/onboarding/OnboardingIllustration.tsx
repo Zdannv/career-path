@@ -18,11 +18,11 @@ import Image from "next/image";
 type Illustration = { src: string; width: number; height: number };
 
 export const ILLUSTRATIONS = {
-  start: { src: "/onboarding/start.png", width: 283, height: 360 },
-  step1: { src: "/onboarding/step-1.png", width: 472, height: 237 },
-  step2: { src: "/onboarding/step-2.png", width: 472, height: 237 },
+  start: { src: "/onboarding/start.webp", width: 1086, height: 1448 },
+  step1: { src: "/onboarding/step-1.webp", width: 1400, height: 600 },
+  step2: { src: "/onboarding/step-2.webp", width: 1400, height: 600 },
   step3: { src: "/onboarding/step-3.png", width: 472, height: 237 },
-  done: { src: "/onboarding/done.png", width: 320, height: 320 },
+  done: { src: "/onboarding/done.webp", width: 640, height: 640 },
 } as const satisfies Record<string, Illustration>;
 
 export type IllustrationKey = keyof typeof ILLUSTRATIONS;

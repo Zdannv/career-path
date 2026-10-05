@@ -74,7 +74,7 @@ export default function VerifikasiContent({ email }: { email: string }) {
           <div className="flex justify-center pt-10 lg:pt-0">
             <div className="rounded-3xl bg-gradient-to-b from-indigo-50/70 to-transparent p-4">
               <Image
-                src="/auth/verify-email.png"
+                src="/auth/verify-email.webp"
                 alt="Email verifikasi terkirim"
                 width={200}
                 height={200}

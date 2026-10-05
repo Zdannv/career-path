@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import Image from "next/image";
 import { Timer, ChevronUp, ChevronDown } from "lucide-react";
 
-const WIDE_SRC = "/auth/signup-illustration.png";
+const WIDE_SRC = "/auth/signup-illustration.webp";
 const WIDE_ALT = "Mulai perjalanan kariermu bersama Navika";
 
 /**
@@ -34,10 +34,10 @@ export function SignupIllustrationPanel({ className = "" }: { className?: string
 export function SignupIllustrationBlock({ className = "" }: { className?: string }) {
   return (
     <Image
-      src="/auth/signup-illustration-tablet.png"
+      src="/auth/signup-illustration-tablet.webp"
       alt={WIDE_ALT}
-      width={688}
-      height={574}
+      width={1254}
+      height={729}
       className={`w-full h-auto ${className}`}
     />
   );
@@ -54,10 +54,10 @@ export function SignupIllustrationCollapsible() {
     <div className="rounded-2xl border border-slate-200 overflow-hidden bg-white">
       {expanded && (
         <Image
-          src="/auth/signup-illustration-mobile.png"
+          src="/auth/signup-illustration-mobile.webp"
           alt={WIDE_ALT}
-          width={343}
-          height={618}
+          width={1029}
+          height={900}
           className="w-full h-auto"
         />
       )}

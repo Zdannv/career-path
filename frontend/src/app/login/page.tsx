@@ -20,7 +20,7 @@ function LoginIllustrationPanel({ className = "" }: { className?: string }) {
   return (
     <div className={`relative overflow-hidden ${className}`}>
       <Image
-        src="/auth/login-illustration.png"
+        src="/auth/login-illustration.webp"
         alt={ILLUSTRATION_ALT}
         fill
         sizes="(max-width: 1024px) 100vw, 625px"
@@ -167,7 +167,7 @@ function LoginForm() {
 
         {/* Below the form at mobile and tablet widths. */}
         <Image
-          src="/auth/login-illustration.png"
+          src="/auth/login-illustration.webp"
           alt={ILLUSTRATION_ALT}
           width={688}
           height={525}
