@@ -48,3 +48,6 @@ build/
 Thumbs.db
 # transport/scratch artifacts
 _to_delete/
+
+# Salinan skrip seed berisi sandi uji — jangan sampai ter-push (repo publik)
+supabase/seed/*.lokal.sql
