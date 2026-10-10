@@ -7,9 +7,12 @@
  *                   dengan lama tempuh dan tiga keunggulan
  *   sudah memilih   ringkasan jalur + tabel langkah berstatus
  *
- * Statusnya bukan centang manual: ia dihitung di database dari jenjang
- * pendidikan yang diisi pengguna saat onboarding, jadi seorang mahasiswa
- * semester 7 melihat "Lulus SMA/SMK" sudah hijau tanpa harus mencentangnya.
+ * Status langkah datang dari dua sumber. Langkah pendidikan yang sudah tuntas
+ * menurut profil tercentang sendiri — mahasiswa semester 7 melihat "Lulus
+ * SMA/SMK" sudah hijau tanpa perlu menyentuhnya, dan kotaknya terkunci.
+ * Langkah lain (uji kompetensi, STR, mulai bekerja) dicentang pengguna, dengan
+ * satu aturan: langkah sebelumnya harus sudah selesai. Aturan itu dijaga
+ * database; kotak yang mati di sini hanya petunjuknya.
  */
 
 import { useState } from "react";
@@ -103,10 +106,12 @@ function JalurTerpilih({
   jalur,
   sibuk,
   onUbah,
+  onCentang,
 }: {
   jalur: Jalur;
   sibuk: boolean;
   onUbah: () => void;
+  onCentang: (pathId: number, urutan: number, selesai: boolean) => void;
 }) {
   const Ikon = jalur.kind_code === "VOKASI" ? ScrollText : GraduationCap;
   return (
@@ -153,18 +158,36 @@ function JalurTerpilih({
             key={l.urutan}
             className="flex items-start gap-3 border-b border-slate-100 px-4 py-3.5 last:border-b-0"
           >
-            <span
-              aria-hidden
-              className={`mt-0.5 grid size-5 shrink-0 place-items-center rounded ${
-                l.status === "BELUM_MULAI"
-                  ? "border border-slate-200 bg-slate-100"
-                  : l.status === "SELESAI"
+            {/* Kotak centang. Yang mengikuti profil dan yang pendahulunya
+                belum selesai tampil mati; sisanya bisa ditekan. */}
+            <button
+              type="button"
+              role="checkbox"
+              aria-checked={l.status === "SELESAI"}
+              aria-label={`Tandai "${l.judul}" selesai`}
+              disabled={!l.bisa || sibuk}
+              title={
+                l.otomatis
+                  ? "Mengikuti data pendidikan di profilmu"
+                  : !l.bisa && !l.dicentang
+                    ? "Selesaikan langkah sebelumnya dulu"
+                    : undefined
+              }
+              onClick={() => onCentang(jalur.path_id, l.urutan, !l.dicentang)}
+              className={`mt-0.5 grid size-5 shrink-0 place-items-center rounded transition-colors ${
+                l.status === "SELESAI"
+                  ? l.otomatis
                     ? "bg-violet-200 text-white"
-                    : "bg-violet-600 text-white"
-              }`}
+                    : "bg-violet-600 text-white hover:bg-violet-700"
+                  : l.status === "BERLANGSUNG"
+                    ? "bg-violet-600 text-white"
+                    : l.bisa
+                      ? "border-2 border-violet-400 bg-white hover:bg-violet-50"
+                      : "border border-slate-200 bg-slate-100"
+              } ${l.bisa && !sibuk ? "cursor-pointer" : "cursor-not-allowed"}`}
             >
               {l.status !== "BELUM_MULAI" && <Check className="size-3.5" aria-hidden />}
-            </span>
+            </button>
 
             <div className="min-w-0 flex-1">
               <p className="text-[14px] font-semibold leading-snug text-slate-900">{l.judul}</p>
@@ -188,11 +211,13 @@ export default function JalurPendidikan({
   sibuk,
   onPilih,
   onUbah,
+  onCentang,
 }: {
   jalur: Jalur[];
   sibuk: boolean;
   onPilih: (pathId: number) => void;
   onUbah: () => void;
+  onCentang: (pathId: number, urutan: number, selesai: boolean) => void;
 }) {
   const [terbuka] = useState(true);
   const terpilih = jalur.find((j) => j.dipilih);
@@ -216,7 +241,7 @@ export default function JalurPendidikan({
 
       <div className="mt-4 space-y-5">
         {terpilih ? (
-          <JalurTerpilih jalur={terpilih} sibuk={sibuk} onUbah={onUbah} />
+          <JalurTerpilih jalur={terpilih} sibuk={sibuk} onUbah={onUbah} onCentang={onCentang} />
         ) : (
           terbuka &&
           jalur.map((j, i) => (

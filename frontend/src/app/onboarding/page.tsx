@@ -2,7 +2,7 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { GraduationCap, BookMarked, AlertCircle, ArrowRight } from "lucide-react";
+import { GraduationCap, BookMarked, AlertCircle, ArrowRight, ChevronsUpDown } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { HOME_AFTER_ONBOARDING, ROUTES } from "@/lib/routes";
 import { sudahOnboarding } from "@/lib/postAuth";
@@ -172,14 +172,6 @@ export default function OnboardingPage() {
     (!rule?.needs_grade || grade !== null) &&
     (!rule?.needs_semester || semester !== null);
 
-  const smkOptions: ChipOption[] = useMemo(
-    () =>
-      smk.flatMap((p) =>
-        p.concentrations.map((c) => ({ value: String(c.id), label: c.name_id }))
-      ),
-    [smk]
-  );
-
   const labelOf = (code: LevelCode | null) =>
     levels.find((l) => l.code === code)?.level_name ?? "—";
 
@@ -344,14 +336,41 @@ export default function OnboardingPage() {
 
                     {majorKind === "smk_concentration" && (
                       <div className="border-t border-slate-200 pt-7">
-                        <ChipGroup
-                          name="jurusan"
-                          legend="Jurusan"
-                          description="Pilih konsentrasi keahlian yang Kamu ambil."
-                          options={smkOptions}
-                          value={smkConcentrationId ? String(smkConcentrationId) : null}
-                          onChange={(v) => setSmkConcentrationId(Number(v))}
-                        />
+                        <h2 className="text-lg font-bold text-slate-900 sm:text-xl">Jurusan</h2>
+                        <p className="mt-1 text-sm text-[#525252]">
+                          Pilih konsentrasi keahlian yang Kamu ambil.
+                        </p>
+                        {/* Dropdown, bukan deretan chip: konsentrasi SMK jumlahnya
+                            ratusan, dan sebagai chip daftarnya memenuhi beberapa
+                            layar. Dikelompokkan per program keahlian supaya yang
+                            dicari cepat ketemu. */}
+                        <div className="relative mt-4">
+                          <select
+                            aria-label="Jurusan SMK"
+                            value={smkConcentrationId ?? ""}
+                            onChange={(e) =>
+                              setSmkConcentrationId(e.target.value ? Number(e.target.value) : null)
+                            }
+                            className={`w-full appearance-none rounded-full border border-slate-200 bg-white py-3 pl-4 pr-11 text-sm outline-none transition-colors focus:border-[#7033FF] ${
+                              smkConcentrationId ? "text-slate-900" : "text-slate-400"
+                            }`}
+                          >
+                            <option value="">Pilih jurusan</option>
+                            {smk.map((p) => (
+                              <optgroup key={p.code} label={p.name_id}>
+                                {p.concentrations.map((c) => (
+                                  <option key={c.id} value={c.id}>
+                                    {c.name_id}
+                                  </option>
+                                ))}
+                              </optgroup>
+                            ))}
+                          </select>
+                          <ChevronsUpDown
+                            className="pointer-events-none absolute right-4 top-1/2 size-4 -translate-y-1/2 text-slate-400"
+                            aria-hidden
+                          />
+                        </div>
                       </div>
                     )}
 

@@ -26,6 +26,12 @@
 --   navika.lengkap@zdann.me
 --       Kelima tahap tuntas dan kedua belas badge terbuka.
 --
+--   navika.semester3@zdann.me
+--       Mahasiswa S1 semester 3 yang baru menyelesaikan satu quest tools.
+--       Untuk menguji syarat quest Asah Pengalaman: praktik magang masih
+--       terkunci (baru terbuka semester 5), sedangkan proyek part-time dan
+--       kegiatan organisasi sudah terbuka.
+--
 -- Semua progres dikerjakan lewat RPC yang sama dengan aplikasi (ambil_quest,
 -- selesaikan_quest), bukan ditulis langsung ke tabel. Jadi XP, badge, persen
 -- tahap, dan notifikasinya persis seperti kalau penguji mengerjakannya sendiri,
@@ -168,6 +174,36 @@ begin
   return v_n;
 end $$;
 
+-- Kerjakan satu quest saja dari satu jenis: cukup untuk membuka jenis
+-- berikutnya tanpa menuntaskan seluruh tahap.
+create or replace function pg_temp.kerjakan_satu(p_uid uuid, p_career_id integer, p_jenis text)
+returns void language plpgsql as $$
+declare q record;
+begin
+  perform pg_temp.sebagai(p_uid);
+
+  -- Sudah ada yang selesai di jenis ini: tidak perlu menambah (aman diulang).
+  if exists (select 1 from public.quest_status(p_career_id) s
+              where s.group_kind = p_jenis and s.status = 'SELESAI') then
+    return;
+  end if;
+
+  select s.quest_key, s.status, k.mode into q
+  from public.quest_status(p_career_id) s
+  join public.quest_group_kinds k on k.code = s.group_kind
+  where s.group_kind = p_jenis and (s.bisa or s.status = 'DIAMBIL')
+  order by s.group_order, s.item_order
+  limit 1;
+  if not found then
+    raise exception 'akun_uji: tidak ada quest % yang bisa dikerjakan', p_jenis;
+  end if;
+
+  if q.mode = 'AMBIL' and q.status = 'BELUM' then
+    perform public.ambil_quest(q.quest_key);
+  end if;
+  perform * from public.selesaikan_quest(q.quest_key);
+end $$;
+
 -- Pengguna berprogres lengkap: profil, Career DNA, profesi, lalu quest.
 create or replace function pg_temp.siapkan(
   p_email text, p_nama text, p_sandi text, p_profesi text, p_jenis text[])
@@ -241,6 +277,40 @@ begin
   raise notice 'akun_uji: %', pg_temp.siapkan(
     'navika.lengkap@zdann.me', 'Penguji Lengkap', v_sandi, 'Akuntan / Auditor',
     array['EKSPLORASI','SOFT_SKILL','HARD_SKILL','TOOL','PENGALAMAN','BERKARIER']);
+
+  -- Mahasiswa S1 semester 3: Asah Pengalaman sudah terbuka (satu quest tools
+  -- selesai), tapi praktik magang masih terkunci syarat semester.
+  declare
+    v_uid uuid;
+    v_cid integer;
+  begin
+    v_uid := pg_temp.buat_akun('navika.semester3@zdann.me', 'Penguji Semester 3', v_sandi);
+    select id into v_cid from public.careers
+     where is_active and career_name = 'Frontend Developer';
+    if v_cid is null then
+      select id into v_cid from public.careers where is_active order by id limit 1;
+    end if;
+
+    update public.profiles set
+      full_name = 'Penguji Semester 3',
+      education_level_code = 'S1', graduation_status = 'sedang_studi',
+      grade_level = null, semester = 3, is_final_semester = false,
+      smk_concentration_id = null,
+      onboarding_completed_at = coalesce(onboarding_completed_at, now()),
+      updated_at = now()
+    where user_id = v_uid;
+
+    perform pg_temp.isi_dna(v_uid, v_cid);
+    perform pg_temp.sebagai(v_uid);
+    perform public.start_roadmap(v_cid);
+
+    perform pg_temp.kerjakan(v_uid, v_cid, array['EKSPLORASI']);
+    perform pg_temp.kerjakan_satu(v_uid, v_cid, 'SOFT_SKILL');
+    perform pg_temp.kerjakan_satu(v_uid, v_cid, 'TOOL');
+    perform public.sinkron_pencapaian();
+    perform public.sinkron_notifikasi();
+    raise notice 'akun_uji: navika.semester3@zdann.me — S1 semester 3, satu quest tools selesai';
+  end;
 end $$;
 
 -- ---------------------------------------------------------------------------
@@ -281,6 +351,20 @@ begin
                       where u.user_id = v_uid and u.code = a.code);
   if n > 0 then
     raise exception 'akun_uji: navika.lengkap masih punya % badge terkunci', n;
+  end if;
+
+  -- navika.semester3: magang terkunci, part-time dan organisasi terbuka
+  select id into v_uid from auth.users where email = 'navika.semester3@zdann.me';
+  perform set_config('request.jwt.claim.sub', v_uid::text, true);
+  perform set_config('request.jwt.claims', jsonb_build_object('sub', v_uid::text)::text, true);
+  select count(*) into n
+  from public.quest_status((select career_id from public.user_roadmaps
+                             where user_id = v_uid and status = 'AKTIF' limit 1)) s
+  where (s.quest_key like 'PENGALAMAN:%:MAGANG' and not s.bisa and s.grup_terbuka)
+     or (s.quest_key like 'PENGALAMAN:%:PARUH_WAKTU' and s.bisa)
+     or (s.quest_key like 'PENGALAMAN:%:ORGANISASI' and s.bisa);
+  if n <> 3 then
+    raise exception 'akun_uji: navika.semester3 tidak dalam keadaan yang diharapkan (% dari 3 syarat)', n;
   end if;
 
   raise notice 'akun_uji: semua akun sesuai permintaan';

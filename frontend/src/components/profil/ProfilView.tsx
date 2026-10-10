@@ -28,6 +28,7 @@ import {
   NotepadText,
   type LucideIcon,
 } from "lucide-react";
+import Sheet from "@/components/profesi/Sheet";
 import { pesanGalat } from "@/lib/quest";
 import {
   ambilNotifikasi,
@@ -206,8 +207,23 @@ export default function ProfilView() {
     }
   }
 
+  // Mengganti status lulus mengubah banyak hal sekaligus: perkiraan durasi
+  // roadmap, langkah jalur pendidikan, dan quest yang terbuka (magang, lamaran
+  // kerja). Karena itu ia diminta konfirmasi dulu; mengganti kelas atau
+  // semester saja tidak.
+  const [konfirmasi, setKonfirmasi] = useState(false);
+  const statusBerubah =
+    tab === "pendidikan" && !!data && status !== (data.graduation_status ?? "sedang_studi");
+
+  function tekanSimpan() {
+    if (!data || !bisaSimpan) return;
+    if (statusBerubah) setKonfirmasi(true);
+    else void simpan();
+  }
+
   async function simpan() {
     if (!data || !bisaSimpan) return;
+    setKonfirmasi(false);
     setMenyimpan(true);
     setGalat(null);
     try {
@@ -517,7 +533,7 @@ export default function ProfilView() {
 
             <button
               type="button"
-              onClick={simpan}
+              onClick={tekanSimpan}
               disabled={!bisaSimpan || menyimpan || mengunggah}
               className="flex w-full items-center justify-center gap-2 rounded-full bg-[#7033FF] py-3.5 text-[15px] font-semibold text-white transition-colors hover:bg-violet-700 disabled:bg-violet-300"
             >
@@ -527,6 +543,52 @@ export default function ProfilView() {
           </div>
         </div>
       )}
+
+      <Sheet
+        buka={konfirmasi}
+        onTutup={() => setKonfirmasi(false)}
+        judul="Ubah status pendidikan?"
+        garis={false}
+        footer={
+          <div
+            className="space-y-2.5 px-4 pb-5 pt-2 sm:px-6"
+            style={{ paddingBottom: "max(1.25rem, env(safe-area-inset-bottom))" }}
+          >
+            <button
+              type="button"
+              onClick={() => void simpan()}
+              className="w-full rounded-full bg-[#7033FF] py-3 text-[15px] font-medium text-white transition-colors hover:bg-violet-700"
+            >
+              Ya, simpan perubahan
+            </button>
+            <button
+              type="button"
+              onClick={() => setKonfirmasi(false)}
+              className="w-full rounded-full border border-slate-200 bg-white py-3 text-[15px] font-medium text-slate-900 shadow-sm transition-colors hover:bg-slate-50"
+            >
+              Batalkan
+            </button>
+          </div>
+        }
+      >
+        <div className="px-4 pb-5 pt-1 sm:px-6">
+          <p className="text-[14.5px] leading-relaxed text-slate-600">
+            Status Kamu akan diubah menjadi{" "}
+            <strong className="font-semibold text-slate-900">
+              {status === "sudah_lulus" ? "Sudah lulus" : "Sedang menempuh studi"}
+            </strong>
+            . Navika akan menghitung ulang roadmap-mu berdasarkan status ini:
+          </p>
+          <ul className="mt-3 list-disc space-y-1.5 pl-5 text-[13.5px] leading-relaxed text-slate-600">
+            <li>Perkiraan waktu menuju profesi pilihanmu</li>
+            <li>Status langkah di Jalur Pendidikan</li>
+            <li>Quest yang terbuka, seperti praktik magang dan kirim lamaran kerja</li>
+          </ul>
+          <p className="mt-3 text-[13px] leading-relaxed text-slate-500">
+            Quest yang sudah Kamu selesaikan dan XP-mu tidak berubah.
+          </p>
+        </div>
+      </Sheet>
     </div>
   );
 }

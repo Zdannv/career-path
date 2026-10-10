@@ -85,7 +85,10 @@ export default function AuthField({
       </div>
 
       {message && (
-        <p id={`${id}-message`} className="mt-1.5 text-sm text-[#525252] leading-snug">
+        <p
+          id={`${id}-message`}
+          className={`mt-1.5 text-sm leading-snug ${error ? "text-[#E54B4F]" : "text-[#525252]"}`}
+        >
           {message}
         </p>
       )}

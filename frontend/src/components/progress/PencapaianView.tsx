@@ -48,9 +48,12 @@ export default function PencapaianView() {
     };
   }, []);
 
-  const tampil = semua.filter((p) =>
-    tab === "semua" ? true : tab === "selesai" ? p.waktu != null : p.waktu == null,
-  );
+  // Di tab Semua, badge yang sudah terbuka didahulukan, baru yang masih
+  // terkunci; di dalam tiap kelompok urutannya tetap urutan desain. Array.sort
+  // stabil, jadi cukup membandingkan status terbukanya.
+  const tampil = semua
+    .filter((p) => (tab === "semua" ? true : tab === "selesai" ? p.waktu != null : p.waktu == null))
+    .sort((a, b) => Number(b.waktu != null) - Number(a.waktu != null));
 
   function kembali() {
     if (window.history.length > 1) router.back();

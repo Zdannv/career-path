@@ -19,6 +19,7 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { AppBottomNav, AppTopNav } from "@/components/explore/AppNav";
 import JalurPendidikan from "@/components/roadmap/JalurPendidikan";
+import { pesanGalat } from "@/lib/quest";
 import KartuProfesi from "@/components/roadmap/KartuProfesi";
 import TahapPersiapan from "@/components/roadmap/TahapPersiapan";
 import TabSwitch from "@/components/profesi/TabSwitch";
@@ -26,6 +27,7 @@ import {
   ambilJalur,
   ambilRoadmapState,
   batalkanJalur,
+  centangLangkah,
   simpanJalur,
   type Jalur,
   type RoadmapState,
@@ -87,6 +89,21 @@ export default function RoadmapView() {
       await muatJalur();
     } catch {
       setGalat("Pilihan jalur gagal disimpan.");
+    } finally {
+      setSibuk(false);
+    }
+  }
+
+  async function centang(pathId: number, urutan: number, selesai: boolean) {
+    setSibuk(true);
+    setGalat(null);
+    try {
+      await centangLangkah(pathId, urutan, selesai);
+      // Dimuat ulang dari server: mencentang satu langkah mengubah kotak mana
+      // yang boleh ditekan berikutnya, dan itu dihitung database.
+      await muatJalur();
+    } catch (e) {
+      setGalat(pesanGalat(e));
     } finally {
       setSibuk(false);
     }
@@ -160,7 +177,7 @@ export default function RoadmapView() {
               ) : jalur === null ? (
                 <div className="h-64 animate-pulse rounded-2xl bg-slate-100" aria-busy />
               ) : (
-                <JalurPendidikan jalur={jalur} sibuk={sibuk} onPilih={pilih} onUbah={ubah} />
+                <JalurPendidikan jalur={jalur} sibuk={sibuk} onPilih={pilih} onUbah={ubah} onCentang={centang} />
               )}
             </div>
           </>

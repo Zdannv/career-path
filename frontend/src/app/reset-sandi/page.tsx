@@ -158,6 +158,7 @@ export default function ResetSandiPage() {
                   placeholder="Buat kata sandi baru"
                   autoComplete="new-password"
                   hint={PASSWORD_HINT}
+                  error={touched.password || password.length > 0 ? passwordError : null}
                 />
 
                 <AuthField

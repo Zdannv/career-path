@@ -9,8 +9,10 @@
  * mendarat di tempat pengguna berhenti.
  *
  * Pemilih tahap di bawah hero memakai daftar dari roadmap_state(), termasuk
- * status terkuncinya, supaya pengguna tidak bisa melompat ke tahap yang belum
- * terbuka lewat mengubah URL sendiri — tombolnya memang tidak bisa ditekan.
+ * status terkuncinya. Tahap yang masih terkunci tetap bisa dibuka untuk dilihat
+ * isinya — Journey itu layar "apa yang perlu Kamu ketahui", dan melihat apa
+ * yang menunggu di depan tidak merugikan siapa pun. Yang tetap terkunci adalah
+ * quest-nya: itu dijaga database di layar Quest, bukan di sini.
  */
 
 import { useEffect, useState } from "react";
@@ -127,14 +129,13 @@ export default function JourneyView() {
                     <button
                       key={t.kode}
                       type="button"
-                      disabled={kunci}
                       onClick={() => setPilih(t.kode)}
                       aria-current={on ? "page" : undefined}
                       className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-2 text-[12.5px] font-medium transition-colors ${
                         on
                           ? "bg-violet-600 text-white"
                           : kunci
-                            ? "bg-slate-100 text-slate-400"
+                            ? "bg-slate-100 text-slate-400 hover:bg-slate-200"
                             : "bg-slate-100 text-slate-600 hover:bg-slate-200"
                       }`}
                     >
@@ -144,6 +145,14 @@ export default function JourneyView() {
                   );
                 })}
               </nav>
+            )}
+
+            {daftar.find((t) => t.kode === tahap.stage_code)?.status === "TERKUNCI" && (
+              <p className="mt-4 flex items-start gap-2 rounded-xl bg-slate-100 px-4 py-3 text-[13px] leading-relaxed text-slate-600">
+                <Lock className="mt-0.5 size-4 shrink-0" aria-hidden />
+                Tahap ini masih terkunci. Isinya bisa Kamu lihat dulu, tapi quest-nya baru terbuka
+                setelah quest di tahap sebelumnya dikerjakan.
+              </p>
             )}
 
             <IsiTahap tahap={tahap} />

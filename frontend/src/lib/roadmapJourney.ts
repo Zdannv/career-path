@@ -65,7 +65,14 @@ export type Langkah = {
   judul: string;
   catatan: string | null;
   jenis: JenisLangkah;
+  /** Gabungan dari profil dan centang pengguna. */
   status: StatusItem;
+  /** Selesai menurut data pendidikan di profil; tidak bisa diubah dari sini. */
+  otomatis: boolean;
+  /** Dicentang pengguna sendiri. */
+  dicentang: boolean;
+  /** Kotaknya boleh diubah sekarang: langkah sebelumnya sudah selesai. */
+  bisa: boolean;
 };
 
 export type Jalur = {
@@ -144,6 +151,23 @@ export async function simpanJalur(careerId: number, pathId: number): Promise<voi
   const { error } = await supabase.rpc("pilih_jalur", {
     p_career_id: careerId,
     p_path_id: pathId,
+  });
+  if (error) throw error;
+}
+
+/**
+ * Centang atau lepas satu langkah jalur pendidikan (0040).
+ * Urutannya dijaga database: langkah sebelumnya harus sudah selesai.
+ */
+export async function centangLangkah(
+  pathId: number,
+  urutan: number,
+  selesai: boolean,
+): Promise<void> {
+  const { error } = await supabase.rpc("centang_langkah_jalur", {
+    p_path_id: pathId,
+    p_step_order: urutan,
+    p_selesai: selesai,
   });
   if (error) throw error;
 }

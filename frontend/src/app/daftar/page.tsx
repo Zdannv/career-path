@@ -51,8 +51,12 @@ export default function DaftarPage() {
   // Errors only surface after a field is left or the form is submitted, so a
   // pristine form still shows the neutral state from the design.
   const shownEmailError = touched.email ? emailError : null;
+  // Kata sandi dinilai begitu ada yang diketik, tidak menunggu kolomnya
+  // ditinggalkan: syaratnya sudah tertulis di bawah kolom, jadi pengguna perlu
+  // tahu saat itu juga bahwa yang diketiknya belum memenuhi.
+  const shownPasswordError = touched.password || password.length > 0 ? passwordError : null;
   const shownConfirmError = touched.confirm ? confirmError : null;
-  const hasVisibleError = Boolean(shownEmailError || shownConfirmError);
+  const hasVisibleError = Boolean(shownEmailError || shownPasswordError || shownConfirmError);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -140,6 +144,7 @@ export default function DaftarPage() {
                 placeholder="Buat kata sandi kamu"
                 autoComplete="new-password"
                 hint={PASSWORD_HINT}
+                error={shownPasswordError}
               />
 
               <AuthField
