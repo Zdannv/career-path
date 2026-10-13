@@ -255,6 +255,15 @@ export default function ProfesiDetail({
                 </Blok>
 
                 <Blok judul="Lisensi & Sertifikasi">
+                  {/* Tidak semua profesi mensyaratkan lisensi. Mengatakannya terus
+                      terang lebih baik daripada mengisinya dengan sertifikat
+                      generik yang tidak berhubungan dengan profesinya. */}
+                  {lisensi.length === 0 && (
+                    <p className="rounded-2xl bg-slate-50 px-4 py-3.5 text-[13px] leading-relaxed text-slate-500">
+                      Profesi ini tidak mensyaratkan lisensi atau sertifikasi khusus. Pengalaman
+                      dan portofolio lebih menentukan.
+                    </p>
+                  )}
                   <ul className="flex flex-col gap-2.5">
                     {(semuaLisensi ? lisensi : lisensi.slice(0, TAMPIL_AWAL)).map((l) => (
                       <li
@@ -279,7 +288,7 @@ export default function ProfesiDetail({
                       </li>
                     ))}
                   </ul>
-                  {!semuaLisensi && (
+                  {!semuaLisensi && lisensi.length > TAMPIL_AWAL && (
                     <LihatSemua
                       label="Lihat Semua"
                       sisa={lisensi.length - TAMPIL_AWAL}

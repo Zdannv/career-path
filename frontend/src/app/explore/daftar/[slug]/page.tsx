@@ -1,13 +1,16 @@
+"use client";
+
+/** Daftar lengkap satu baris Explore: paling-diminati, program-studi, match, aktivitas. */
+
+import { useParams } from "next/navigation";
 import RequireAuth from "@/components/RequireAuth";
-import SoonScreen from "@/components/explore/SoonScreen";
+import DaftarBaris from "@/components/explore/DaftarBaris";
 
 export default function Page() {
+  const params = useParams<{ slug: string }>();
   return (
-    <RequireAuth>
-      <SoonScreen
-        title="Daftar Profesi"
-        note="Halaman daftar lengkap untuk baris ini belum dibangun. Sementara ini, geser kartunya langsung di Explore, atau pakai pencarian berfilter."
-      />
+    <RequireAuth pesan="Menyiapkan daftar profesi…">
+      <DaftarBaris slug={params?.slug ?? ""} />
     </RequireAuth>
   );
 }
