@@ -17,6 +17,7 @@ import {
 import { supabase } from "@/lib/supabaseClient";
 import { postLoginDestination, HOME_AFTER_ONBOARDING } from "@/lib/postAuth";
 import type { User } from "@supabase/supabase-js";
+import KampusRelevanLanding from "@/components/landing/KampusRelevanLanding";
 
 /** lucide-react v1 tidak lagi membawa ikon merek, jadi Instagram digambar di sini. */
 function IkonInstagram({ className = "" }: { className?: string }) {
@@ -279,6 +280,8 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
+
+      <KampusRelevanLanding />
 
       {/* Closing CTA */}
       <section className="px-4 sm:px-6 lg:px-8 py-16 sm:py-20">
