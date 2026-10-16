@@ -281,7 +281,7 @@ export default function LandingPage() {
       </section>
 
       {/* Closing CTA */}
-      <section className="px-4 sm:px-6 lg:px-8 pb-16 sm:pb-20">
+      <section className="px-4 sm:px-6 lg:px-8 py-16 sm:py-20">
         <div className="max-w-6xl mx-auto overflow-hidden rounded-3xl bg-gradient-to-r from-indigo-700 via-purple-700 to-indigo-800 px-6 sm:px-10 pt-10 sm:py-12 flex flex-col sm:flex-row sm:items-center gap-6 sm:gap-8 text-center sm:text-left">
           {/* Ilustrasinya jadi anak flex, bukan lapisan melayang: di layar
               sedang teksnya sempat tertimpa gunung waktu memakai posisi absolut. */}
