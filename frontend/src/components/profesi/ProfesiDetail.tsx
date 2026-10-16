@@ -34,11 +34,13 @@ import {
   ambilKunciProfesi,
   getCareerCompetency,
   getCareerInsight,
+  getKampusRelevan,
   gajiPanjang,
   pilihProfesi,
   type CareerCompetency,
   type CareerDetail,
   type CareerInsight,
+  type KampusRelevan,
   type KunciProfesi,
   type SkillGap,
 } from "@/lib/careerDetail";
@@ -71,6 +73,7 @@ export default function ProfesiDetail({
   const [tab, setTab] = useState<Tab>("analisa");
   const [komp, setKomp] = useState<CareerCompetency | null>(kompAwal);
   const [insight, setInsight] = useState<CareerInsight | null>(insightAwal);
+  const [kampus, setKampus] = useState<KampusRelevan[] | null>(null);
   const [memuatTab, setMemuatTab] = useState(false);
   const [gapBuka, setGapBuka] = useState(false);
   const [gapTab, setGapTab] = useState<"hard" | "soft" | "tools">("hard");
@@ -83,6 +86,9 @@ export default function ProfesiDetail({
   const [galat, setGalat] = useState<string | null>(null);
 
   useEffect(() => {
+    if (tab === "skill" && kampus === null) {
+      void getKampusRelevan(detail.career_id).then(setKampus);
+    }
     if (tab === "skill" && !komp) {
       setMemuatTab(true);
       void getCareerCompetency(detail.career_id).then((d) => {
@@ -97,7 +103,7 @@ export default function ProfesiDetail({
         setMemuatTab(false);
       });
     }
-  }, [tab, komp, insight, detail.career_id]);
+  }, [tab, komp, insight, kampus, detail.career_id]);
 
   const [kunci, setKunci] = useState<KunciProfesi | null>(null);
   useEffect(() => {
@@ -199,6 +205,36 @@ export default function ProfesiDetail({
                     ))}
                   </ul>
                 </Blok>
+
+                {kampus && kampus.length > 0 && (
+                  <Blok
+                    judul="Kampus dengan Program Studi Relevan"
+                    subjudul="Kampus yang menyelenggarakan program studi untuk profesi ini, akreditasi tertinggi lebih dulu"
+                  >
+                    <ul>
+                      {kampus.map((k) => (
+                        <BarisIsi
+                          key={k.pt_name}
+                          utama={k.pt_name}
+                          penjelas={`${k.prodi} (${k.jenjang}) · Akreditasi ${k.akreditasi}`}
+                          kanan={
+                            k.negeri ? (
+                              <span className="shrink-0 rounded-full bg-violet-50 px-2 py-0.5 text-[11px] font-semibold text-violet-700">
+                                Negeri
+                              </span>
+                            ) : null
+                          }
+                        />
+                      ))}
+                    </ul>
+                    <p className="mt-2 text-[11.5px] leading-relaxed text-slate-400">
+                      {kampus[0].n_kampus > kampus.length
+                        ? `dan ${kampus[0].n_kampus - kampus.length} kampus lain. `
+                        : ""}
+                      Sumber: direktori akreditasi BAN-PT, diakses 16 Oktober 2026.
+                    </p>
+                  </Blok>
+                )}
 
                 <Blok judul="Soft Skill" keterangan="(Ketrampilan non teknis)">
                   <ul>

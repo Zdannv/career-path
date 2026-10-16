@@ -195,6 +195,23 @@ export async function getCareerInsight(id: number): Promise<CareerInsight | null
   return data as CareerInsight;
 }
 
+/** Kampus yang menyelenggarakan program studi untuk profesi ini (sumber: BAN-PT, 0043). */
+export type KampusRelevan = {
+  pt_name: string;
+  prodi: string;
+  jenjang: string;
+  akreditasi: string;
+  negeri: boolean;
+  n_kampus: number;
+};
+
+export async function getKampusRelevan(id: number, limit = 6): Promise<KampusRelevan[]> {
+  const { data, error } = await supabase.rpc("kampus_relevan", { p_career_id: id, p_limit: limit });
+  // Daftar kampus hanya pelengkap: kalau RPC-nya belum dipasang, bagian ini cukup tidak tampil.
+  if (error || !data) return [];
+  return data as KampusRelevan[];
+}
+
 export async function getSkillGap(id: number): Promise<SkillGap | null> {
   const { data, error } = await supabase
     .rpc("career_skill_gap", { p_career_id: id })
