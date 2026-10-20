@@ -24,6 +24,7 @@ import {
   CircleCheck,
   Layers,
   Loader2,
+  LogOut,
   Medal,
   NotepadText,
   type LucideIcon,
@@ -45,6 +46,7 @@ import {
   type ProfilState,
 } from "@/lib/profil";
 import { ROUTES } from "@/lib/routes";
+import { supabase } from "@/lib/supabaseClient";
 
 type Tab = "profil" | "pendidikan" | "notifikasi";
 
@@ -177,6 +179,8 @@ export default function ProfilView() {
 
   const berubahProfil =
     !!data && (nama.trim() !== (data.full_name ?? "").trim() || avatar !== data.avatar_url);
+  // Status lulus yang sudah tersimpan dikunci (lihat tab Pendidikan).
+  const sudahLulus = data?.graduation_status === "sudah_lulus";
   const berubahPendidikan =
     !!data &&
     (status !== (data.graduation_status ?? "sedang_studi") ||
@@ -384,6 +388,19 @@ export default function ProfilView() {
                 className="mt-3 w-full rounded-full bg-slate-100 px-4 py-3 text-[14.5px] text-slate-400 outline-none"
               />
             </div>
+
+            {/* Satu-satunya tombol keluar di aplikasi selain menu ponsel di Navbar. */}
+            <button
+              type="button"
+              onClick={async () => {
+                await supabase.auth.signOut();
+                router.push(ROUTES.landing);
+              }}
+              className="flex w-full items-center justify-center gap-2 rounded-full border border-red-200 py-3 text-[14.5px] font-semibold text-red-600 transition-colors hover:bg-red-50"
+            >
+              <LogOut className="size-4" aria-hidden />
+              Keluar dari Akun
+            </button>
           </section>
         ) : tab === "pendidikan" ? (
           <section className="mt-6 space-y-4">
@@ -399,12 +416,17 @@ export default function ProfilView() {
               <p className="text-[14.5px] text-slate-500">{data.study_label ?? "Belum diisi"}</p>
             </Kotak>
 
-            <Kotak label="Status Saat Ini">
+            {/* Status yang sudah tersimpan "Sudah lulus" tidak bisa dikembalikan: lulus
+                tidak bisa dibatalkan, dan roadmap pasca-lulus sudah dihitung dari status itu. */}
+            <Kotak label="Status Saat Ini" kunci={sudahLulus}>
               <select
                 value={status}
                 onChange={(e) => setStatus(e.target.value as typeof status)}
+                disabled={sudahLulus}
                 aria-label="Status saat ini"
-                className="w-full bg-transparent text-[14.5px] text-slate-900 outline-none"
+                className={`w-full bg-transparent text-[14.5px] outline-none ${
+                  sudahLulus ? "appearance-none text-slate-500" : "text-slate-900"
+                }`}
               >
                 <option value="sedang_studi">Sedang menempuh studi</option>
                 <option value="sudah_lulus">Sudah lulus</option>
@@ -459,8 +481,9 @@ export default function ProfilView() {
               ))}
 
             <p className="px-1 text-[12.5px] leading-relaxed text-slate-400">
-              Jenjang dan jurusan menentukan seluruh roadmap, jadi keduanya tidak bisa diubah dari
-              sini.
+              {sudahLulus
+                ? "Jenjang, jurusan, dan status lulus menentukan seluruh roadmap, jadi ketiganya tidak bisa diubah dari sini."
+                : "Jenjang dan jurusan menentukan seluruh roadmap, jadi keduanya tidak bisa diubah dari sini."}
             </p>
           </section>
         ) : (
