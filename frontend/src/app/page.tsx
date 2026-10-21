@@ -16,8 +16,10 @@ import {
 } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { postLoginDestination, HOME_AFTER_ONBOARDING } from "@/lib/postAuth";
+import { ROUTES } from "@/lib/routes";
 import type { User } from "@supabase/supabase-js";
 import KampusRelevanLanding from "@/components/landing/KampusRelevanLanding";
+import KnowledgeGraphLanding from "@/components/landing/KnowledgeGraphLanding";
 
 /** lucide-react v1 tidak lagi membawa ikon merek, jadi Instagram digambar di sini. */
 function IkonInstagram({ className = "" }: { className?: string }) {
@@ -278,6 +280,8 @@ export default function LandingPage() {
         </div>
       </section>
 
+      <KnowledgeGraphLanding />
+
       <KampusRelevanLanding />
 
       {/* Closing CTA */}
@@ -338,6 +342,12 @@ export default function LandingPage() {
             <div className="flex items-center gap-3">
               <Globe className="w-4 h-4" />
               <IkonInstagram className="w-4 h-4" />
+            </div>
+            <div className="flex items-center gap-4 text-xs font-medium text-slate-500">
+              <Link href={ROUTES.bantuan} className="hover:text-slate-900">Support</Link>
+              <Link href={ROUTES.feedback} className="hover:text-slate-900">Feedback</Link>
+              <Link href={ROUTES.syaratLayanan} className="hover:text-slate-900">Syarat</Link>
+              <Link href={ROUTES.kebijakanPrivasi} className="hover:text-slate-900">Privasi</Link>
             </div>
             <p className="text-xs text-slate-400">
               Brewed with creativity and love by Sub1 Studio. &copy; 2026. All rights reserved.

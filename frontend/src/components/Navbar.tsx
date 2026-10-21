@@ -27,10 +27,12 @@ import {
   ChevronRight,
   ChevronsUpDown,
   LayoutDashboard,
+  LifeBuoy,
   Map,
   Menu,
   PieChart,
   ScrollText,
+  Send,
   X,
   type LucideIcon,
 } from "lucide-react";
@@ -48,6 +50,12 @@ const MENU_PLATFORM: { label: string; href: string; icon: LucideIcon }[] = [
   { label: "Journey", href: ROUTES.journey, icon: Map },
   { label: "Quest", href: ROUTES.quest, icon: ScrollText },
   { label: "Progress", href: ROUTES.progress, icon: PieChart },
+];
+
+/** Bantuan terbuka untuk semua orang, termasuk yang belum (atau tidak bisa) masuk. */
+const MENU_BANTUAN: { label: string; href: string; icon: LucideIcon }[] = [
+  { label: "Support", href: ROUTES.bantuan, icon: LifeBuoy },
+  { label: "Feedback", href: ROUTES.feedback, icon: Send },
 ];
 
 /** Lockup "Navika | Career path journey" yang sama dengan halaman auth. */
@@ -258,6 +266,19 @@ export default function Navbar() {
           </ul>
 
           <div className="mt-auto">
+            <ul className="mb-4 space-y-1">
+              {MENU_BANTUAN.map(({ label, href, icon: Icon }) => (
+                <li key={label}>
+                  <Link
+                    href={href}
+                    className="flex items-center gap-3 rounded-lg px-1 py-2.5 text-base text-slate-900 hover:bg-slate-100"
+                  >
+                    <Icon className="size-5 text-slate-700" />
+                    {label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
             {user ? (
               <div className="space-y-2">
                 <Link href={ROUTES.profil} className="flex items-center gap-3 rounded-xl px-1 py-2 hover:bg-slate-100">

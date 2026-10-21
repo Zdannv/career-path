@@ -20,6 +20,8 @@ export const ROUTES = {
   resetSandi: "/reset-sandi",
   syaratLayanan: "/syarat-layanan",
   kebijakanPrivasi: "/kebijakan-privasi",
+  bantuan: "/bantuan",
+  feedback: "/feedback",
 
   // alur yang harus diselesaikan
   onboarding: "/onboarding",
