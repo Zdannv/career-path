@@ -9,7 +9,7 @@ import { supabase, setRememberMe } from "@/lib/supabaseClient";
 import { pesanAuth } from "@/lib/pesanAuth";
 import { postLoginDestination } from "@/lib/postAuth";
 import { ROUTES } from "@/lib/routes";
-import AuthBrandHeader from "@/components/AuthBrandHeader";
+import AuthBrandHeader, { AuthFooterMobile } from "@/components/AuthBrandHeader";
 import AuthPageShell from "@/components/AuthPageShell";
 import AuthField from "@/components/AuthField";
 
@@ -85,9 +85,21 @@ function LoginForm() {
 
   return (
     <AuthPageShell cancelHref={ROUTES.landing}>
-      <AuthBrandHeader />
+      <AuthBrandHeader className="hidden sm:flex" />
 
-      <div className="mx-auto w-full max-w-[1013px] px-5 sm:px-11 lg:px-0">
+      {/* Ponsel: ilustrasi menggantikan lockup di atas formulir. */}
+      <div className="relative h-[200px] overflow-hidden sm:hidden">
+        <Image
+          src="/auth/login-illustration.webp"
+          alt={ILLUSTRATION_ALT}
+          fill
+          sizes="100vw"
+          className="object-cover object-center"
+          priority
+        />
+      </div>
+
+      <div className="mx-auto w-full max-w-[1013px] px-5 pt-6 sm:px-11 sm:pt-0 lg:px-0">
         <div className="lg:grid lg:grid-cols-[1.61fr_1fr] lg:overflow-hidden lg:rounded-3xl lg:bg-white lg:shadow-xl">
           <LoginIllustrationPanel className="hidden lg:block min-h-[520px]" />
 
@@ -95,12 +107,12 @@ function LoginForm() {
             <h1 className="text-2xl font-bold tracking-tight text-slate-900">
               Masuk Akun Kamu
             </h1>
-            <p className="mt-1.5 text-sm text-[#525252] leading-relaxed">
+            <p className="mt-1.5 hidden text-sm text-[#525252] leading-relaxed sm:block">
               Masuk ke akun Kamu untuk melanjutkan aktivitas dan melihat pembaruan career
               path journey Kamu.
             </p>
 
-            <form onSubmit={handleSubmit} className="mt-8 space-y-4" noValidate>
+            <form onSubmit={handleSubmit} className="mt-6 space-y-4 sm:mt-8" noValidate>
               <AuthField
                 label="Email"
                 icon={Mail}
@@ -171,10 +183,11 @@ function LoginForm() {
           alt={ILLUSTRATION_ALT}
           width={1376}
           height={933}
-          className="lg:hidden mt-10 w-full h-auto rounded-2xl"
+          className="hidden sm:block lg:hidden mt-10 w-full h-auto rounded-2xl"
         />
 
-        <div className="h-10" />
+        <AuthFooterMobile />
+        <div className="hidden h-10 sm:block" />
       </div>
     </AuthPageShell>
   );

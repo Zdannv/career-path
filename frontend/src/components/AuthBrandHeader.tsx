@@ -4,9 +4,9 @@ import Image from "next/image";
 import { ROUTES } from "@/lib/routes";
 
 /** Centered "Navika | Career path journey" lockup shown above the auth cards. */
-export default function AuthBrandHeader() {
+export default function AuthBrandHeader({ className = "" }: { className?: string }) {
   return (
-    <div className="flex items-center justify-center gap-4 py-8 sm:py-10">
+    <div className={`flex items-center justify-center gap-4 py-8 sm:py-10 ${className}`}>
       <Link href={ROUTES.landing} className="cursor-pointer">
         <Image
           src="/navika-logo.png"
@@ -25,5 +25,17 @@ export default function AuthBrandHeader() {
         <div className="text-sm text-slate-400">Sub1 Studio</div>
       </div>
     </div>
+  );
+}
+
+/**
+ * Penutup halaman auth versi ponsel. Di ponsel lockup atas diganti ilustrasi,
+ * jadi nama produk pindah ke sini.
+ */
+export function AuthFooterMobile() {
+  return (
+    <p className="mt-16 border-t border-slate-200 py-5 text-center text-sm text-slate-600 sm:hidden">
+      <span className="font-bold text-slate-900">Navika</span> - Career Path Journey
+    </p>
   );
 }

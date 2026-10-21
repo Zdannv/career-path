@@ -7,17 +7,17 @@ import { Mail, Lock, AlertCircle } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { pesanAuth } from "@/lib/pesanAuth";
 import { siteUrl } from "@/lib/siteUrl";
-import AuthBrandHeader from "@/components/AuthBrandHeader";
+import Image from "next/image";
+import AuthBrandHeader, { AuthFooterMobile } from "@/components/AuthBrandHeader";
 import AuthPageShell from "@/components/AuthPageShell";
 import AuthField from "@/components/AuthField";
 import { ROUTES } from "@/lib/routes";
 import {
   SignupIllustrationPanel,
   SignupIllustrationBlock,
-  SignupIllustrationCollapsible,
 } from "@/components/SignupIllustration";
 
-const EMAIL_HINT = "Gunakan format email yang benar, contoh: nama@domain.com";
+const EMAIL_HINT = "Format alamat email tidak valid. Silakan periksa kembali";
 const PASSWORD_HINT = "Minimal 8 karakter dengan kombinasi huruf dan angka.";
 
 function validateEmail(value: string): string | null {
@@ -46,7 +46,9 @@ export default function DaftarPage() {
     ? "Email ini sudah terdaftar. Coba masuk atau gunakan email lain."
     : validateEmail(email);
   const passwordError = validatePassword(password);
-  const confirmError = confirm !== password ? "Konfirmasi sandi tidak sesuai" : null;
+  const confirmError = confirm !== password
+      ? "Pastikan isian kata sandi dan konfirmasi kata sandi Kamu sama."
+      : null;
 
   // Errors only surface after a field is left or the form is submitted, so a
   // pristine form still shows the neutral state from the design.
@@ -103,9 +105,21 @@ export default function DaftarPage() {
 
   return (
     <AuthPageShell cancelHref="/">
-      <AuthBrandHeader />
+      <AuthBrandHeader className="hidden sm:flex" />
 
-      <div className="mx-auto w-full max-w-[1013px] px-5 sm:px-11 lg:px-0">
+      {/* Ponsel: ilustrasi menggantikan lockup di atas formulir. */}
+      <div className="relative h-[180px] overflow-hidden sm:hidden">
+        <Image
+          src="/auth/signup-illustration-tablet.webp"
+          alt="Mulai perjalanan kariermu bersama Navika"
+          fill
+          sizes="100vw"
+          className="object-cover object-center"
+          priority
+        />
+      </div>
+
+      <div className="mx-auto w-full max-w-[1013px] px-5 pt-6 sm:px-11 sm:pt-0 lg:px-0">
         <div className="lg:grid lg:grid-cols-[1.61fr_1fr] lg:overflow-hidden lg:rounded-3xl lg:bg-white lg:shadow-xl">
           <SignupIllustrationPanel className="hidden lg:block min-h-[574px]" />
 
@@ -113,12 +127,12 @@ export default function DaftarPage() {
             <h1 className="text-2xl font-bold tracking-tight text-slate-900">
               Buat Akun Kamu
             </h1>
-            <p className="mt-1.5 text-sm text-[#525252] leading-relaxed">
+            <p className="mt-1.5 hidden text-sm text-[#525252] leading-relaxed sm:block">
               Mulai perjalanan karier Kamu bersama Navika dan dapatkan rekomendasi karier
               yang sesuai dengan minat, keahlian, dan tujuan Kamu.
             </p>
 
-            <form onSubmit={handleSubmit} className="mt-8 space-y-4" noValidate>
+            <form onSubmit={handleSubmit} className="mt-6 space-y-4 sm:mt-8" noValidate>
               <AuthField
                 label="Email"
                 icon={Mail}
@@ -171,7 +185,7 @@ export default function DaftarPage() {
                 disabled={submitting || hasVisibleError}
                 className="w-full rounded-full py-3 text-sm font-semibold text-white transition-colors cursor-pointer bg-[#7033FF] hover:bg-[#5f27e6] disabled:bg-[#B698FE] disabled:cursor-not-allowed"
               >
-                {submitting ? "Membuat akun..." : "Daftar"}
+                {submitting ? "Membuat akun..." : "Buat Akun"}
               </button>
             </form>
 
@@ -187,11 +201,7 @@ export default function DaftarPage() {
         {/* Tablet keeps the wide artwork, but below the form instead of beside it. */}
         <SignupIllustrationBlock className="hidden sm:block lg:hidden mt-10 rounded-2xl" />
 
-        <div className="sm:hidden mt-10">
-          <SignupIllustrationCollapsible />
-        </div>
-
-        <p className="py-8 text-center text-sm text-[#525252]">
+        <p className="pt-8 text-center text-xs text-[#525252] sm:py-8 sm:text-sm">
           Dengan membuat akun, Kamu telah menyetujui{" "}
           <Link href={ROUTES.syaratLayanan} className="text-[#1E69DC] cursor-pointer">
             Syarat Layanan
@@ -202,6 +212,8 @@ export default function DaftarPage() {
           </Link>
           .
         </p>
+
+        <AuthFooterMobile />
       </div>
     </AuthPageShell>
   );

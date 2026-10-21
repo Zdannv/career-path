@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Mail, Undo2, AlertCircle } from "lucide-react";
@@ -16,12 +16,26 @@ import { ROUTES } from "@/lib/routes";
 const EMAIL_HINT = "Gunakan format email yang benar, contoh: nama@domain.com";
 const ILLUSTRATION_ALT = "Lupa kata sandi";
 
+/** Jeda sebelum link reset boleh diminta lagi, sesuai desain (02:00). */
+const RESEND_COOLDOWN_SECONDS = 120;
+
+function formatCountdown(total: number): string {
+  return `${String(Math.floor(total / 60)).padStart(2, "0")}:${String(total % 60).padStart(2, "0")}`;
+}
+
 export default function LupaSandiPage() {
   const [email, setEmail] = useState("");
   const [touched, setTouched] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [sent, setSent] = useState(false);
+  const [secondsLeft, setSecondsLeft] = useState(0);
+
+  useEffect(() => {
+    if (secondsLeft <= 0) return;
+    const timer = setTimeout(() => setSecondsLeft((s) => s - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [secondsLeft]);
 
   const emailError = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim()) ? null : EMAIL_HINT;
   const shownEmailError = touched ? emailError : null;
@@ -37,6 +51,7 @@ export default function LupaSandiPage() {
         setFormError(pesanAuth(error));
         return false;
       }
+      setSecondsLeft(RESEND_COOLDOWN_SECONDS);
       return true;
     } catch (err) {
       setFormError(
@@ -124,7 +139,7 @@ export default function LupaSandiPage() {
 
             <Link
               href={ROUTES.login}
-              className="mt-5 flex items-center justify-center gap-2 text-sm font-semibold text-slate-900 hover:text-[#7033FF] transition-colors cursor-pointer"
+              className="mt-3 flex w-full items-center justify-center gap-2 rounded-full bg-slate-100 py-3 text-sm font-semibold text-slate-900 hover:bg-slate-200 transition-colors cursor-pointer"
             >
               <Undo2 className="w-4 h-4" />
               kembali ke Halaman Login
@@ -142,8 +157,9 @@ export default function LupaSandiPage() {
           imageAlt="Email reset kata sandi terkirim"
           heading="Cek Email Kamu!"
           description="kami telah mengirimkan link email reset kata sandi ke email Kamu."
-          actionLabel="Kirim Ulang"
+          actionLabel={secondsLeft > 0 ? `Kirim Ulang (${formatCountdown(secondsLeft)})` : "Kirim Ulang"}
           actionPending={submitting}
+          actionDisabled={secondsLeft > 0}
           onAction={() => void sendResetLink()}
           onClose={() => setSent(false)}
         />

@@ -223,6 +223,19 @@ export default function StudyProgramCombobox({
     setQuery("");
   };
 
+  /** Bagian nama yang cocok dengan ketikan ditebalkan, seperti desain. */
+  const sorot = (nama: string) => {
+    const i = q.length >= 2 ? nama.toLowerCase().indexOf(q.toLowerCase()) : -1;
+    if (i < 0) return nama;
+    return (
+      <>
+        {nama.slice(0, i)}
+        <strong className="font-bold">{nama.slice(i, i + q.length)}</strong>
+        {nama.slice(i + q.length)}
+      </>
+    );
+  };
+
   const Row = ({ p }: { p: StudyProgram }) => (
     <li>
       <button
@@ -230,7 +243,7 @@ export default function StudyProgramCombobox({
         onClick={() => pick(p)}
         className="flex w-full cursor-pointer items-center justify-between gap-3 rounded-lg px-3 py-2.5 text-left text-sm text-slate-900 transition-colors hover:bg-[#EEF2FF]"
       >
-        <span className="truncate">{p.name_id}</span>
+        <span className="truncate">{sorot(p.name_id)}</span>
         {value.id === p.id && <Check className="h-4 w-4 shrink-0 text-[#7033FF]" />}
       </button>
     </li>
@@ -323,7 +336,11 @@ export default function StudyProgramCombobox({
         <>
           {/* Mobile: bottom sheet berlatar gelap. Sudah fixed, jadi tidak
               terpotong induk mana pun — tidak perlu portal. */}
-          <div className="fixed inset-0 z-40 bg-slate-900/60 sm:hidden" aria-hidden />
+          <div
+            className="fixed inset-0 z-40 bg-slate-900/60 sm:hidden"
+            aria-hidden
+            onClick={() => setOpen(false)}
+          />
           <div className="fixed inset-x-0 bottom-0 z-50 rounded-t-2xl bg-white shadow-2xl sm:hidden">
             {panel()}
           </div>

@@ -69,7 +69,9 @@ export default function ResetSandiPage() {
   }, []);
 
   const passwordError = validatePassword(password);
-  const confirmError = confirm !== password ? "Konfirmasi sandi tidak sesuai" : null;
+  const confirmError = confirm !== password
+      ? "Pastikan isian kata sandi dan konfirmasi kata sandi Kamu sama."
+      : null;
   const shownConfirmError = touched.confirm ? confirmError : null;
   const canSubmit = !passwordError && !confirmError && !submitting;
 
@@ -182,10 +184,12 @@ export default function ResetSandiPage() {
 
                 <hr className="!mt-8 border-slate-200" />
 
-                <div className="flex items-center justify-end gap-5 !mt-6">
+                {/* Ponsel dan tablet: dua tombol penuh bertumpuk, simpan di atas.
+                    Desktop: sejajar rata kanan. */}
+                <div className="flex flex-col-reverse gap-3 !mt-6 lg:flex-row lg:items-center lg:justify-end lg:gap-5">
                   <Link
                     href={ROUTES.login}
-                    className="inline-flex items-center gap-2 text-sm font-semibold text-slate-900 hover:text-[#7033FF] transition-colors cursor-pointer"
+                    className="inline-flex items-center justify-center gap-2 rounded-full bg-slate-100 py-3 text-sm font-semibold text-slate-900 hover:bg-slate-200 transition-colors cursor-pointer lg:bg-transparent lg:py-0 lg:hover:bg-transparent lg:hover:text-[#7033FF]"
                   >
                     <X className="w-4 h-4" />
                     Batalkan
@@ -210,7 +214,7 @@ export default function ResetSandiPage() {
       {done && (
         <AuthDialog
           title="Berhasil!"
-          imageSrc="/auth/reset-password.webp"
+          imageSrc="/onboarding/done.webp"
           imageAlt="Kata sandi berhasil diperbarui"
           heading="Kata sandi berhasil diperbarui."
           description="Sekarang kamu bisa melanjutkan perjalanan kariermu."

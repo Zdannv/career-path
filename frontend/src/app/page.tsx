@@ -11,7 +11,7 @@ import {
   Route,
   TrendingUp,
   Trophy,
-  CheckCircle2,
+  Check,
   Globe,
 } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
@@ -43,9 +43,9 @@ const TARGET_USERS = [
     description: "Bantu siswa memahami dan merencanakan arah karier mereka.",
   },
   {
-    name: "Professional",
+    name: "Profesional",
     image: "/landing/persona-professional.webp",
-    description: "Rancang roadmap karier impian atau rintis usaha lewat panduan rencana aksi harian.",
+    description: "Merancang roadmap karier impian atau memulai merintis usaha.",
   },
 ];
 
@@ -78,10 +78,10 @@ const PRODUCT_FEATURES = [
 ];
 
 const DASHBOARD_HIGHLIGHTS = [
-  "Mudah mengetahui apa yang harus dilakukan hari ini",
-  "Melihat milestone berikutnya",
-  "Melacak progress secara konsisten",
-  "Tetap termotivasi setiap hari",
+  "Ketahui tugas yang perlu diselesaikan",
+  "Lihat milestone berikutnya",
+  "Pantau progres karier",
+  "Jaga motivasi sepanjang perjalanan",
 ];
 
 export default function LandingPage() {
@@ -116,33 +116,41 @@ export default function LandingPage() {
         <div className="absolute top-0 right-0 w-[36rem] h-[36rem] translate-x-1/4 -translate-y-1/4 rounded-full bg-gradient-to-br from-purple-300/50 via-indigo-300/40 to-transparent blur-3xl pointer-events-none" />
 
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20 lg:py-24 grid lg:grid-cols-2 gap-12 items-center">
-          <div className="text-center lg:text-left">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white text-indigo-600 text-xs font-bold shadow-sm border border-indigo-100">
+          <div className="text-left">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#1E69DC] text-white text-xs font-semibold shadow-sm">
               <Sparkles className="w-3.5 h-3.5" />
               AI-Powered Career Journey
             </div>
 
             <h1 className="mt-5 text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight leading-none text-slate-900">
               Temukan Profesi Impianmu.
-              <br />
-              Jalani Langkahnya.
-              <br />
-              Capai Masa Depanmu.
             </h1>
 
-            <p className="mt-4 text-sm sm:text-base text-slate-500 max-w-lg mx-auto lg:mx-0 leading-relaxed">
+            {/* Di ponsel ilustrasinya duduk di antara judul dan paragraf, seperti
+                desain; di layar lebar ia pindah ke kolom kanan. */}
+            <Image
+              src="/landing/hero-roadmap.webp"
+              alt="Ilustrasi roadmap karier"
+              width={997}
+              height={1240}
+              className="mx-auto mt-8 h-auto w-full max-w-sm lg:hidden"
+              priority
+            />
+
+            <p className="mt-6 lg:mt-4 text-base text-slate-700 max-w-lg leading-relaxed">
               Navika membantumu menemukan profesi yang tepat, menyusun roadmap personal, dan
               menjalani langkah kecil setiap hari menuju karier impian.
             </p>
 
-            <div className="mt-6 flex items-center justify-center lg:justify-start gap-8">
+            <div className="mt-6 flex items-center gap-8">
               <div>
-                <div className="text-xl sm:text-2xl font-bold text-slate-900">300++</div>
-                <div className="text-xs text-slate-500 font-medium">Profesi</div>
+                <div className="text-3xl font-medium text-slate-900">300++</div>
+                <div className="text-sm text-slate-400">Profesi</div>
               </div>
+              <span className="h-12 w-px bg-slate-200" aria-hidden />
               <div>
-                <div className="text-xl sm:text-2xl font-bold text-slate-900">5000++</div>
-                <div className="text-xs text-slate-500 font-medium">Skill &amp; Aktivitas</div>
+                <div className="text-3xl font-medium text-slate-900">5000++</div>
+                <div className="text-sm text-slate-400">Skill &amp; Aktivitas</div>
               </div>
             </div>
 
@@ -157,7 +165,7 @@ export default function LandingPage() {
             </div>
           </div>
 
-          <div className="w-full max-w-md mx-auto lg:max-w-none">
+          <div className="hidden w-full lg:block">
             <Image
               src="/landing/hero-roadmap.webp"
               alt="Ilustrasi roadmap karier"
@@ -173,13 +181,7 @@ export default function LandingPage() {
       {/* Target Users */}
       <section className="bg-[#dde3f0] py-16 sm:py-20">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <div className="text-xs font-bold uppercase tracking-wide text-indigo-600">Target Users</div>
-          <h2 className="mt-2 text-2xl sm:text-3xl font-bold text-slate-900">Siapa Pengguna Navika?</h2>
-          <p className="mt-3 text-sm text-slate-500 max-w-2xl mx-auto leading-relaxed">
-            Setiap orang memiliki perjalanan karier yang berbeda. Kami membantu siswa menemukan
-            arah, sekolah membimbing talenta, fresh graduate memasuki dunia kerja, dan profesional
-            yang memulai bidang profesi baru.
-          </p>
+          <h2 className="text-3xl sm:text-4xl font-medium text-slate-900">Siapa Pengguna Navika?</h2>
 
           <div className="mt-10 grid sm:grid-cols-3 gap-5 text-left">
             {TARGET_USERS.map((user) => (
@@ -200,14 +202,10 @@ export default function LandingPage() {
       {/* Product Features */}
       <section className="bg-white pt-16 sm:pt-20">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <div className="text-xs font-bold uppercase tracking-wide text-indigo-600">Product Features</div>
-          <h2 className="mt-2 text-2xl sm:text-3xl font-bold text-slate-900">
+          <div className="text-sm font-medium text-[#7033FF]">Product Features</div>
+          <h2 className="mt-3 text-3xl sm:text-4xl font-medium text-slate-900">
             Semua yang Kamu Butuhkan dalam Satu Platform
           </h2>
-          <p className="mt-3 text-sm text-slate-500 max-w-2xl mx-auto leading-relaxed">
-            Navika - Career Journey membantu mengubah tujuan karier menjadi langkah-langkah nyata
-            melalui rekomendasi personal, roadmap terstruktur, dan progres yang mudah dipahami.
-          </p>
 
           {/* Ponsel: daftar rata kiri dengan ikon sebaris judul, seperti desain.
               Layar lebar: lima kolom bersebelahan, ikonnya di atas judul. */}
@@ -246,23 +244,22 @@ export default function LandingPage() {
       {/* Dashboard CTA split */}
       <section className="bg-gradient-to-br from-indigo-600 via-purple-600 to-violet-700 py-16 sm:py-20 text-white">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 grid lg:grid-cols-2 gap-12 items-center">
-          <div className="text-center lg:text-left lg:order-first">
-            <div className="inline-flex items-center px-3 py-1 rounded-full bg-white/15 text-white text-xs font-bold">
+          <div className="text-left lg:order-first">
+            <div className="inline-flex items-center px-3 py-1 rounded-full border border-white/80 text-white text-xs font-medium">
               Tampilan dashboard-mu
             </div>
-            <h2 className="mt-4 text-2xl sm:text-3xl font-bold text-white leading-tight">
+            <h2 className="mt-4 text-3xl sm:text-4xl font-medium text-white leading-tight">
               Fokus pada Langkahmu,
               <br />
               Navika yang Bantu Arahkan
             </h2>
-            <p className="mt-3 text-sm text-indigo-100 max-w-md mx-auto lg:mx-0 leading-relaxed">
-              Lihat tugas hari ini, milestone berikutnya, dan progress perjalanan kariermu dalam
-              dashboard yang sederhana.
+            <p className="mt-3 text-base text-white/90 max-w-md leading-relaxed">
+              Pantau tugas, milestone, dan progres kariermu dalam satu dashboard.
             </p>
-            <ul className="mt-5 space-y-2 inline-block text-left">
+            <ul className="mt-5 space-y-3 text-left">
               {DASHBOARD_HIGHLIGHTS.map((item) => (
-                <li key={item} className="flex items-center gap-2 text-sm text-white/90">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-300 shrink-0" />
+                <li key={item} className="flex items-center gap-3 text-sm text-white/90">
+                  <Check className="w-5 h-5 text-white shrink-0" />
                   {item}
                 </li>
               ))}
@@ -285,7 +282,7 @@ export default function LandingPage() {
 
       {/* Closing CTA */}
       <section className="px-4 sm:px-6 lg:px-8 py-16 sm:py-20">
-        <div className="max-w-6xl mx-auto overflow-hidden rounded-3xl bg-gradient-to-r from-indigo-700 via-purple-700 to-indigo-800 px-6 sm:px-10 pt-10 sm:py-12 flex flex-col sm:flex-row sm:items-center gap-6 sm:gap-8 text-center sm:text-left">
+        <div className="max-w-6xl mx-auto overflow-hidden rounded-3xl bg-gradient-to-r from-indigo-700 via-purple-700 to-indigo-800 px-6 sm:px-10 pt-10 sm:py-12 flex flex-col items-start sm:flex-row sm:items-center gap-6 sm:gap-8 text-left">
           {/* Ilustrasinya jadi anak flex, bukan lapisan melayang: di layar
               sedang teksnya sempat tertimpa gunung waktu memakai posisi absolut. */}
           <div className="order-last w-full max-w-xs mx-auto -mb-10 shrink-0 pointer-events-none sm:order-none sm:mx-0 sm:mb-0 sm:-ml-4 sm:w-44 sm:max-w-none sm:self-end lg:w-60">
@@ -321,7 +318,7 @@ export default function LandingPage() {
 
       {/* Footer */}
       <footer className="border-t border-slate-100 py-8">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <Image
               src="/navika-logo.png"
@@ -337,9 +334,11 @@ export default function LandingPage() {
             </span>
           </div>
 
-          <div className="flex items-center gap-4 text-slate-400">
-            <Globe className="w-4 h-4" />
-            <IkonInstagram className="w-4 h-4" />
+          <div className="flex flex-col items-start gap-3 text-slate-500 sm:flex-row sm:items-center sm:gap-4">
+            <div className="flex items-center gap-3">
+              <Globe className="w-4 h-4" />
+              <IkonInstagram className="w-4 h-4" />
+            </div>
             <p className="text-xs text-slate-400">
               Brewed with creativity and love by Sub1 Studio. &copy; 2026. All rights reserved.
             </p>

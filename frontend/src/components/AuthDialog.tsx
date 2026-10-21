@@ -15,6 +15,8 @@ type AuthDialogProps = {
   actionLabel: string;
   onAction: () => void;
   actionPending?: boolean;
+  /** Tombol aksi nonaktif tanpa mengganti labelnya, mis. selama hitung mundur. */
+  actionDisabled?: boolean;
   onClose: () => void;
 };
 
@@ -31,6 +33,7 @@ export default function AuthDialog({
   actionLabel,
   onAction,
   actionPending = false,
+  actionDisabled = false,
   onClose,
 }: AuthDialogProps) {
   const actionRef = useRef<HTMLButtonElement>(null);
@@ -79,7 +82,7 @@ export default function AuthDialog({
           ref={actionRef}
           type="button"
           onClick={onAction}
-          disabled={actionPending}
+          disabled={actionPending || actionDisabled}
           className="mt-5 w-full rounded-full py-3 text-sm font-semibold text-white transition-colors cursor-pointer bg-[#7033FF] hover:bg-[#5f27e6] disabled:bg-[#B698FE] disabled:cursor-not-allowed"
         >
           {actionPending ? "Mengirim..." : actionLabel}

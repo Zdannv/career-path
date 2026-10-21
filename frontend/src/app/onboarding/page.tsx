@@ -2,7 +2,7 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { GraduationCap, BookMarked, AlertCircle, ArrowRight, ChevronsUpDown } from "lucide-react";
+import { BookMarked, AlertCircle, ArrowRight, ChevronsUpDown } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { HOME_AFTER_ONBOARDING, ROUTES } from "@/lib/routes";
 import { sudahOnboarding } from "@/lib/postAuth";
@@ -32,18 +32,11 @@ import {
   type GraduationStatus,
 } from "@/lib/education";
 
-const TOTAL_STEPS = 3;
-
 /** Judul langkah dipakai dua kali: di kartu progres dan di stepper desktop. */
 const STEPS: StepMeta[] = [
   { title: "Latar belakang pendidikan", description: "Informasi riwayat pendidikanmu" },
   { title: "Status Kelulusan", description: "Status kelulusan dari jenjang pendidikan terakhir" },
-  { title: "Review dan selesai!", description: "Rangkuman latar belakang pendidikanmu" },
-];
-
-const STATUS_OPTIONS: ChipOption[] = [
-  { value: "sedang_studi", label: "Sedang menempuh studi" },
-  { value: "sudah_lulus", label: "Sudah lulus" },
+  { title: "Review dan Selesai!", description: "Rangkuman latar belakang pendidikanmu" },
 ];
 
 /** Rentang kelas per jenjang sekolah. SMP 7–9, SMA/SMK 10–12. */
@@ -73,7 +66,9 @@ export default function OnboardingPage() {
 
   const [step, setStep] = useState<0 | 1 | 2 | 3 | 4>(0);
   const [level, setLevel] = useState<LevelCode | null>(null);
-  const [status, setStatus] = useState<GraduationStatus | null>(null);
+  // Status dijawab lewat satu kotak centang "Ya, sudah lulus": tidak dicentang
+  // berarti masih studi, jadi nilai awalnya bukan kosong.
+  const [status, setStatus] = useState<GraduationStatus>("sedang_studi");
   const [grade, setGrade] = useState<string | null>(null);
   const [semester, setSemester] = useState<string | null>(null);
   const [smkConcentrationId, setSmkConcentrationId] = useState<number | null>(null);
@@ -136,6 +131,9 @@ export default function OnboardingPage() {
   );
 
   const rule = ruleFor(rules, level, status);
+  // Kelas/semester selalu ditampilkan, tetapi pudar saat "sudah lulus"
+  // dicentang. Bidang mana yang tampil ditentukan aturan untuk yang masih studi.
+  const ruleStudi = ruleFor(rules, level, "sedang_studi");
   const majorKind = majorKindForLevel(level);
 
   /**
@@ -154,8 +152,8 @@ export default function OnboardingPage() {
     setSemester(null);
   }, []);
 
-  const changeStatus = useCallback((next: string) => {
-    setStatus(next as GraduationStatus);
+  const changeStatus = useCallback((next: GraduationStatus) => {
+    setStatus(next);
     setGrade(null);
     setSemester(null);
   }, []);
@@ -168,7 +166,6 @@ export default function OnboardingPage() {
       (majorKind === "study_program" && (studyProgram.id !== null || !!studyProgram.label)));
 
   const step2Complete =
-    status !== null &&
     (!rule?.needs_grade || grade !== null) &&
     (!rule?.needs_semester || semester !== null);
 
@@ -198,8 +195,12 @@ export default function OnboardingPage() {
 
   const isSchoolLevel = level === "SMP" || level === "SMA" || level === "SMK";
 
-  /** Baris kedua kartu status: Kelas untuk siswa, Semester untuk mahasiswa. */
+  /** Kelas untuk siswa, Semester untuk mahasiswa; tidak ada kalau sudah lulus. */
   const periodRow = () => {
+    if (status === "sudah_lulus") return [];
+    return [periodValue()];
+  };
+  const periodValue = () => {
     if (isSchoolLevel) {
       return { label: "Kelas saat ini", value: grade ? `Kelas ${grade}` : "-" };
     }
@@ -210,6 +211,17 @@ export default function OnboardingPage() {
     };
   };
 
+  /** Ringkasan yang sama di layar review dan layar selesai. */
+  const summaryRows = () => [
+    { label: "Jenjang Pendidikan", value: labelOf(level) },
+    { label: "Jurusan / Program Studi", value: majorLabel() },
+    {
+      label: "Status Saat Ini",
+      value: status === "sudah_lulus" ? "Sudah lulus" : "Sedang menempuh studi",
+    },
+    ...periodRow(),
+  ];
+
   const handleSave = async () => {
     if (!userId) return;
     setSaving(true);
@@ -217,7 +229,7 @@ export default function OnboardingPage() {
     try {
       await saveEducation(userId, {
         level: level as LevelCode,
-        status: status as GraduationStatus,
+        status,
         gradeLevel: grade ? Number(grade) : null,
         semester: semester && semester !== "akhir" ? Number(semester) : null,
         isFinalSemester: semester === "akhir",
@@ -275,9 +287,18 @@ export default function OnboardingPage() {
                 Yay! Data kamu tersimpan 🎉
               </h1>
               <p className="mx-auto mt-3 max-w-[420px] text-sm leading-relaxed text-[#525252]">
-                Terima kasih! Informasi yang Kamu berikan akan membantu Navika dalam membuat
-                roadmap journey profesi impian Kamu.
+                Terima kasih! Informasi ini membantu Navika menyusun roadmap menuju profesi
+                impianmu.
               </p>
+
+              <dl className="mt-8 w-full text-left">
+                {summaryRows().map((row) => (
+                  <div key={row.label} className="border-b border-slate-200 py-3">
+                    <dt className="text-sm text-[#525252]">{row.label}</dt>
+                    <dd className="mt-0.5 text-sm font-bold text-slate-900">{row.value}</dd>
+                  </div>
+                ))}
+              </dl>
             </div>
 
             {/* Di desktop tombolnya menyatu di dalam kartu, bukan bilah footer
@@ -290,7 +311,7 @@ export default function OnboardingPage() {
                 onClick={() => router.push(HOME_AFTER_ONBOARDING)}
                 className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-full bg-[#7033FF] px-6 py-3.5 text-sm font-semibold text-white transition-colors hover:bg-[#5f27e6] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#7033FF] lg:mx-auto lg:w-auto lg:min-w-[320px] lg:px-8"
               >
-                Lanjut ke Explore
+                Lanjut ke Dashboard
                 <ArrowRight className="h-4 w-4" />
               </button>
             </div>
@@ -309,18 +330,14 @@ export default function OnboardingPage() {
       <AuthBrandHeader />
 
       {step === 0 ? (
-        <StartScreen onStart={() => setStep(1)} />
+        <StartScreen onStart={() => setStep(1)} steps={STEPS} />
       ) : (
         <div className="mx-auto flex w-full max-w-[560px] flex-1 flex-col px-4 sm:max-w-[750px] sm:px-6 lg:mb-12 lg:max-w-[1120px] lg:px-0">
           <div className="flex flex-1 flex-col lg:grid lg:flex-none lg:grid-cols-[minmax(0,420px)_minmax(0,1fr)] lg:overflow-hidden lg:rounded-2xl lg:bg-white lg:shadow-lg">
             <StepSidebar step={step} steps={STEPS} illustration={illustration} />
 
             <div className="flex flex-1 flex-col lg:min-h-[620px]">
-              <ProgressHeader
-                step={step}
-                totalSteps={TOTAL_STEPS}
-                title={STEPS[step - 1].title}
-              />
+              <ProgressHeader step={step} steps={STEPS} illustration={illustration} />
 
               <div className="flex-1 space-y-8 py-7 lg:px-6">
                 {step === 1 && (
@@ -392,16 +409,25 @@ export default function OnboardingPage() {
 
                 {step === 2 && (
                   <>
-                    <ChipGroup
-                      name="status"
-                      legend="Status Saat Ini"
-                      description="Apakah Kamu sudah lulus dari jenjang ini?"
-                      options={STATUS_OPTIONS}
-                      value={status}
-                      onChange={changeStatus}
-                    />
+                    <fieldset className="min-w-0">
+                      <legend className="text-lg font-bold text-slate-900 sm:text-xl">
+                        Status Saat Ini
+                      </legend>
+                      <p className="mt-1 text-sm text-[#525252]">
+                        Apakah Kamu sudah lulus dari jenjang ini?
+                      </p>
+                      <label className="mt-4 inline-flex cursor-pointer items-center gap-2.5 text-sm text-slate-900">
+                        <input
+                          type="checkbox"
+                          checked={status === "sudah_lulus"}
+                          onChange={(e) => changeStatus(e.target.checked ? "sudah_lulus" : "sedang_studi")}
+                          className="size-4 cursor-pointer rounded accent-[#7033FF]"
+                        />
+                        Ya, sudah lulus
+                      </label>
+                    </fieldset>
 
-                    {rule?.needs_grade && (
+                    {ruleStudi?.needs_grade && (
                       <div className="border-t border-slate-200 pt-7">
                         <ChipGroup
                           name="kelas"
@@ -410,11 +436,12 @@ export default function OnboardingPage() {
                           options={gradeOptions(level)}
                           value={grade}
                           onChange={setGrade}
+                          disabled={status === "sudah_lulus"}
                         />
                       </div>
                     )}
 
-                    {rule?.needs_semester && (
+                    {ruleStudi?.needs_semester && (
                       <div className="space-y-4 border-t border-slate-200 pt-7">
                         <ChipGroup
                           name="semester"
@@ -423,8 +450,9 @@ export default function OnboardingPage() {
                           options={SEMESTER_OPTIONS}
                           value={semester}
                           onChange={setSemester}
+                          disabled={status === "sudah_lulus"}
                         />
-                        <TipCallout>
+                        <TipCallout muted={status === "sudah_lulus"}>
                           <strong className="font-bold">Tips:</strong> Sudah di tahap akhir kuliah
                           menunggu wisuda? Pilih{" "}
                           <strong className="font-bold">&ldquo;Semester Akhir&rdquo;</strong>.
@@ -440,24 +468,7 @@ export default function OnboardingPage() {
                       icon={BookMarked}
                       title="Pendidikan terakhir"
                       subtitle="Informasi riwayat pendidikanmu"
-                      rows={[
-                        { label: "Jenjang Pendidikan", value: labelOf(level) },
-                        { label: "Jurusan / Program Studi", value: majorLabel() },
-                      ]}
-                    />
-
-                    <ReviewCard
-                      icon={GraduationCap}
-                      title="Status Kelulusan"
-                      subtitle="Status kelulusan dari jenjang pendidikan terakhir"
-                      rows={[
-                        {
-                          label: "Status Saat Ini",
-                          value:
-                            status === "sudah_lulus" ? "Sudah lulus" : "Sedang menempuh studi",
-                        },
-                        periodRow(),
-                      ]}
+                      rows={summaryRows()}
                     />
 
                     {saveError && (
@@ -475,6 +486,7 @@ export default function OnboardingPage() {
                   primaryLabel="Lanjut ke Step 2"
                   onPrimary={() => setStep(2)}
                   primaryDisabled={!step1Complete}
+                  onSecondary={() => setStep(0)}
                 />
               )}
               {step === 2 && (
@@ -482,7 +494,7 @@ export default function OnboardingPage() {
                   primaryLabel="Lanjut ke Step 3"
                   onPrimary={() => setStep(3)}
                   primaryDisabled={!step2Complete}
-                  secondaryLabel="Kembali ke Step 1"
+                  secondaryLabel="Step 1"
                   onSecondary={() => setStep(1)}
                 />
               )}
@@ -492,7 +504,7 @@ export default function OnboardingPage() {
                   primaryIcon="check"
                   onPrimary={handleSave}
                   primaryBusy={saving}
-                  secondaryLabel="Kembali ke Step 2"
+                  secondaryLabel="Step 2"
                   onSecondary={() => setStep(2)}
                 />
               )}
