@@ -8,7 +8,7 @@
  * yang sudah dilihat pengguna di deretan kartunya.
  */
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, ArrowRight, Loader2 } from "lucide-react";
@@ -18,6 +18,9 @@ import {
   getByActivity,
   getByMatch,
   getByStudy,
+  getBySubIndustri,
+  getDisimpan,
+  getSubIndustriNama,
   getTopDemand,
   type CareerCard,
   type ScoredCard,
@@ -67,6 +70,16 @@ export const BARIS: Record<string, Baris> = {
       href: ROUTES.careerDna,
     },
   },
+  disimpan: {
+    judul: "Profesi Disimpan",
+    keterangan: "Profesi yang kamu simpan dari halaman detail profesi, terbaru di atas.",
+    ambil: () => getDisimpan(BATAS),
+    kosong: {
+      teks: "Belum ada profesi yang kamu simpan. Ketuk ikon simpan di halaman detail profesi untuk menambahkannya.",
+      ajakan: "Cari profesi",
+      href: ROUTES.exploreCari,
+    },
+  },
   aktivitas: {
     judul: "Dari Aktivitas Pilihan",
     keterangan: "Profesi yang paling banyak memuat aktivitas pilihanmu di Career DNA.",
@@ -78,6 +91,16 @@ export const BARIS: Record<string, Baris> = {
     },
   },
 };
+
+/** "sub-<KODE>": profesi dalam satu sub-industri, dari kartu Rekomendasi Sub-Industri. */
+function barisSubIndustri(kode: string): Baris {
+  return {
+    judul: "Profesi terkait",
+    keterangan: "Profesi di sub-industri ini, diurutkan dari kecocokan tertinggi dengan Career DNA-mu.",
+    ambil: () => getBySubIndustri(kode, BATAS),
+    kosong: { teks: "Belum ada profesi di sub-industri ini.", ajakan: "Kembali ke Explore", href: ROUTES.explore },
+  };
+}
 
 /** Kartu baris Explore membawa kolom yang sama; hanya skornya yang opsional. */
 function keKartu(c: CareerCard | ScoredCard): KartuProfesi {
@@ -100,9 +123,20 @@ function keKartu(c: CareerCard | ScoredCard): KartuProfesi {
 
 export default function DaftarBaris({ slug }: { slug: string }) {
   const router = useRouter();
-  const baris = BARIS[slug];
+  const kodeSub = slug.startsWith("sub-") ? decodeURIComponent(slug.slice(4)) : null;
+  const baris = useMemo(() => (kodeSub ? barisSubIndustri(kodeSub) : BARIS[slug]), [kodeSub, slug]);
   const [kartu, setKartu] = useState<KartuProfesi[] | null>(null);
   const [galat, setGalat] = useState(false);
+  const [namaSub, setNamaSub] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!kodeSub) return;
+    let batal = false;
+    getSubIndustriNama(kodeSub).then((n) => !batal && setNamaSub(n));
+    return () => {
+      batal = true;
+    };
+  }, [kodeSub]);
 
   useEffect(() => {
     if (!baris) return;
@@ -141,7 +175,7 @@ export default function DaftarBaris({ slug }: { slug: string }) {
           </button>
           <div className="min-w-0 flex-1 leading-tight">
             <p className="truncate text-[14px] font-semibold text-slate-900">
-              {baris?.judul ?? "Daftar Profesi"}
+              {namaSub ?? baris?.judul ?? "Daftar Profesi"}
             </p>
             {kartu && kartu.length > 0 && (
               <p className="truncate text-[12px] text-slate-400">{kartu.length} profesi</p>

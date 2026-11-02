@@ -30,6 +30,7 @@ import AiCard, { AiInfoSheet } from "@/components/profesi/AiCard";
 import { KartuDemand, KartuEstimasi, DaftarSubIndustri } from "@/components/profesi/InfoCards";
 import { Blok, BarisDuaKolom, BarisIsi, LihatSemua } from "@/components/profesi/Listing";
 import { ROUTES } from "@/lib/routes";
+import { isDisimpan, setDisimpan } from "@/lib/explore";
 import {
   ambilKunciProfesi,
   getCareerCompetency,
@@ -78,6 +79,25 @@ export default function ProfesiDetail({
   const [gapBuka, setGapBuka] = useState(false);
   const [gapTab, setGapTab] = useState<"hard" | "soft" | "tools">("hard");
   const [aiBuka, setAiBuka] = useState(false);
+  // Simpanan profesi (0048). Ditampilkan optimistis lalu dibatalkan kalau
+  // gagal tersimpan, supaya ketukan terasa langsung.
+  const [disimpan, setStatusSimpan] = useState(false);
+  useEffect(() => {
+    let hidup = true;
+    isDisimpan(detail.career_id).then((v) => hidup && setStatusSimpan(v));
+    return () => {
+      hidup = false;
+    };
+  }, [detail.career_id]);
+  const ubahSimpan = useCallback(async () => {
+    const baru = !disimpan;
+    setStatusSimpan(baru);
+    try {
+      await setDisimpan(detail.career_id, baru);
+    } catch {
+      setStatusSimpan(!baru);
+    }
+  }, [disimpan, detail.career_id]);
   const [semuaSoft, setSemuaSoft] = useState(false);
   const [semuaHard, setSemuaHard] = useState(false);
   const [semuaTool, setSemuaTool] = useState(false);
@@ -142,7 +162,12 @@ export default function ProfesiDetail({
 
   return (
     <div className="flex min-h-[100dvh] flex-col bg-white">
-      <DetailHeader judul="Detail Profesi" subjudul={detail.career_name} />
+      <DetailHeader
+        judul="Detail Profesi"
+        subjudul={detail.career_name}
+        disimpan={disimpan}
+        onSimpan={ubahSimpan}
+      />
 
       <main className="mx-auto w-full max-w-3xl flex-1 px-4 pb-8 pt-6 sm:px-6">
         <h1 className="text-[27px] font-bold leading-[1.15] tracking-tight text-slate-900">

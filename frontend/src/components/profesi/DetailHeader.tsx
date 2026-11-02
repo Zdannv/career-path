@@ -9,16 +9,19 @@
  */
 
 import { useRouter } from "next/navigation";
-import { ArrowLeft, BookmarkPlus } from "lucide-react";
+import { ArrowLeft, BookmarkCheck, BookmarkPlus } from "lucide-react";
 
 export default function DetailHeader({
   judul,
   subjudul,
   onSimpan,
+  disimpan = false,
 }: {
   judul: string;
   subjudul?: string | null;
   onSimpan?: () => void;
+  /** Profesi ini sudah ada di daftar Profesi Disimpan. */
+  disimpan?: boolean;
 }) {
   const router = useRouter();
   return (
@@ -39,10 +42,15 @@ export default function DetailHeader({
         <button
           type="button"
           onClick={onSimpan}
-          aria-label="Simpan profesi"
-          className="rounded-full p-1.5 text-slate-700 transition-colors hover:bg-slate-100"
+          aria-label={disimpan ? "Hapus dari Profesi Disimpan" : "Simpan profesi"}
+          aria-pressed={disimpan}
+          className={`rounded-full p-1.5 transition-colors hover:bg-slate-100 ${disimpan ? "text-violet-600" : "text-slate-700"}`}
         >
-          <BookmarkPlus className="size-5" aria-hidden />
+          {disimpan ? (
+            <BookmarkCheck className="size-5 fill-violet-100" aria-hidden />
+          ) : (
+            <BookmarkPlus className="size-5" aria-hidden />
+          )}
         </button>
       </div>
     </header>

@@ -13,8 +13,12 @@
  *
  *   belum keduanya   Career Discovery + paling diminati + program studi
  *   profesi saja     kartu journey + ajakan Career DNA + dua baris yang sama
- *   DNA saja         persentase match + profesi dari atribut aktivitas
- *   sudah keduanya   kartu journey + quest minggu ini + dua dari empat baris
+ *   DNA saja         profesi disimpan + DNA Kamu + sub-industri + match + aktivitas
+ *   sudah keduanya   kartu journey + profesi disimpan + DNA Kamu + quest
+ *                    minggu ini + sub-industri + dua dari tiga baris kartu
+ *
+ * "Paling Diminati tahun ini" tampil di semua keadaan sebagai daftar ringkas
+ * (desain In Review), bukan lagi deretan kartu.
  */
 
 import { useMemo } from "react";
@@ -22,6 +26,7 @@ import type {
   CareerCard as CardData,
   ExploreState,
   ScoredCard,
+  SubIndustriRekomendasi,
   WeeklyQuest,
 } from "@/lib/explore";
 import { AppBottomNav, AppTopNav } from "@/components/explore/AppNav";
@@ -30,7 +35,14 @@ import CareerCard from "@/components/explore/CareerCard";
 import GreetingHeader from "@/components/explore/GreetingHeader";
 import JourneyCard from "@/components/explore/JourneyCard";
 import PromoBanner from "@/components/explore/PromoBanner";
-import QuestWeek from "@/components/explore/QuestWeek";
+import {
+  DemandList,
+  DnaKamuCard,
+  ProfesiDisimpanBar,
+  QuestBanner,
+  SubIndustriCard,
+  type DnaKelompok,
+} from "@/components/explore/BlokReview";
 import { ROUTES } from "@/lib/routes";
 
 export type BarisKode = "demand" | "study" | "match" | "activity";
@@ -44,6 +56,11 @@ export type ExploreData = {
   quests: WeeklyQuest[];
   /** Kode tahap Journey yang sedang berjalan, untuk gambar kartu profesi. */
   tahap: string | null;
+  /** Jumlah profesi simpanan (0048). */
+  disimpan: number;
+  subIndustri: SubIndustriRekomendasi[];
+  /** Pilihan Career DNA per kategori, untuk kartu DNA Kamu. */
+  dna: DnaKelompok[];
 };
 
 /**
@@ -53,20 +70,22 @@ export type ExploreData = {
  * mengisi DNA tidak membayar dua query pencocokan yang sudah pasti kosong.
  */
 export function barisDibutuhkan(state: ExploreState): Set<BarisKode> {
+  // "demand" selalu diambil: daftar ringkas Paling Diminati tampil di semua keadaan.
   if (!state.has_dna) return new Set<BarisKode>(["demand", "study"]);
-  if (!state.has_career) return new Set<BarisKode>(["match", "activity"]);
+  if (!state.has_career) return new Set<BarisKode>(["demand", "match", "activity"]);
   return new Set<BarisKode>(["demand", "study", "match", "activity"]);
 }
 
 /**
- * Dua dari empat baris — permintaan tim desain untuk keadaan terakhir.
+ * Dua dari tiga baris kartu — permintaan tim desain untuk keadaan terakhir.
+ * "demand" tidak ikut diundi karena sudah tampil sebagai daftar ringkas.
  *
  * Seed-nya tanggal ditambah profesi yang dituju, bukan Math.random(): kalau
  * acaknya benar-benar acak, isinya berganti tiap kali komponen ini dirender
  * ulang dan pengguna melihat baris berganti sendiri saat menggulir.
  */
 export function pilihDuaBaris(seed: number, hariEpoch?: number): BarisKode[] {
-  const semua: BarisKode[] = ["demand", "study", "match", "activity"];
+  const semua: BarisKode[] = ["study", "match", "activity"];
   const hari = hariEpoch ?? Math.floor(Date.now() / 86_400_000);
   const a = (hari + seed) % semua.length;
   const b = (a + 1 + ((hari + seed) % (semua.length - 1))) % semua.length;
@@ -81,14 +100,14 @@ export default function ExploreView({
   /** Hanya diisi oleh harness verifikasi supaya pilihan barisnya bisa ditebak. */
   hariEpoch?: number;
 }) {
-  const { state, demand, study, match, activity, quests, tahap } = data;
+  const { state, demand, study, match, activity, quests, tahap, disimpan, subIndustri, dna } = data;
 
   const barisTerpilih = useMemo<BarisKode[]>(() => {
     if (state.has_dna && state.has_career) {
       return pilihDuaBaris(state.career_id ?? 0, hariEpoch);
     }
     if (state.has_dna) return ["match", "activity"];
-    return ["demand", "study"];
+    return ["study"];
   }, [state, hariEpoch]);
 
   const baris: Record<BarisKode, React.ReactNode> = {
@@ -195,6 +214,12 @@ export default function ExploreView({
               />
             )}
 
+            {disimpan > 0 && <ProfesiDisimpanBar jumlah={disimpan} />}
+            {state.has_dna && <DnaKamuCard kelompok={dna} />}
+            {state.has_career && quests.length > 0 && (
+              <QuestBanner jumlah={quests[0]?.total ?? quests.length} />
+            )}
+
             {/* Di desktop banner ini menutup kolom kiri; di layar sempit ia
                 pindah ke ujung bawah isi supaya tidak menyela deretan kartu. */}
             <PromoBanner
@@ -206,9 +231,8 @@ export default function ExploreView({
         </div>
 
         <main className="min-w-0 flex-1">
-          {state.has_career && quests.length > 0 && (
-            <QuestWeek quests={quests} total={quests[0]?.total ?? quests.length} />
-          )}
+          {state.has_dna && <SubIndustriCard data={subIndustri} />}
+          <DemandList data={demand} />
           {barisTerpilih.map((k) => baris[k])}
           <div className="px-4 pb-8 pt-2 sm:px-6 lg:hidden">
             <PromoBanner variant="artikel" href={ROUTES.careerInsights} />

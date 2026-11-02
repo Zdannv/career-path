@@ -7,8 +7,15 @@
  * dan diredupkan — persis keadaan yang digambar di mockup langkah 1, di mana
  * tiga minat sudah dipilih dan sisanya pudar. Tanpa itu pengguna mengetuk
  * pilihan keempat lalu tidak terjadi apa-apa, dan tidak jelas kenapa.
+ *
+ * Pilihan yang sudah dicentang naik ke atas daftar (masukan Pak Yoki dan
+ * Nico): pengguna langsung melihat apa saja yang sudah ia pilih tanpa
+ * menggulir, termasuk saat kembali ke langkah yang pernah diisi. Urutan di
+ * dalam tiap kelompok tetap urutan aslinya, supaya posisi pilihan yang belum
+ * dicentang tidak berpindah-pindah.
  */
 
+import { Fragment } from "react";
 import { Check } from "lucide-react";
 import type { DnaAttributeOption } from "@/lib/careerDna";
 
@@ -21,14 +28,28 @@ type Props = {
 
 export default function OptionList({ options, selected, maxPick, onToggle }: Props) {
   const penuh = selected.length >= maxPick;
+  const dipilih = options.filter((o) => selected.includes(o.code));
+  const lainnya = options.filter((o) => !selected.includes(o.code));
+  const urut = [...dipilih, ...lainnya];
 
   return (
     <ul className="flex flex-col gap-2.5">
-      {options.map((o) => {
+      {urut.map((o, i) => {
         const aktif = selected.includes(o.code);
         const nonaktif = penuh && !aktif;
         return (
-          <li key={o.code}>
+          <Fragment key={o.code}>
+            {i === 0 && dipilih.length > 0 && (
+              <li aria-hidden className="text-[12px] font-semibold text-violet-700">
+                Pilihanmu ({dipilih.length}/{maxPick})
+              </li>
+            )}
+            {i === dipilih.length && dipilih.length > 0 && lainnya.length > 0 && (
+              <li aria-hidden className="pt-2 text-[12px] font-semibold text-slate-400">
+                Pilihan lain
+              </li>
+            )}
+          <li>
             <button
               type="button"
               onClick={() => onToggle(o.code)}
@@ -62,6 +83,7 @@ export default function OptionList({ options, selected, maxPick, onToggle }: Pro
               </span>
             </button>
           </li>
+          </Fragment>
         );
       })}
     </ul>

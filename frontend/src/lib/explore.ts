@@ -97,6 +97,68 @@ export async function getWeeklyQuests(limit = 3): Promise<WeeklyQuest[]> {
   return ambilQuestMingguIni(limit).catch(() => []);
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Profesi disimpan dan rekomendasi sub-industri (0048)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export type SubIndustriRekomendasi = {
+  code: string;
+  name_id: string;
+  industry_code: string;
+  industry_name: string;
+  n_profesi: number;
+  /** Rata-rata skor kecocokan tiga profesi teratas di sub-industri ini. */
+  skor: number;
+  /** Pilihan DNA pengguna yang dominan di sebagian besar profesinya. */
+  minat: string[];
+  aktivitas: string[];
+};
+
+export async function getSubIndustri(limit = 1): Promise<SubIndustriRekomendasi[]> {
+  const { data } = await supabase.rpc("explore_sub_industri", { p_limit: limit });
+  return (data as SubIndustriRekomendasi[]) ?? [];
+}
+
+export async function getBySubIndustri(code: string, limit = 60): Promise<ScoredCard[]> {
+  const { data } = await supabase.rpc("explore_by_sub_industri", { p_code: code, p_limit: limit });
+  return (data as ScoredCard[]) ?? [];
+}
+
+export async function getSubIndustriNama(code: string): Promise<string | null> {
+  const { data } = await supabase.from("sub_industries").select("name_id").eq("code", code).maybeSingle();
+  return (data as { name_id: string } | null)?.name_id ?? null;
+}
+
+export async function getDisimpan(limit = 60): Promise<CareerCard[]> {
+  const { data } = await supabase.rpc("explore_disimpan", { p_limit: limit });
+  return (data as CareerCard[]) ?? [];
+}
+
+/** Jumlah profesi simpanan. 0 juga kalau tabelnya belum ada (0048 belum dijalankan). */
+export async function countDisimpan(): Promise<number> {
+  const { count, error } = await supabase
+    .from("user_saved_careers")
+    .select("career_id", { count: "exact", head: true });
+  return error ? 0 : (count ?? 0);
+}
+
+export async function isDisimpan(careerId: number): Promise<boolean> {
+  const { data, error } = await supabase
+    .from("user_saved_careers")
+    .select("career_id")
+    .eq("career_id", careerId)
+    .maybeSingle();
+  return !error && data !== null;
+}
+
+/** Menyimpan atau melepas simpanan. user_id diisi database dari sesi (default auth.uid()). */
+export async function setDisimpan(careerId: number, simpan: boolean): Promise<void> {
+  const { error } = simpan
+    ? await supabase.from("user_saved_careers").upsert({ career_id: careerId }, { onConflict: "user_id,career_id", ignoreDuplicates: true })
+    : await supabase.from("user_saved_careers").delete().eq("career_id", careerId);
+  if (error) throw new Error("Gagal menyimpan profesi. Coba lagi sebentar.");
+}
+
 export async function searchCareerCards(query: string, limit = 20): Promise<CareerCard[]> {
   const { data } = await supabase.rpc("explore_search", { p_query: query, p_limit: limit });
   return (data as CareerCard[]) ?? [];

@@ -15,19 +15,32 @@
 import { useCallback, useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
 import {
+  countDisimpan,
   getByActivity,
   getByMatch,
   getByStudy,
   getExploreState,
+  getSubIndustri,
   getTopDemand,
   getWeeklyQuests,
 } from "@/lib/explore";
+import { getDnaProgress, getDnaSteps } from "@/lib/careerDna";
+import type { DnaKelompok } from "@/components/explore/BlokReview";
 import RequireAuth from "@/components/RequireAuth";
 import { ambilRoadmapState } from "@/lib/roadmapJourney";
 import ExploreView, {
   barisDibutuhkan,
   type ExploreData,
 } from "@/components/explore/ExploreView";
+
+/** Pilihan Career DNA per kategori, dengan nama atributnya, untuk kartu DNA Kamu. */
+async function ambilDnaKamu(): Promise<DnaKelompok[]> {
+  const [langkah, progres] = await Promise.all([getDnaSteps(), getDnaProgress()]);
+  return langkah.map((l) => ({
+    nama: l.name,
+    isi: l.attributes.filter((a) => (progres.picks[l.layerCode] ?? []).includes(a.code)).map((a) => a.name),
+  }));
+}
 
 function ExploreIsi() {
   const [memuat, setMemuat] = useState(true);
@@ -42,7 +55,7 @@ function ExploreIsi() {
     }
 
     const perlu = barisDibutuhkan(state);
-    const [demand, study, match, activity, quests, roadmap] = await Promise.all([
+    const [demand, study, match, activity, quests, roadmap, disimpan, subIndustri, dna] = await Promise.all([
       perlu.has("demand") ? getTopDemand(12) : Promise.resolve([]),
       perlu.has("study") ? getByStudy(12) : Promise.resolve([]),
       perlu.has("match") ? getByMatch(12) : Promise.resolve([]),
@@ -51,10 +64,13 @@ function ExploreIsi() {
       // Gambar kartu profesi mengikuti tahap Journey yang sedang berjalan:
       // tahap pertama yang belum selesai, sama dengan yang dibuka Journey.
       state.has_career ? ambilRoadmapState().catch(() => null) : Promise.resolve(null),
+      countDisimpan(),
+      state.has_dna ? getSubIndustri(1).catch(() => []) : Promise.resolve([]),
+      state.has_dna ? ambilDnaKamu().catch(() => []) : Promise.resolve([]),
     ]);
     const tahap = roadmap?.tahap.find((t) => t.status !== "SELESAI")?.kode ?? null;
 
-    setData({ state, demand, study, match, activity, quests, tahap });
+    setData({ state, demand, study, match, activity, quests, tahap, disimpan, subIndustri, dna });
     setMemuat(false);
   }, []);
 
