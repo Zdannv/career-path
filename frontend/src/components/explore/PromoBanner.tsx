@@ -11,10 +11,9 @@
  * teks sungguhan. Selain tajam di ukuran berapa pun, teksnya jadi bisa dipilih,
  * dibaca pembaca layar, dan diubah tanpa menunggu ekspor ulang dari desainer.
  *
- * Banner Career Insights dihapus dari Explore atas permintaan tim, lalu
- * digantikan banner "Artikel & Tips" dari desain terbaru. Isi artikelnya
- * sendiri belum ada, jadi tombolnya mengarah ke layar "segera hadir" — bukan
- * ke halaman kosong yang terlihat rusak.
+ * Banner "Artikel & Tips" berisi kartu Rekomendasi Karier 10 tahun ke depan.
+ * Halamannya belum didesain, jadi tujuannya layar "segera hadir" — bukan
+ * halaman kosong yang terlihat rusak.
  */
 
 import Link from "next/link";

@@ -44,6 +44,7 @@ import {
   type DnaKelompok,
 } from "@/components/explore/BlokReview";
 import { ROUTES } from "@/lib/routes";
+import { InsightIndustriCard } from "@/components/insight/InsightView";
 
 export type BarisKode = "demand" | "study" | "match" | "activity";
 
@@ -220,13 +221,7 @@ export default function ExploreView({
               <QuestBanner jumlah={quests[0]?.total ?? quests.length} />
             )}
 
-            {/* Di desktop banner ini menutup kolom kiri; di layar sempit ia
-                pindah ke ujung bawah isi supaya tidak menyela deretan kartu. */}
-            <PromoBanner
-              variant="artikel"
-              href={ROUTES.careerInsights}
-              className="hidden lg:block"
-            />
+
           </div>
         </div>
 
@@ -234,8 +229,10 @@ export default function ExploreView({
           {state.has_dna && <SubIndustriCard data={subIndustri} />}
           <DemandList data={demand} />
           {barisTerpilih.map((k) => baris[k])}
-          <div className="px-4 pb-8 pt-2 sm:px-6 lg:hidden">
-            <PromoBanner variant="artikel" href={ROUTES.careerInsights} />
+          {/* Dua kartu penutup dari desain In Review, di semua ukuran layar. */}
+          <div className="grid gap-4 px-4 pb-8 pt-2 sm:px-6 lg:grid-cols-2">
+            <PromoBanner variant="artikel" href={`${ROUTES.careerInsights}/karier-10-tahun`} />
+            <InsightIndustriCard />
           </div>
         </main>
       </div>
