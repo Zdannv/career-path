@@ -65,8 +65,10 @@ export default function CareerCard({
           {card.career_name}
         </h3>
 
+        {/* Deskripsi singkat (0049) ditulis supaya muat 2 baris di kartu terkecil.
+            Tingginya dikunci 2 baris supaya semua kartu sama tinggi. */}
         {showDescription && card.career_description && (
-          <p className="line-clamp-3 text-[13px] leading-relaxed text-slate-500">
+          <p className="line-clamp-2 h-[3.25em] text-[13px] leading-relaxed text-slate-500">
             {card.career_description}
           </p>
         )}

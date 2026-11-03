@@ -48,7 +48,9 @@ export default function KartuHasil({
           {kartu.career_name}
         </h3>
         {kartu.career_description && (
-          <p className="line-clamp-2 text-[12.5px] leading-relaxed text-slate-500">
+          // Tinggi dikunci 2 baris (deskripsi singkat maks 80 karakter, 0049)
+          // supaya kartu di daftar sama tinggi.
+          <p className="line-clamp-2 h-[3.25em] text-[12.5px] leading-relaxed text-slate-500">
             {kartu.career_description}
           </p>
         )}
