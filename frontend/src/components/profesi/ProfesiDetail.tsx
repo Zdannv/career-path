@@ -173,10 +173,13 @@ export default function ProfesiDetail({
         <h1 className="text-[27px] font-bold leading-[1.15] tracking-tight text-slate-900">
           {detail.career_name}
         </h1>
+        {/* Deskripsi panjang (0050) berisi 2 paragraf yang dipisah baris kosong. */}
         {detail.career_description && (
-          <p className="mt-2.5 text-[14.5px] leading-relaxed text-slate-500">
-            {detail.career_description}
-          </p>
+          <div className="mt-2.5 space-y-2.5 text-[14.5px] leading-relaxed text-slate-500">
+            {detail.career_description.split(/\n\s*\n/).map((paragraf, i) => (
+              <p key={i}>{paragraf}</p>
+            ))}
+          </div>
         )}
 
         {detail.family_code && (
