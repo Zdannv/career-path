@@ -12,7 +12,7 @@
  * keluar; dialognya menyebut apa adanya bahwa progres sudah tersimpan.
  */
 
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, ArrowRight, ChevronRight, CornerUpLeft, Home, Save, X } from "lucide-react";
@@ -21,7 +21,6 @@ import DnaStepper from "@/components/career-dna/DnaStepper";
 import DoneScreen from "@/components/career-dna/DoneScreen";
 import IntroScreen from "@/components/career-dna/IntroScreen";
 import OptionList from "@/components/career-dna/OptionList";
-import PilihanRingkas from "@/components/career-dna/PilihanRingkas";
 import ReviewList from "@/components/career-dna/ReviewList";
 import SaveProgressDialog from "@/components/career-dna/SaveProgressDialog";
 import StepHeaderBar, { type StepMeta } from "@/components/career-dna/StepHeaderBar";
@@ -56,8 +55,6 @@ export default function DnaFlow({
   const [sibuk, setSibuk] = useState(false);
   const [galat, setGalat] = useState<string | null>(null);
   const [dialog, setDialog] = useState(false);
-  // Judul langkah aktif; bar ringkasan pilihan muncul begitu judul ini tergulir keluar.
-  const judulRef = useRef<HTMLDivElement>(null);
 
   const meta: StepMeta[] = useMemo(
     () => [
@@ -168,21 +165,10 @@ export default function DnaFlow({
               </>
             ) : aktif ? (
               <>
-                <div ref={judulRef}>
-                  <h1 className="text-[17px] font-bold tracking-tight text-slate-900">{aktif.name}</h1>
-                  <p className="mt-0.5 text-[13px] text-slate-500">
-                    {aktif.question} (Maks {aktif.maxPick} pilihan)
-                  </p>
-                </div>
-                <PilihanRingkas
-                  key={aktif.layerCode}
-                  judulRef={judulRef}
-                  kategori={aktif.name}
-                  options={aktif.attributes}
-                  selected={terpilih}
-                  maxPick={aktif.maxPick}
-                  onToggle={toggle}
-                />
+                <h1 className="text-[17px] font-bold tracking-tight text-slate-900">{aktif.name}</h1>
+                <p className="mt-0.5 text-[13px] text-slate-500">
+                  {aktif.question} (Maks {aktif.maxPick} pilihan)
+                </p>
                 <div className="mt-4">
                   <OptionList
                     options={aktif.attributes}
