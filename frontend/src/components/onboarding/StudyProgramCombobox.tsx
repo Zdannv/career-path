@@ -9,8 +9,8 @@ import React, {
   useState,
 } from "react";
 import { createPortal } from "react-dom";
-import { Search, ChevronsUpDown, Check } from "lucide-react";
-import { searchStudyPrograms, type StudyProgram } from "@/lib/education";
+import { Search, ChevronsUpDown, Check, Plus, Sparkles } from "lucide-react";
+import { prodiTerdekat, searchStudyPrograms, type StudyProgram } from "@/lib/education";
 
 export type StudyProgramValue = { id: number | null; label: string | null; custom: boolean };
 
@@ -31,6 +31,8 @@ type Props = {
 const POPULAR = [
   "Teknik Informatika",
   "Sistem Informasi",
+  "Kecerdasan Buatan",
+  "Sains Data",
   "Akuntansi",
   "Kedokteran",
   "Teknik Elektro",
@@ -54,6 +56,14 @@ const POPULAR = [
  * Daftar di database berisi 243 nama, bukan ~29.000 prodi per kampus dari
  * PDDikti. Jadi user pasti akan menemui prodi yang tidak ada, dan itu bukan
  * kasus tepi: "pakai yang saya ketik" adalah opsi setara, bukan jalan darurat.
+ *
+ * Usability test November 2026: tiga dari lima partisipan bertanya "prodiku
+ * tidak ada", padahal opsi ketik sendiri sudah ada — ia hanya muncul setelah
+ * mengetik, kecil di bawah daftar. Sekarang petunjuknya terlihat sejak panel
+ * dibuka, tombolnya menonjol, ada saran "Mungkin maksudmu" dari
+ * prodi_terdekat() untuk nama yang tidak cocok huruf per huruf ("Data Sains"
+ * -> Sains Data), dan di bawah pemicu tertulis prodi mana yang dipakai
+ * rekomendasi untuk isian bebas itu.
  */
 /** Letak dan ukuran popover desktop, dihitung dari kotak pemicu. */
 type PosisiPopover = { left: number; width: number; top: number; maxHeight: number };
@@ -73,6 +83,8 @@ export default function StudyProgramCombobox({
   const [results, setResults] = useState<StudyProgram[]>([]);
   const [popular, setPopular] = useState<StudyProgram[]>([]);
   const [loading, setLoading] = useState(false);
+  const [saran, setSaran] = useState<{ id: number; name_id: string } | null>(null);
+  const [padanan, setPadanan] = useState<{ label: string; nama: string | null } | null>(null);
   const reqId = useRef(0);
   const rootRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -117,9 +129,11 @@ export default function StudyProgramCombobox({
         return;
       }
       setLoading(true);
-      searchStudyPrograms(q, 30)
-        .then((r) => {
-          if (id === reqId.current) setResults(r);
+      Promise.all([searchStudyPrograms(q, 30), prodiTerdekat(q)])
+        .then(([r, s]) => {
+          if (id !== reqId.current) return;
+          setResults(r);
+          setSaran(s && !r.some((x) => x.id === s.id) ? s : null);
         })
         .catch(() => {
           if (id === reqId.current) setResults([]);
@@ -130,6 +144,21 @@ export default function StudyProgramCombobox({
     }, 250);
     return () => clearTimeout(timer);
   }, [query, open]);
+
+  // Prodi yang dipakai rekomendasi untuk isian bebas yang sudah dipilih.
+  useEffect(() => {
+    if (!value.custom || !value.label) return;
+    let hidup = true;
+    const label = value.label;
+    void prodiTerdekat(label).then((s) => {
+      if (hidup) setPadanan({ label, nama: s?.name_id ?? null });
+    });
+    return () => {
+      hidup = false;
+    };
+  }, [value.custom, value.label]);
+  // Hanya berlaku untuk isian yang sedang dipilih, bukan sisa isian sebelumnya.
+  const padananIni = value.custom && padanan?.label === value.label ? padanan : null;
 
   // Tutup saat klik di luar (hanya relevan untuk mode popover).
   useEffect(() => {
@@ -282,6 +311,24 @@ export default function StudyProgramCombobox({
           <p className="px-3 py-3 text-sm text-slate-400">Mencari…</p>
         )}
 
+        {q.length >= 2 && !loading && saran && (
+          <div>
+            <p className="px-3 pb-1 pt-3 text-xs text-slate-400">Mungkin maksudmu</p>
+            <ul>
+              <li>
+                <button
+                  type="button"
+                  onClick={() => pick({ id: saran.id, name_id: saran.name_id, rumpun: [] })}
+                  className="flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-2.5 text-left text-sm text-slate-900 transition-colors hover:bg-[#EEF2FF]"
+                >
+                  <Sparkles className="h-4 w-4 shrink-0 text-[#7033FF]" />
+                  <span className="truncate">{saran.name_id}</span>
+                </button>
+              </li>
+            </ul>
+          </div>
+        )}
+
         {grouped.map(([rumpun, items]) => (
           <div key={rumpun}>
             <p className="px-3 pb-1 pt-3 text-xs text-slate-400">{rumpun}</p>
@@ -298,15 +345,28 @@ export default function StudyProgramCombobox({
             <button
               type="button"
               onClick={useCustom}
-              className="w-full cursor-pointer rounded-lg px-3 py-2.5 text-left text-sm text-[#7033FF] transition-colors hover:bg-[#EEF2FF]"
+              className="flex w-full cursor-pointer items-center gap-2.5 rounded-xl bg-[#F1EBFF] px-3 py-3 text-left text-sm font-semibold text-[#7033FF] transition-colors hover:bg-[#E6DBFF]"
             >
-              Pakai &ldquo;{q}&rdquo; — tidak ada di daftar
+              <Plus className="h-4 w-4 shrink-0" />
+              <span className="min-w-0">
+                <span className="block truncate">Pakai &ldquo;{q}&rdquo; sebagai prodiku</span>
+                <span className="block text-xs font-normal text-[#525252]">
+                  Untuk prodi yang tidak ada di daftar
+                </span>
+              </span>
             </button>
           </div>
         )}
 
-        {q.length >= 2 && !loading && results.length === 0 && !canUseCustom && (
+        {q.length >= 2 && !loading && results.length === 0 && !canUseCustom && !saran && (
           <p className="px-3 py-3 text-sm text-slate-400">Tidak ada hasil.</p>
+        )}
+
+        {q.length < 2 && (
+          <p className="mt-2 border-t border-slate-100 px-3 pb-1 pt-3 text-xs leading-relaxed text-slate-500">
+            Prodimu tidak ada di daftar? Ketik namanya di kolom pencarian, lalu pilih{" "}
+            <strong className="font-semibold text-[#7033FF]">&ldquo;Pakai … sebagai prodiku&rdquo;</strong>.
+          </p>
         )}
       </div>
     </div>
@@ -328,8 +388,12 @@ export default function StudyProgramCombobox({
         <ChevronsUpDown className="h-4 w-4 shrink-0 text-slate-400" />
       </button>
 
-      {value.custom && value.label && (
-        <p className="mt-2 px-1 text-xs text-slate-400">Di luar daftar — akan ditinjau admin.</p>
+      {padananIni && (
+        <p className="mt-2 px-1 text-xs leading-relaxed text-slate-500">
+          {padananIni.nama
+            ? <>Prodi di luar daftar. Rekomendasi profesi memakai prodi terdekat: <strong className="font-semibold text-slate-700">{padananIni.nama}</strong>.</>
+            : "Prodi di luar daftar dan belum ada padanannya, jadi rekomendasi belum memakai jurusanmu. Prodinya akan ditinjau admin."}
+        </p>
       )}
 
       {open && (

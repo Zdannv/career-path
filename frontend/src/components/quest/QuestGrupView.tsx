@@ -9,6 +9,11 @@
  *                  -> lembar konfirmasi -> layar sukses -> baris jadi "Selesai"
  *   mode LANGSUNG  Selesaikan -> lembar konfirmasi -> layar sukses
  *
+ * Sejak usability test November 2026: setelah quest diambil, lembar
+ * "Selesaikan" langsung terbuka berisi tombol sumber dan kolom jawaban —
+ * partisipan tidak tahu bahwa baris quest-nya berubah jadi tombol Selesaikan.
+ * Jawaban yang sudah dikirim bisa dibaca lagi di baris quest yang selesai.
+ *
  * Yang boleh ditekan ditentukan database (`bisa`): grup terbuka, level
  * sebelumnya selesai untuk hard skill dan tools, syarat waktu magang, dan
  * seterusnya. Setelah setiap aksi, grup dimuat ulang dari server — status
@@ -18,10 +23,10 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, ArrowUpRight, Check, ChevronRight, CircleCheck, Loader2, Lock } from "lucide-react";
+import { ArrowLeft, ArrowUpRight, Check, ChevronDown, ChevronRight, CircleCheck, Loader2, Lock } from "lucide-react";
 import { AppTopNav } from "@/components/explore/AppNav";
 import Sheet from "@/components/profesi/Sheet";
-import KonfirmasiQuest, { type Aksi } from "@/components/quest/KonfirmasiQuest";
+import KonfirmasiQuest, { hapusDraf, type Aksi } from "@/components/quest/KonfirmasiQuest";
 import MetaQuest from "@/components/quest/MetaQuest";
 import SuksesQuest from "@/components/quest/SuksesQuest";
 import TipsBanner from "@/components/quest/TipsBanner";
@@ -34,7 +39,7 @@ import {
   type Quest,
   type QuestGrup,
 } from "@/lib/quest";
-import { ROUTES } from "@/lib/routes";
+import { ROUTES, profesiPath } from "@/lib/routes";
 
 // ── tombol di kanan baris quest ────────────────────────────────────────────
 
@@ -86,6 +91,29 @@ function TombolQuest({
   );
 }
 
+/** Jawaban yang sudah dikirim, tertutup sampai diketuk supaya daftar tetap ringkas. */
+function JawabanTersimpan({ teks }: { teks: string }) {
+  const [buka, setBuka] = useState(false);
+  return (
+    <div className="mt-2.5">
+      <button
+        type="button"
+        onClick={() => setBuka((v) => !v)}
+        aria-expanded={buka}
+        className="inline-flex items-center gap-1 text-[12.5px] font-medium text-violet-700 hover:text-violet-800"
+      >
+        {buka ? "Sembunyikan jawabanmu" : "Lihat jawabanmu"}
+        <ChevronDown className={`size-3.5 transition-transform ${buka ? "rotate-180" : ""}`} aria-hidden />
+      </button>
+      {buka && (
+        <p className="mt-1.5 whitespace-pre-line rounded-xl bg-white px-3.5 py-2.5 text-[13px] leading-relaxed text-slate-700 ring-1 ring-slate-200">
+          {teks}
+        </p>
+      )}
+    </div>
+  );
+}
+
 function BarisQuest({
   q,
   mode,
@@ -120,6 +148,7 @@ function BarisQuest({
           {q.alasan}
         </p>
       )}
+      {selesai && q.jawaban && <JawabanTersimpan teks={q.jawaban} />}
     </li>
   );
 }
@@ -156,12 +185,15 @@ export default function QuestGrupView({ slug, kode }: { slug: string; kode: stri
   }, [slug, kode]);
 
   /** Setelah ambil/selesaikan: status dan kunci level berikutnya dari server. */
-  async function muatUlang() {
+  async function muatUlang(): Promise<QuestGrup | null> {
     try {
-      setGrup(await ambilGrup(slug, kode));
+      const g = await ambilGrup(slug, kode);
+      setGrup(g);
+      return g;
     } catch {
       // Aksinya sudah tersimpan; daftar yang basi diperbaiki saat halaman
       // dibuka lagi. Tidak perlu membatalkan layar sukses karena ini.
+      return null;
     }
   }
 
@@ -170,18 +202,23 @@ export default function QuestGrupView({ slug, kode }: { slug: string; kode: stri
     setPilih({ q, aksi });
   }
 
-  async function konfirmasi() {
+  async function konfirmasi(jawaban: string) {
     if (!pilih) return;
     setProses(true);
     setGalat(null);
     try {
       if (pilih.aksi === "ambil") {
         await ambilQuest(pilih.q.key);
+        const g = await muatUlang();
+        // Quest yang baru diambil langsung dibuka untuk dikerjakan.
+        const q = g?.quest.find((x) => x.key === pilih.q.key);
+        setPilih(q && g?.mode === "AMBIL" ? { q, aksi: "selesaikan" } : null);
       } else {
-        setHasil(await selesaikanQuest(pilih.q.key));
+        setHasil(await selesaikanQuest(pilih.q.key, jawaban));
+        hapusDraf(pilih.q.key);
+        setPilih(null);
+        await muatUlang();
       }
-      setPilih(null);
-      await muatUlang();
     } catch (e) {
       setGalat(pesanGalat(e));
     } finally {
@@ -292,9 +329,13 @@ export default function QuestGrupView({ slug, kode }: { slug: string; kode: stri
       </main>
 
       <KonfirmasiQuest
+        key={pilih ? `${pilih.q.key}:${pilih.aksi}` : "tutup"}
         quest={pilih?.q ?? null}
         aksi={pilih?.aksi ?? "ambil"}
-        bisaSalin={grup?.mode === "AMBIL"}
+        mode={grup?.mode ?? "AMBIL"}
+        infoHref={
+          grup?.jenis === "EKSPLORASI" && grup.career_id ? profesiPath(grup.career_id) : null
+        }
         proses={proses}
         galat={galat}
         onYa={konfirmasi}

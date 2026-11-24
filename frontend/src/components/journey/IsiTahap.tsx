@@ -12,10 +12,16 @@
  * Yang membedakan hanya penyajian — semua datanya sudah dirakit RPC
  * journey_stage(), termasuk statusnya, jadi komponen ini tidak menghitung apa
  * pun sendiri.
+ *
+ * Kode item soft skill, hard skill, dan tools sama dengan kode grup quest-nya
+ * (quest_sinkron_journey menulis keduanya dari sumber yang sama), jadi tiap
+ * kartu bisa menaut langsung ke /quest/<jenis>/<kode>. Sebelum usability test
+ * November 2026 tidak ada satu pun tautan dari sini ke quest.
  */
 
 import { useState } from "react";
-import { ArrowUpRight, Check, ScrollText } from "lucide-react";
+import Link from "next/link";
+import { ArrowRight, ArrowUpRight, Check, ChevronRight, Lock, ScrollText } from "lucide-react";
 import HasilBox from "@/components/journey/HasilBox";
 import Ikon from "@/components/journey/Ikon";
 import Sheet from "@/components/profesi/Sheet";
@@ -28,6 +34,7 @@ import type {
   JourneyStage,
   KontenSkillTools,
 } from "@/lib/roadmapJourney";
+import { questGrupPath } from "@/lib/routes";
 
 // ── tahap 1 dan 4: daftar sederhana ─────────────────────────────────────────
 
@@ -61,9 +68,11 @@ const TONE: Record<string, string> = {
 function KartuSoftSkill({
   item,
   onDetail,
+  terkunci,
 }: {
   item: ItemSoftSkill;
   onDetail: () => void;
+  terkunci: boolean;
 }) {
   return (
     <article className="flex gap-3.5 border-b border-slate-100 py-4 last:border-b-0">
@@ -80,18 +89,26 @@ function KartuSoftSkill({
         <p className="mt-1 text-[13.5px] leading-relaxed text-slate-500">{item.isi}</p>
 
         <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
-          <span className="inline-flex items-center gap-1.5 text-[13px] font-medium text-slate-600">
-            <ScrollText className="size-4 text-violet-500" aria-hidden />
-            {item.n_quest} Quest
-          </span>
           <button
             type="button"
             onClick={onDetail}
-            className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 px-3.5 py-2 text-[13px] font-medium text-slate-700 transition-colors hover:bg-slate-50"
+            className="inline-flex items-center gap-1.5 text-[13px] font-medium text-slate-600 underline-offset-2 hover:underline"
           >
-            Tampilkan Detail
-            <ArrowUpRight className="size-4" aria-hidden />
+            <ScrollText className="size-4 text-violet-500" aria-hidden />
+            {item.n_quest} Quest · lihat detail
           </button>
+          <Link
+            href={questGrupPath("soft-skill", item.kode)}
+            className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-2 text-[13px] font-semibold transition-colors ${
+              terkunci
+                ? "border border-slate-200 text-slate-500 hover:bg-slate-50"
+                : "bg-violet-600 text-white hover:bg-violet-700"
+            }`}
+          >
+            {terkunci && <Lock className="size-3.5" aria-hidden />}
+            Kerjakan Quest
+            <ArrowUpRight className="size-4" aria-hidden />
+          </Link>
         </div>
       </div>
     </article>
@@ -100,7 +117,7 @@ function KartuSoftSkill({
 
 // ── tahap 3: tabel hard skill dan tools ─────────────────────────────────────
 
-function TabelSkill({ label, items }: { label: string; items: ItemSkill[] }) {
+function TabelSkill({ label, slug, items }: { label: string; slug: string; items: ItemSkill[] }) {
   if (!items.length) {
     return (
       <p className="rounded-xl bg-slate-50 px-4 py-5 text-center text-[13px] text-slate-500">
@@ -116,17 +133,21 @@ function TabelSkill({ label, items }: { label: string; items: ItemSkill[] }) {
       </div>
       <ul>
         {items.map((s) => (
-          <li
-            key={s.kode}
-            className="flex items-start gap-3 border-b border-slate-100 px-4 py-3.5 last:border-b-0"
-          >
-            <div className="min-w-0 flex-1">
-              <p className="text-[14px] font-semibold leading-snug text-slate-900">{s.judul}</p>
-              {s.isi && (
-                <p className="mt-0.5 text-[12.5px] leading-relaxed text-slate-500">{s.isi}</p>
-              )}
-            </div>
-            <StatusPill status={s.status} />
+          <li key={s.kode} className="border-b border-slate-100 last:border-b-0">
+            <Link
+              href={questGrupPath(slug, s.kode)}
+              className="flex items-start gap-3 px-4 py-3.5 transition-colors hover:bg-slate-50"
+            >
+              <div className="min-w-0 flex-1">
+                <p className="text-[14px] font-semibold leading-snug text-slate-900">{s.judul}</p>
+                {s.isi && (
+                  <p className="mt-0.5 text-[12.5px] leading-relaxed text-slate-500">{s.isi}</p>
+                )}
+                <p className="mt-1 text-[12px] font-medium text-violet-700">Kerjakan quest-nya</p>
+              </div>
+              <StatusPill status={s.status} />
+              <ChevronRight className="mt-0.5 size-4 shrink-0 text-slate-400" aria-hidden />
+            </Link>
           </li>
         ))}
       </ul>
@@ -148,9 +169,9 @@ function SkillDanTools({ konten }: { konten: KontenSkillTools }) {
       />
       <div className="mt-4">
         {tab === "hard" ? (
-          <TabelSkill label="Hard Skill" items={konten.hard_skill} />
+          <TabelSkill label="Hard Skill" slug="hard-skill" items={konten.hard_skill} />
         ) : (
-          <TabelSkill label="Tools" items={konten.tools} />
+          <TabelSkill label="Tools" slug="tools" items={konten.tools} />
         )}
       </div>
     </div>
@@ -159,12 +180,18 @@ function SkillDanTools({ konten }: { konten: KontenSkillTools }) {
 
 // ── penampung ───────────────────────────────────────────────────────────────
 
-export default function IsiTahap({ tahap }: { tahap: JourneyStage }) {
+export default function IsiTahap({
+  tahap,
+  terkunci = false,
+}: {
+  tahap: JourneyStage;
+  terkunci?: boolean;
+}) {
   const [detail, setDetail] = useState<ItemSoftSkill | null>(null);
 
   return (
     <>
-      <section className="mt-6">
+      <section className="mt-6 lg:mt-0">
         <h2 className="text-[19px] font-bold tracking-tight text-slate-900">
           Apa yang akan kamu pelajari?
         </h2>
@@ -177,7 +204,12 @@ export default function IsiTahap({ tahap }: { tahap: JourneyStage }) {
           )}
           {tahap.content_kind === "SOFT_SKILL" &&
             (tahap.konten as ItemSoftSkill[]).map((s) => (
-              <KartuSoftSkill key={s.kode} item={s} onDetail={() => setDetail(s)} />
+              <KartuSoftSkill
+                key={s.kode}
+                item={s}
+                onDetail={() => setDetail(s)}
+                terkunci={terkunci}
+              />
             ))}
           {tahap.content_kind === "SKILL_TOOLS" && (
             <SkillDanTools konten={tahap.konten as KontenSkillTools} />
@@ -202,6 +234,15 @@ export default function IsiTahap({ tahap }: { tahap: JourneyStage }) {
               </li>
             ))}
           </ul>
+          {detail && (
+            <Link
+              href={questGrupPath("soft-skill", detail.kode)}
+              className="mt-6 flex w-full items-center justify-center gap-2 rounded-full bg-violet-600 py-3 text-[14.5px] font-semibold text-white transition-colors hover:bg-violet-700"
+            >
+              Kerjakan quest {detail.judul}
+              <ArrowRight className="size-4" aria-hidden />
+            </Link>
+          )}
         </div>
       </Sheet>
     </>

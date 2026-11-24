@@ -78,17 +78,35 @@ type Props = {
    * berbunyi "Lanjutkan progress-mu", bukan mengajak mulai dari awal.
    */
   overrides?: { eyebrow?: string; cta?: string };
+  /**
+   * Sorot banner ini sebagai langkah pertama: bingkai ungu dan pita "Mulai di
+   * sini". Dipakai Career Discovery untuk pengguna yang belum mulai — di
+   * usability test November 2026 dua dari lima partisipan tidak menyadari
+   * banner ini adalah pintunya.
+   */
+  sorot?: boolean;
 };
 
-export default function PromoBanner({ variant, href, className = "", overrides }: Props) {
+export default function PromoBanner({ variant, href, className = "", overrides, sorot = false }: Props) {
   const b = BANNERS[variant];
 
   return (
     <Link
       href={href}
       style={{ backgroundColor: b.bg }}
-      className={`group relative block min-h-[200px] overflow-hidden rounded-2xl transition-opacity hover:opacity-95 sm:min-h-[180px] lg:min-h-[200px] ${className}`}
+      className={`group relative block min-h-[200px] overflow-hidden rounded-2xl transition-opacity hover:opacity-95 sm:min-h-[180px] lg:min-h-[200px] ${
+        sorot ? "ring-2 ring-violet-500 ring-offset-2 ring-offset-[#E7EAF2]" : ""
+      } ${className}`}
     >
+      {sorot && (
+        <span className="absolute right-3 top-3 z-10 inline-flex items-center gap-1.5 rounded-full bg-violet-600 px-2.5 py-1 text-[11px] font-bold text-white shadow-sm">
+          <span className="relative flex size-2">
+            <span className="absolute inline-flex size-full animate-ping rounded-full bg-white opacity-75 motion-reduce:hidden" />
+            <span className="relative inline-flex size-2 rounded-full bg-white" />
+          </span>
+          Mulai di sini
+        </span>
+      )}
       {/* Dua berkas untuk satu ilustrasi karena wadahnya berubah bentuk:
           4:1 saat memenuhi lebar tablet, 1,7:1 di ponsel dan di kolom kiri
           desktop. Memakai satu berkas untuk keduanya berarti salah satunya

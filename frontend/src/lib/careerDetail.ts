@@ -310,6 +310,23 @@ export async function ambilKunciProfesi(): Promise<KunciProfesi | null> {
   return (data as KunciProfesi) ?? null;
 }
 
+export type PeringkatMatch = { peringkat: number; total: number };
+
+/**
+ * Peringkat profesi ini di antara semua profesi untuk pengguna (0051).
+ *
+ * Partisipan usability test membaca skor 55% sebagai "kurang cocok", padahal
+ * itu profesi teratas mereka. Peringkat memberi skala yang tidak bisa disalah
+ * baca. NULL kalau Career DNA belum selesai atau migrasinya belum jalan.
+ */
+export async function ambilPeringkat(careerId: number): Promise<PeringkatMatch | null> {
+  const { data, error } = await supabase
+    .rpc("peringkat_match", { p_career_id: careerId })
+    .maybeSingle();
+  if (error || !data) return null;
+  return data as PeringkatMatch;
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Pemformatan khusus layar detail
 // ─────────────────────────────────────────────────────────────────────────────

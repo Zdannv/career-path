@@ -16,16 +16,27 @@
  * berapa quest-nya, dan apa syarat membukanya. Ini tambahan di luar desain —
  * tanpa itu pengguna baru hanya melihat dua quest Eksplorasi dan mengira
  * isinya memang cuma dua.
+ *
+ * Di bawah judul ada pita "hari beruntun" (0051): usability test menemukan
+ * gamifikasinya kurang mengikat, dan partisipan menyebut api beruntun ala
+ * aplikasi belajar bahasa sebagai alasan kembali setiap hari.
  */
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowUpRight, Lock, NotepadText } from "lucide-react";
+import { ArrowUpRight, Flame, Lock, NotepadText } from "lucide-react";
 import { AppBottomNav, AppTopNav } from "@/components/explore/AppNav";
 import IkonGrup from "@/components/quest/IkonGrup";
 import TipsBanner from "@/components/quest/TipsBanner";
-import { ambilBeranda, type JenisTerkunci, type KartuGrup, type QuestBeranda } from "@/lib/quest";
+import {
+  ambilBeranda,
+  ambilStreak,
+  type JenisTerkunci,
+  type KartuGrup,
+  type QuestBeranda,
+  type Streak,
+} from "@/lib/quest";
 import { ROUTES, questGrupPath } from "@/lib/routes";
 
 function Kartu({ g }: { g: KartuGrup }) {
@@ -86,13 +97,49 @@ function KartuTerkunci({ j }: { j: JenisTerkunci }) {
   );
 }
 
+/** Pita hari beruntun. Sengaja tetap tampil saat 0 hari: ajakan memulai. */
+export function PitaStreak({ s }: { s: Streak }) {
+  const menyala = s.hari > 0;
+  return (
+    <div
+      className={`flex items-center gap-3 rounded-2xl px-4 py-3 ${
+        menyala ? "bg-orange-50 ring-1 ring-orange-200" : "bg-slate-50 ring-1 ring-slate-200"
+      }`}
+    >
+      <span
+        className={`grid size-10 shrink-0 place-items-center rounded-full ${
+          menyala ? "bg-orange-500 text-white" : "bg-slate-200 text-slate-400"
+        }`}
+      >
+        <Flame className="size-5" aria-hidden />
+      </span>
+      <div className="min-w-0 flex-1 leading-tight">
+        <p className="text-[15px] font-bold text-slate-900">
+          {menyala ? `${s.hari} hari beruntun` : "Mulai api beruntunmu"}
+        </p>
+        <p className="mt-0.5 text-[12.5px] text-slate-600">
+          {s.hari_ini
+            ? "Mantap, quest hari ini sudah beres. Lanjutkan besok!"
+            : menyala
+              ? "Selesaikan 1 quest hari ini supaya apinya tidak padam."
+              : "Selesaikan 1 quest hari ini, lalu ulangi besok."}
+        </p>
+      </div>
+    </div>
+  );
+}
+
 export default function QuestView() {
   const [data, setData] = useState<QuestBeranda | null>(null);
+  const [streak, setStreak] = useState<Streak | null>(null);
   const [muat, setMuat] = useState(true);
   const [galat, setGalat] = useState<string | null>(null);
 
   useEffect(() => {
     let batal = false;
+    void ambilStreak().then((s) => {
+      if (!batal) setStreak(s);
+    });
     ambilBeranda()
       .then((d) => {
         if (!batal) setData(d);
@@ -112,7 +159,8 @@ export default function QuestView() {
     <div className="flex min-h-screen flex-col bg-white">
       <AppTopNav />
 
-      <main className="mx-auto w-full max-w-2xl flex-1 px-4 pb-10 pt-6 sm:px-6 lg:py-8">
+      {/* Desktop (lg): lebih lebar, kartu quest dua kolom. */}
+      <main className="mx-auto w-full max-w-2xl flex-1 px-4 pb-10 pt-6 sm:px-6 lg:max-w-5xl lg:px-8 lg:py-8">
         <h1 className="text-[30px] font-bold tracking-tight text-slate-900">Quest</h1>
         <p className="mt-1 text-[14px] text-slate-500">Apa yang perlu Kamu kerjakan minggu ini</p>
 
@@ -143,29 +191,36 @@ export default function QuestView() {
           )
         ) : (
           <>
-            <div className="mt-5">
-              {data.eksplorasi_selesai ? (
-                <Image
-                  src="/quest/header.jpg"
-                  alt=""
-                  width={1916}
-                  height={732}
-                  sizes="(min-width: 42rem) 42rem, 100vw"
-                  priority
-                  className="h-auto w-full rounded-[20px]"
-                />
-              ) : (
-                <TipsBanner
-                  besar={false}
-                  tips={{
-                    gambar: "WHATS_NEXT",
-                    label: "Tips Navika",
-                    judul: "Selesaikan quest untuk unlock stage berikutnya",
-                    isi: null,
-                    sumber: false,
-                  }}
-                />
+            <div className="lg:mt-5 lg:grid lg:grid-cols-2 lg:items-center lg:gap-4">
+              {streak && (
+                <div className="mt-5 lg:mt-0">
+                  <PitaStreak s={streak} />
+                </div>
               )}
+              <div className={`mt-5 lg:mt-0 ${streak ? "" : "lg:col-span-2"}`}>
+                {data.eksplorasi_selesai ? (
+                  <Image
+                    src="/quest/header.jpg"
+                    alt=""
+                    width={1916}
+                    height={732}
+                    sizes="(min-width: 42rem) 42rem, 100vw"
+                    priority
+                    className="h-auto w-full rounded-[20px]"
+                  />
+                ) : (
+                  <TipsBanner
+                    besar={false}
+                    tips={{
+                      gambar: "WHATS_NEXT",
+                      label: "Tips Navika",
+                      judul: "Selesaikan quest untuk unlock stage berikutnya",
+                      isi: null,
+                      sumber: false,
+                    }}
+                  />
+                )}
+              </div>
             </div>
 
             {data.semua_selesai ? (
@@ -177,7 +232,7 @@ export default function QuestView() {
                 </p>
               </div>
             ) : (
-              <ul className="mt-5 space-y-3">
+              <ul className="mt-5 space-y-3 lg:grid lg:grid-cols-2 lg:gap-3 lg:space-y-0">
                 {data.grup.map((g) => (
                   <Kartu key={`${g.jenis}:${g.kode}`} g={g} />
                 ))}
@@ -191,7 +246,7 @@ export default function QuestView() {
                   {data.terkunci.reduce((n, j) => n + j.n_quest, 0)} quest lagi terbuka bertahap
                   seiring progresmu.
                 </p>
-                <ul className="mt-3 space-y-2.5">
+                <ul className="mt-3 space-y-2.5 lg:grid lg:grid-cols-2 lg:gap-2.5 lg:space-y-0">
                   {data.terkunci.map((j) => (
                     <KartuTerkunci key={j.jenis} j={j} />
                   ))}

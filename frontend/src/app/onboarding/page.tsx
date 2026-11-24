@@ -2,10 +2,11 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { BookMarked, AlertCircle, ArrowRight, ChevronsUpDown } from "lucide-react";
+import { BookMarked, AlertCircle, ArrowRight, ChevronsUpDown, Compass } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { HOME_AFTER_ONBOARDING, ROUTES } from "@/lib/routes";
 import { sudahOnboarding } from "@/lib/postAuth";
+import { dibukaDariLinkEmail, umumkanTerverifikasi } from "@/lib/verifikasiTab";
 import AuthBrandHeader from "@/components/AuthBrandHeader";
 import ProgressHeader from "@/components/onboarding/ProgressHeader";
 import ChipGroup, { type ChipOption } from "@/components/onboarding/ChipGroup";
@@ -35,7 +36,7 @@ import {
 /** Judul langkah dipakai dua kali: di kartu progres dan di stepper desktop. */
 const STEPS: StepMeta[] = [
   { title: "Latar belakang pendidikan", description: "Informasi riwayat pendidikanmu" },
-  { title: "Status Kelulusan", description: "Status kelulusan dari jenjang pendidikan terakhir" },
+  { title: "Status Kelulusan", description: "Masih studi atau sudah lulus dari jenjang ini" },
   { title: "Review dan Selesai!", description: "Rangkuman latar belakang pendidikanmu" },
 ];
 
@@ -63,6 +64,11 @@ export default function OnboardingPage() {
   const [smk, setSmk] = useState<SmkProgram[]>([]);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
+  // Link verifikasi dibuka di tab baru dan tab lama sudah mengambil alih.
+  const [diambilTabLain, setDiambilTabLain] = useState(false);
+  // Peramban hanya mengizinkan window.close() untuk tab yang dibuka skrip;
+  // tab dari email biasanya bukan. Kalau ditolak, katakan cara menutupnya.
+  const [tutupDitolak, setTutupDitolak] = useState(false);
 
   const [step, setStep] = useState<0 | 1 | 2 | 3 | 4>(0);
   const [level, setLevel] = useState<LevelCode | null>(null);
@@ -83,11 +89,21 @@ export default function OnboardingPage() {
   // ── muat sesi + data referensi ────────────────────────────────────────────
   useEffect(() => {
     let alive = true;
+    // Dibaca sebelum klien Supabase menghapus token dari address bar.
+    const dariEmail = dibukaDariLinkEmail();
     (async () => {
       const { data } = await supabase.auth.getSession();
       if (!alive) return;
       if (!data.session) {
         router.replace(`${ROUTES.login}?next=${encodeURIComponent(ROUTES.onboarding)}`);
+        return;
+      }
+      // Tab layar verifikasi masih terbuka? Biar ia yang melanjutkan
+      // (lib/verifikasiTab); tab ini cukup memberi tahu.
+      if (dariEmail && (await umumkanTerverifikasi())) {
+        if (!alive) return;
+        setDiambilTabLain(true);
+        setReady(true);
         return;
       }
       // Link verifikasi email mendarat di sini. Yang sudah pernah menuntaskan
@@ -256,6 +272,45 @@ export default function OnboardingPage() {
     );
   }
 
+  if (diambilTabLain) {
+    return (
+      <div className="flex flex-1 flex-col bg-white">
+        <AuthBrandHeader />
+        <div className="mx-auto flex w-full max-w-[480px] flex-1 flex-col items-center justify-center px-5 pb-16 text-center">
+          <OnboardingIllustration name="done" className="h-auto w-[220px]" priority />
+          <h1 className="mt-6 text-xl font-bold text-slate-900">Email kamu sudah terverifikasi ✓</h1>
+          <p className="mt-2 text-sm leading-relaxed text-[#525252]">
+            Lanjutkan di tab sebelumnya — halaman itu sudah otomatis pindah ke langkah berikutnya.
+            Tab ini boleh kamu tutup.
+          </p>
+          <button
+            type="button"
+            onClick={() => {
+              window.close();
+              window.setTimeout(() => setTutupDitolak(true), 300);
+            }}
+            className="mt-7 w-full cursor-pointer rounded-full bg-[#7033FF] px-6 py-3.5 text-sm font-semibold text-white transition-colors hover:bg-[#5f27e6]"
+          >
+            Tutup tab ini
+          </button>
+          {tutupDitolak && (
+            <p className="mt-3 text-xs leading-relaxed text-[#525252]">
+              Peramban tidak mengizinkan tab ini ditutup otomatis. Tutup lewat tombol × di tab,
+              lalu kembali ke tab Navika sebelumnya.
+            </p>
+          )}
+          <button
+            type="button"
+            onClick={() => window.location.replace(ROUTES.onboarding)}
+            className="mt-3 cursor-pointer text-sm font-semibold text-[#7033FF] hover:underline"
+          >
+            Lanjut di tab ini saja
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   if (loadError) {
     return (
       <div className="flex flex-1 flex-col bg-white">
@@ -287,8 +342,8 @@ export default function OnboardingPage() {
                 Yay! Data kamu tersimpan 🎉
               </h1>
               <p className="mx-auto mt-3 max-w-[420px] text-sm leading-relaxed text-[#525252]">
-                Terima kasih! Informasi ini membantu Navika menyusun roadmap menuju profesi
-                impianmu.
+                Terima kasih! Langkah berikutnya: kenali minat dan kebiasaanmu lewat Career
+                Discovery, supaya Navika bisa menyarankan profesi yang paling cocok.
               </p>
 
               <dl className="mt-8 w-full text-left">
@@ -302,17 +357,29 @@ export default function OnboardingPage() {
             </div>
 
             {/* Di desktop tombolnya menyatu di dalam kartu, bukan bilah footer
-                terpisah seperti langkah 1-3. */}
-            <div className="sticky bottom-0 -mx-4 bg-[#F1EBFF] px-4 py-4 sm:static sm:mx-0 sm:rounded-xl sm:px-6 lg:mt-7 lg:bg-transparent lg:p-0">
+                terpisah seperti langkah 1-3.
+
+                Tombol utamanya Career Discovery, bukan Dashboard: di usability
+                test November 2026 dua dari lima partisipan tidak menemukan
+                pintu Career Discovery di Explore. Explore tetap satu ketukan. */}
+            <div className="sticky bottom-0 -mx-4 space-y-2.5 bg-[#F1EBFF] px-4 py-4 sm:static sm:mx-0 sm:rounded-xl sm:px-6 lg:mt-7 lg:bg-transparent lg:p-0">
               {/* Hanya di desktop tombolnya menyempit dan terpusat (C-01); di
                   mobile dan tablet ia melebar penuh di dalam bilah lilac. */}
               <button
                 type="button"
-                onClick={() => router.push(HOME_AFTER_ONBOARDING)}
+                onClick={() => router.push(ROUTES.careerDna)}
                 className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-full bg-[#7033FF] px-6 py-3.5 text-sm font-semibold text-white transition-colors hover:bg-[#5f27e6] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#7033FF] lg:mx-auto lg:w-auto lg:min-w-[320px] lg:px-8"
               >
-                Lanjut ke Dashboard
+                <Compass className="h-4 w-4" />
+                Mulai Career Discovery
                 <ArrowRight className="h-4 w-4" />
+              </button>
+              <button
+                type="button"
+                onClick={() => router.push(HOME_AFTER_ONBOARDING)}
+                className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-full px-6 py-2.5 text-sm font-semibold text-[#7033FF] transition-colors hover:bg-white/60 lg:mx-auto lg:w-auto lg:min-w-[320px]"
+              >
+                Jelajahi profesi dulu
               </button>
             </div>
           </div>
@@ -344,8 +411,8 @@ export default function OnboardingPage() {
                   <>
                     <ChipGroup
                       name="jenjang"
-                      legend="Pendidikan terakhir"
-                      description="Jenjang pendidikan terakhir atau saat ini."
+                      legend="Jenjang pendidikan saat ini"
+                      description="Pilih jenjang yang sedang kamu jalani. Sudah lulus? Pilih jenjang terakhirmu."
                       options={levelOptions}
                       value={level}
                       onChange={changeLevel}
@@ -397,7 +464,8 @@ export default function OnboardingPage() {
                           Program studi
                         </h2>
                         <p className="mt-1 text-sm text-[#525252]">
-                          Pilih program studi yang Kamu ambil
+                          Pilih program studi yang Kamu ambil. Tidak ada di daftar? Ketik saja
+                          namanya di kolom pencarian.
                         </p>
                         <div className="mt-4">
                           <StudyProgramCombobox value={studyProgram} onChange={setStudyProgram} />
@@ -466,8 +534,8 @@ export default function OnboardingPage() {
                   <div className="space-y-5">
                     <ReviewCard
                       icon={BookMarked}
-                      title="Pendidikan terakhir"
-                      subtitle="Informasi riwayat pendidikanmu"
+                      title="Pendidikan kamu"
+                      subtitle="Informasi pendidikanmu saat ini"
                       rows={summaryRows()}
                     />
 

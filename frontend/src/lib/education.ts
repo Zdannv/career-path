@@ -145,6 +145,21 @@ export async function searchStudyPrograms(query: string, limit = 20): Promise<St
   }));
 }
 
+/**
+ * Prodi daftar yang paling dekat dengan isian bebas (0051): "Teknik Informatika
+ * dan Komputer" -> Teknik Informatika, "Data Science" -> Sains Data.
+ *
+ * Inilah prodi yang dipakai rekomendasi untuk pengguna yang mengetik prodinya
+ * sendiri. NULL kalau tidak ada yang cukup dekat, atau migrasinya belum jalan.
+ */
+export async function prodiTerdekat(teks: string): Promise<{ id: number; name_id: string } | null> {
+  const q = teks.trim();
+  if (q.length < 2) return null;
+  const { data, error } = await supabase.rpc("prodi_terdekat", { p_teks: q }).maybeSingle();
+  if (error || !data) return null;
+  return data as { id: number; name_id: string };
+}
+
 /** 12 rumpun, untuk filter atau pengelompokan di dropdown. */
 export async function getStudyRumpun() {
   const { data, error } = await supabase

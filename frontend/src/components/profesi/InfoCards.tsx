@@ -5,7 +5,7 @@
  * estimasi pencapaian.
  */
 
-import { Building2, TrendingUp, Timer } from "lucide-react";
+import { ArrowRight, Building2, TrendingUp, Timer, Wallet } from "lucide-react";
 import type { SubIndustri } from "@/lib/careerDetail";
 
 export function KartuDemand({
@@ -41,6 +41,51 @@ export function KartuDemand({
         </span>
       </div>
     </section>
+  );
+}
+
+/**
+ * Ringkasan kisaran gaji di tab Analisa, dengan tautan ke rincian per jenjang
+ * di tab Insight. Tugas usability test meminta partisipan menyebut kisaran
+ * gaji, dan yang tidak sadar ada tab lain berhenti tanpa menemukannya.
+ */
+export function KartuGaji({ teks, onRincian }: { teks: string; onRincian: () => void }) {
+  return (
+    <section className="flex items-center justify-between gap-3 rounded-2xl bg-emerald-50 px-4 py-3.5">
+      <div className="flex min-w-0 items-start gap-3">
+        <Wallet className="mt-0.5 size-5 shrink-0 text-emerald-700" aria-hidden />
+        <div className="min-w-0">
+          <h3 className="text-[14.5px] font-semibold text-slate-900">Kisaran Gaji</h3>
+          <p className="mt-0.5 text-[16px] font-bold text-slate-900">{teks}<span className="text-[11.5px] font-normal text-slate-500"> /bulan</span></p>
+        </div>
+      </div>
+      <button
+        type="button"
+        onClick={onRincian}
+        className="inline-flex shrink-0 items-center gap-1 text-[12.5px] font-semibold text-emerald-800 hover:text-emerald-900"
+      >
+        Rincian
+        <ArrowRight className="size-3.5" aria-hidden />
+      </button>
+    </section>
+  );
+}
+
+/** Ajakan pindah ke tab berikutnya, di kaki tab yang sedang dibuka. */
+export function TabBerikutnya({ label, isi, onClick }: { label: string; isi: string; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="flex w-full items-center gap-3 rounded-2xl border border-violet-200 bg-white px-4 py-3.5 text-left transition-colors hover:bg-violet-50"
+    >
+      <span className="min-w-0 flex-1">
+        <span className="block text-[12px] text-slate-500">Selanjutnya</span>
+        <span className="block text-[14.5px] font-semibold text-violet-700">{label}</span>
+        <span className="mt-0.5 block text-[12.5px] leading-snug text-slate-500">{isi}</span>
+      </span>
+      <ArrowRight className="size-5 shrink-0 text-violet-600" aria-hidden />
+    </button>
   );
 }
 

@@ -10,15 +10,20 @@
  * Membuka layar ini juga membagikan hadiah yang sudah pantas didapat (lihat
  * progress_state di 0038), jadi badge onboarding dan Career DNA muncul di sini
  * walau akunnya dibuat sebelum mesin pencapaian ada.
+ *
+ * Sejak usability test November 2026: statistik ketiga "Hari Beruntun"
+ * (quest_streak, 0051), dan ajakan "Langkah berikutnya" ke Quest supaya
+ * layar ini tidak jadi jalan buntu.
  */
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { ChevronRight, Info } from "lucide-react";
+import { ArrowRight, ChevronRight, Info } from "lucide-react";
 import { AppBottomNav, AppTopNav } from "@/components/explore/AppNav";
 import HeroProgress from "@/components/progress/HeroProgress";
 import { ambilProgress, type ProgressState } from "@/lib/progress";
+import { ambilStreak, type Streak } from "@/lib/quest";
 import { ROUTES } from "@/lib/routes";
 
 function KartuLevel({ data }: { data: ProgressState }) {
@@ -82,9 +87,13 @@ export default function ProgressView() {
   const [data, setData] = useState<ProgressState | null>(null);
   const [muat, setMuat] = useState(true);
   const [galat, setGalat] = useState<string | null>(null);
+  const [streak, setStreak] = useState<Streak | null>(null);
 
   useEffect(() => {
     let batal = false;
+    void ambilStreak().then((s) => {
+      if (!batal) setStreak(s);
+    });
     ambilProgress()
       .then((d) => {
         if (!batal) setData(d);
@@ -104,7 +113,8 @@ export default function ProgressView() {
     <div className="flex min-h-screen flex-col bg-white">
       <AppTopNav />
 
-      <main className="mx-auto w-full max-w-2xl flex-1 px-4 pb-10 pt-6 sm:px-6 lg:py-8">
+      {/* Desktop (lg): dua kolom — ringkasan di kiri, pencapaian di kanan. */}
+      <main className="mx-auto w-full max-w-2xl flex-1 px-4 pb-10 pt-6 sm:px-6 lg:max-w-5xl lg:px-8 lg:py-8">
         <h1 className="text-[30px] font-bold tracking-tight text-slate-900">Progress</h1>
         <p className="mt-1 text-[14px] text-slate-500">Apa yang sudah Kamu capai</p>
 
@@ -125,67 +135,89 @@ export default function ProgressView() {
             </p>
           )
         ) : (
-          <>
-            <div className="mt-5">
-              <HeroProgress persen={data.total_persen} />
-            </div>
+          <div className="lg:grid lg:grid-cols-2 lg:items-start lg:gap-8">
+            <div>
+              <div className="mt-5">
+                <HeroProgress persen={data.total_persen} />
+              </div>
 
-            <div className="mt-4">
-              <KartuLevel data={data} />
-            </div>
+              <div className="mt-4">
+                <KartuLevel data={data} />
+              </div>
 
-            {!data.has_career && (
-              <p className="mt-3 text-[12.5px] leading-relaxed text-slate-500">
-                Total progress dihitung dari quest profesi pilihanmu. Pilih profesinya dulu di{" "}
-                <Link href={ROUTES.explore} className="font-semibold text-violet-600">
-                  Explore
-                </Link>
-                .
-              </p>
-            )}
+              {!data.has_career && (
+                <p className="mt-3 text-[12.5px] leading-relaxed text-slate-500">
+                  Total progress dihitung dari quest profesi pilihanmu. Pilih profesinya dulu di{" "}
+                  <Link href={ROUTES.explore} className="font-semibold text-violet-600">
+                    Explore
+                  </Link>
+                  .
+                </p>
+              )}
 
-            <h2 className="mt-7 text-[17px] font-bold tracking-tight text-slate-900">
-              Statistik Pencapaian
-            </h2>
-            <div className="mt-3 flex gap-3">
-              <Statistik nilai={data.n_quest_selesai} label="Quest Selesai" />
-              <Statistik nilai={data.n_achievement} label="Achievement" />
-            </div>
-
-            <Link
-              href={ROUTES.pencapaian}
-              className="mt-7 flex items-center justify-between gap-3 rounded-xl py-1 transition-colors hover:bg-slate-50"
-            >
-              <h2 className="text-[17px] font-bold tracking-tight text-slate-900">
-                Pencapaian Terbaru
+              <h2 className="mt-7 text-[17px] font-bold tracking-tight text-slate-900">
+                Statistik Pencapaian
               </h2>
-              <ChevronRight className="size-5 shrink-0 text-slate-700" aria-hidden />
-            </Link>
+              <div className="mt-3 flex gap-3">
+                <Statistik nilai={data.n_quest_selesai} label="Quest Selesai" />
+                <Statistik nilai={data.n_achievement} label="Achievement" />
+                {streak && <Statistik nilai={streak.hari} label="Hari Beruntun 🔥" />}
+              </div>
 
-            {data.terbaru.length === 0 ? (
-              <p className="mt-3 rounded-2xl bg-[#FAFAFA] px-4 py-5 text-[13.5px] leading-relaxed text-slate-500">
-                Belum ada pencapaian. Selesaikan quest pertamamu untuk membuka badge.
-              </p>
-            ) : (
-              <ul className="mt-3 space-y-2.5">
-                {data.terbaru.map((b) => (
-                  <li key={b.kode} className="flex items-center gap-3.5 rounded-2xl bg-[#FAFAFA] p-3">
-                    <Image
-                      src={b.gambar}
-                      alt=""
-                      width={420}
-                      height={480}
-                      className="h-14 w-auto shrink-0"
-                    />
-                    <div className="min-w-0 flex-1">
-                      <h3 className="text-[15.5px] font-semibold text-slate-900">{b.nama}</h3>
-                      <p className="mt-0.5 text-[13px] leading-snug text-slate-500">{b.deskripsi}</p>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </>
+              {data.has_career && data.n_quest_selesai < data.n_quest_total && (
+                <Link
+                  href={ROUTES.quest}
+                  className="mt-4 flex items-center gap-3 rounded-2xl bg-violet-600 px-4 py-3.5 text-white transition-colors hover:bg-violet-700"
+                >
+                  <span className="min-w-0 flex-1 leading-tight">
+                    <span className="block text-[12px] text-violet-100">Langkah berikutnya</span>
+                    <span className="mt-0.5 block text-[14.5px] font-semibold">
+                      {streak && !streak.hari_ini
+                        ? "Kerjakan 1 quest hari ini"
+                        : "Lanjutkan quest berikutnya"}
+                    </span>
+                  </span>
+                  <ArrowRight className="size-5 shrink-0" aria-hidden />
+                </Link>
+              )}
+            </div>
+
+            <div>
+              <Link
+                href={ROUTES.pencapaian}
+                className="mt-7 lg:mt-5 flex items-center justify-between gap-3 rounded-xl py-1 transition-colors hover:bg-slate-50"
+              >
+                <h2 className="text-[17px] font-bold tracking-tight text-slate-900">
+                  Pencapaian Terbaru
+                </h2>
+                <ChevronRight className="size-5 shrink-0 text-slate-700" aria-hidden />
+              </Link>
+
+              {data.terbaru.length === 0 ? (
+                <p className="mt-3 rounded-2xl bg-[#FAFAFA] px-4 py-5 text-[13.5px] leading-relaxed text-slate-500">
+                  Belum ada pencapaian. Selesaikan quest pertamamu untuk membuka badge.
+                </p>
+              ) : (
+                <ul className="mt-3 space-y-2.5">
+                  {data.terbaru.map((b) => (
+                    <li key={b.kode} className="flex items-center gap-3.5 rounded-2xl bg-[#FAFAFA] p-3">
+                      <Image
+                        src={b.gambar}
+                        alt=""
+                        width={420}
+                        height={480}
+                        className="h-14 w-auto shrink-0"
+                      />
+                      <div className="min-w-0 flex-1">
+                        <h3 className="text-[15.5px] font-semibold text-slate-900">{b.nama}</h3>
+                        <p className="mt-0.5 text-[13px] leading-snug text-slate-500">{b.deskripsi}</p>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </div>
         )}
       </main>
 

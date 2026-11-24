@@ -13,6 +13,8 @@ type Props<T extends string> = {
   aktif: T;
   onPilih: (kode: T) => void;
   className?: string;
+  /** Selebar wadah dengan tab sama lebar — dipakai detail profesi. */
+  penuh?: boolean;
 };
 
 export default function TabSwitch<T extends string>({
@@ -20,11 +22,12 @@ export default function TabSwitch<T extends string>({
   aktif,
   onPilih,
   className = "",
+  penuh = false,
 }: Props<T>) {
   return (
     <div
       role="tablist"
-      className={`inline-flex max-w-full items-center gap-1 overflow-x-auto rounded-full bg-slate-100 p-1 ${className}`}
+      className={`${penuh ? "flex w-full" : "inline-flex max-w-full"} items-center gap-1 overflow-x-auto rounded-full bg-slate-100 p-1 ${className}`}
     >
       {tabs.map((t) => {
         const on = t.kode === aktif;
@@ -35,7 +38,7 @@ export default function TabSwitch<T extends string>({
             type="button"
             aria-selected={on}
             onClick={() => onPilih(t.kode)}
-            className={`shrink-0 whitespace-nowrap rounded-full px-3.5 py-2 text-[13px] transition-colors ${
+            className={`${penuh ? "flex-1" : "shrink-0"} whitespace-nowrap rounded-full px-3.5 py-2 text-[13px] transition-colors ${
               on
                 ? "bg-white font-semibold text-slate-900 shadow-sm"
                 : "font-medium text-slate-500 hover:text-slate-700"

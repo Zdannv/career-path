@@ -405,7 +405,7 @@ export default function ProfilView() {
         ) : tab === "pendidikan" ? (
           <section className="mt-6 space-y-4">
             <div>
-              <Label judul="Pendidikan Terakhir" catatan="Informasi riwayat pendidikanmu" />
+              <Label judul="Pendidikan Saat Ini" catatan="Jenjang yang sedang kamu jalani, atau yang terakhir kalau sudah lulus" />
             </div>
 
             <Kotak label="Jenjang Pendidikan" kunci>

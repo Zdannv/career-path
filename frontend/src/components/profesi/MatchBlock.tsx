@@ -11,7 +11,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { ArrowRight, Check, ChevronDown, Info, PieChart } from "lucide-react";
 import MatchGauge from "@/components/profesi/MatchGauge";
-import { labelBand, type Alasan } from "@/lib/careerDetail";
+import { labelBand, type Alasan, type PeringkatMatch } from "@/lib/careerDetail";
 import { ROUTES } from "@/lib/routes";
 
 function TeksTebal({ teks }: { teks: string }) {
@@ -96,12 +96,15 @@ export default function MatchBlock({
   band,
   alasan,
   ringkas = false,
+  peringkat = null,
 }: {
   skor: number | null;
   band: string | null;
   alasan: Alasan[];
   /** true = alasan disembunyikan di balik tombol "Tampilkan detail". */
   ringkas?: boolean;
+  /** Peringkat di antara semua profesi untuk pengguna ini (0051). */
+  peringkat?: PeringkatMatch | null;
 }) {
   const [buka, setBuka] = useState(false);
   return (
@@ -113,6 +116,24 @@ export default function MatchBlock({
       <div className="mt-2.5">
         <LencanaBand skor={skor} band={band} />
       </div>
+
+      {/* Skor ini bukan nilai ujian. Partisipan usability test membaca 55%
+          sebagai "kurang cocok" padahal itu profesi teratas mereka. */}
+      {skor != null && (
+        <div className="mt-3 max-w-sm text-center">
+          {peringkat && (
+            <p className="text-[13px] font-semibold text-violet-700">
+              {peringkat.peringkat === 1
+                ? `Paling cocok untukmu dari ${peringkat.total} profesi`
+                : `Peringkat ${peringkat.peringkat} dari ${peringkat.total} profesi untukmu`}
+            </p>
+          )}
+          <p className="mt-1 text-[12px] leading-relaxed text-slate-500">
+            Persentase ini menunjukkan seberapa banyak pilihan Career DNA-mu yang sama dengan
+            profil profesi ini, bukan nilai ujian. 50% ke atas sudah termasuk cocok.
+          </p>
+        </div>
+      )}
 
       {/* Skor null berarti Career DNA belum selesai — bukan berarti tidak cocok.
           Sebelum 0032 keadaan ini muncul sebagai "0% Belum Direkomendasikan",

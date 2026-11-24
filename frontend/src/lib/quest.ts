@@ -6,8 +6,10 @@
  *   quest_beranda()          kartu "Apa yang perlu Kamu kerjakan minggu ini"
  *   quest_grup(slug, kode)   isi satu grup: banner tips, quest, tujuan, catatan
  *   ambil_quest(key)         tombol "Ambil Quest"
- *   selesaikan_quest(key)    tombol "Selesaikan", mengembalikan XP dan badge baru
+ *   selesaikan_quest(key, jawaban)  tombol "Selesaikan", mengembalikan XP dan badge baru.
+ *                            Sejak 0051 quest AMBIL wajib dijawab (minimal 20 karakter).
  *   quest_minggu_ini(n)      kartu "Quest minggu ini" di Explore
+ *   quest_streak()           hari beruntun menyelesaikan quest (0051)
  *
  * Aturan buka-kunci, urutan level, syarat magang, dan nilai XP semuanya
  * diputuskan database. Layar hanya menampilkan `bisa` dan `alasan` yang
@@ -81,6 +83,8 @@ export type Quest = {
   bisa: boolean;
   /** Kenapa belum bisa. NULL kalau bisa atau sudah selesai. */
   alasan: string | null;
+  /** Jawaban atau catatan yang ditulis saat menyelesaikan (0051). */
+  jawaban?: string | null;
 };
 
 export type Tips = {
@@ -107,6 +111,8 @@ export type QuestGrup = {
   tujuan: string[] | null;
   catatan: string | null;
   quest: Quest[];
+  /** Profesi pilihan, untuk tautan "Detail profesi di Navika" (0051). */
+  career_id?: number | null;
 };
 
 export type Badge = { kode: string; nama: string; deskripsi: string; gambar: string };
@@ -155,12 +161,27 @@ export async function ambilQuest(key: string): Promise<void> {
   if (error) throw error;
 }
 
-export async function selesaikanQuest(key: string): Promise<HasilSelesai> {
+export async function selesaikanQuest(key: string, jawaban?: string): Promise<HasilSelesai> {
   const { data, error } = await supabase
-    .rpc("selesaikan_quest", { p_quest_key: key })
+    .rpc("selesaikan_quest", { p_quest_key: key, p_jawaban: jawaban?.trim() || null })
     .single();
   if (error) throw error;
   return data as HasilSelesai;
+}
+
+export type Streak = {
+  /** Hari beruntun sampai hari ini atau kemarin; 0 kalau sudah putus. */
+  hari: number;
+  /** Sudah menyelesaikan quest hari ini. */
+  hari_ini: boolean;
+  total_hari: number;
+};
+
+export async function ambilStreak(): Promise<Streak | null> {
+  const { data, error } = await supabase.rpc("quest_streak").maybeSingle();
+  // Fitur pelengkap: kalau migrasinya belum jalan, layar tetap tampil tanpanya.
+  if (error) return null;
+  return (data as Streak) ?? null;
 }
 
 export async function ambilQuestMingguIni(limit = 3): Promise<QuestMingguIni[]> {
@@ -172,6 +193,26 @@ export async function ambilQuestMingguIni(limit = 3): Promise<QuestMingguIni[]> 
 // ─────────────────────────────────────────────────────────────────────────────
 // Penyajian
 // ─────────────────────────────────────────────────────────────────────────────
+
+/** Jawaban quest AMBIL minimal sepanjang ini; sama dengan aturan di database. */
+export const MIN_JAWABAN = 20;
+export const MAKS_JAWABAN = 2000;
+
+/**
+ * Tautan pencarian yang sudah terisi kalimat quest.
+ *
+ * Partisipan usability test bertanya kenapa harus mencari sendiri di tempat
+ * lain. Sumbernya tetap di luar Navika, tapi sekarang satu ketukan langsung
+ * membuka hasil pencarian untuk quest itu, bukan halaman kosong.
+ */
+export function tautanSumber(teks: string) {
+  const q = encodeURIComponent(teks);
+  return {
+    ai: `https://chatgpt.com/?q=${q}`,
+    youtube: `https://www.youtube.com/results?search_query=${q}`,
+    google: `https://www.google.com/search?q=${q}`,
+  };
+}
 
 /** "10-15 menit", "15 menit", atau null untuk quest tanpa durasi. */
 export function rentangMenit(min: number | null, max: number | null): string | null {

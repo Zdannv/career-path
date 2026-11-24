@@ -14,6 +14,11 @@
  * Dirancang untuk ponsel lebih dulu — lebar isi dikunci ke max-w-3xl dan
  * seluruh ukuran teks ditulis untuk layar 360-430px; layar lebar hanya
  * mendapat jarak tepi yang lebih longgar, bukan tata letak lain.
+ *
+ * Usability test November 2026: partisipan tidak sadar ada tab selain
+ * Analisa. Sakelar tabnya kini selebar layar, tab Analisa memuat ringkasan
+ * gaji (tautan ke rincian di Insight), dan kaki tiap tab mengajak ke tab
+ * berikutnya. Skor kecocokan juga disertai peringkatnya (0051).
  */
 
 import { useCallback, useEffect, useState } from "react";
@@ -27,12 +32,19 @@ import StickyCta from "@/components/profesi/StickyCta";
 import TabSwitch from "@/components/profesi/TabSwitch";
 import SkillGapSheet from "@/components/profesi/SkillGapSheet";
 import AiCard, { AiInfoSheet } from "@/components/profesi/AiCard";
-import { KartuDemand, KartuEstimasi, DaftarSubIndustri } from "@/components/profesi/InfoCards";
+import {
+  KartuDemand,
+  KartuEstimasi,
+  KartuGaji,
+  DaftarSubIndustri,
+  TabBerikutnya,
+} from "@/components/profesi/InfoCards";
 import { Blok, BarisDuaKolom, BarisIsi, LihatSemua } from "@/components/profesi/Listing";
 import { ROUTES } from "@/lib/routes";
 import { isDisimpan, setDisimpan } from "@/lib/explore";
 import {
   ambilKunciProfesi,
+  ambilPeringkat,
   getCareerCompetency,
   getCareerInsight,
   getKampusRelevan,
@@ -43,6 +55,7 @@ import {
   type CareerInsight,
   type KampusRelevan,
   type KunciProfesi,
+  type PeringkatMatch,
   type SkillGap,
 } from "@/lib/careerDetail";
 
@@ -125,6 +138,24 @@ export default function ProfesiDetail({
     }
   }, [tab, komp, insight, kampus, detail.career_id]);
 
+  const [peringkat, setPeringkat] = useState<PeringkatMatch | null>(null);
+  useEffect(() => {
+    if (detail.match_score == null) return;
+    let batal = false;
+    void ambilPeringkat(detail.career_id).then((r) => {
+      if (!batal) setPeringkat(r);
+    });
+    return () => {
+      batal = true;
+    };
+  }, [detail.career_id, detail.match_score]);
+
+  /** Pindah tab dan gulir ke sakelarnya, supaya isi tab baru terlihat dari atas. */
+  const keTab = useCallback((t: Tab) => {
+    setTab(t);
+    document.getElementById("tab-profesi")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, []);
+
   const [kunci, setKunci] = useState<KunciProfesi | null>(null);
   useEffect(() => {
     let batal = false;
@@ -192,8 +223,8 @@ export default function ProfesiDetail({
           </Link>
         )}
 
-        <div className="mt-5">
-          <TabSwitch tabs={TABS} aktif={tab} onPilih={setTab} />
+        <div id="tab-profesi" className="mt-5 scroll-mt-20">
+          <TabSwitch tabs={TABS} aktif={tab} onPilih={setTab} penuh />
         </div>
 
         {/* ── Tab 1 · Analisa ─────────────────────────────────────────── */}
@@ -203,13 +234,25 @@ export default function ProfesiDetail({
               skor={detail.match_score}
               band={detail.band_code}
               alasan={detail.reasons ?? []}
+              peringkat={peringkat}
             />
+            {(detail.salary_min != null || detail.salary_max != null) && (
+              <KartuGaji
+                teks={gajiPanjang(detail.salary_min, detail.salary_max)}
+                onRincian={() => keTab("insight")}
+              />
+            )}
             <KartuDemand growth={detail.growth_pct} label={detail.demand_label} />
             <DaftarSubIndustri isi={detail.sub_industries ?? []} />
             <KartuEstimasi
               bulan={detail.roadmap_months}
               posisi={detail.posisi_sekarang}
               persen={detail.percent_done}
+            />
+            <TabBerikutnya
+              label="Skill & Kompetensi"
+              isi="Pendidikan, soft skill, hard skill, tools, dan sertifikasi yang dibutuhkan."
+              onClick={() => keTab("skill")}
             />
           </div>
         )}
@@ -360,6 +403,12 @@ export default function ProfesiDetail({
                     />
                   )}
                 </Blok>
+
+                <TabBerikutnya
+                  label="Insight"
+                  isi="Kisaran gaji per jenjang karier, Skill Gap Analysis, dan ketahanan terhadap AI."
+                  onClick={() => keTab("insight")}
+                />
               </>
             )}
           </div>

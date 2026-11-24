@@ -198,7 +198,9 @@ export default function ExploreView({
               // Yang pengisiannya tertunda di tengah jalan tidak perlu diajak
               // dari awal — untuknya ada banner Career DNA di bawah.
               !state.has_dna &&
-              !state.dna_started && <PromoBanner variant="discovery" href={ROUTES.careerDna} />
+              !state.dna_started && (
+                <PromoBanner variant="discovery" href={ROUTES.careerDna} sorot />
+              )
             )}
             {!state.has_dna && (state.has_career || state.dna_started) && (
               <PromoBanner

@@ -9,10 +9,14 @@
  * keduanya datang dari roadmap_state(). Sejak 0037 sebuah tahap terbuka
  * begitu salah satu jenis quest-nya terbuka, jadi bisa ada lebih dari satu
  * tahap yang berjalan bersamaan.
+ *
+ * Tahap yang berjalan punya dua tombol sejak usability test November 2026:
+ * "Kerjakan Quest" (utama) dan "Tampilkan Journey". Sebelumnya hanya ada
+ * Journey, dan partisipan berhenti di sana tanpa tahu quest-nya di mana.
  */
 
 import Link from "next/link";
-import { ArrowRight, Check, Lock, Sparkles } from "lucide-react";
+import { ArrowRight, Check, Lock, ScrollText, Sparkles } from "lucide-react";
 import type { Tahap } from "@/lib/roadmapJourney";
 import { ROUTES } from "@/lib/routes";
 
@@ -65,13 +69,22 @@ export default function TahapPersiapan({ tahap }: { tahap: Tahap[] }) {
                 </p>
 
                 {t.cta && (
-                  <Link
-                    href={`${ROUTES.journey}?tahap=${encodeURIComponent(t.kode)}`}
-                    className="mt-3 inline-flex items-center gap-2 rounded-full bg-violet-600 px-4 py-2.5 text-[13px] font-semibold text-white transition-colors hover:bg-violet-700"
-                  >
-                    Tampilkan Journey
-                    <ArrowRight className="size-4" aria-hidden />
-                  </Link>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <Link
+                      href={ROUTES.quest}
+                      className="inline-flex items-center gap-2 rounded-full bg-violet-600 px-4 py-2.5 text-[13px] font-semibold text-white transition-colors hover:bg-violet-700"
+                    >
+                      <ScrollText className="size-4" aria-hidden />
+                      Kerjakan Quest
+                    </Link>
+                    <Link
+                      href={`${ROUTES.journey}?tahap=${encodeURIComponent(t.kode)}`}
+                      className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2.5 text-[13px] font-semibold text-slate-800 transition-colors hover:bg-slate-50"
+                    >
+                      Tampilkan Journey
+                      <ArrowRight className="size-4" aria-hidden />
+                    </Link>
+                  </div>
                 )}
               </div>
             </li>

@@ -1,12 +1,15 @@
 "use client";
 
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { MailSearch, TriangleAlert, TimerReset, Undo2 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Loader2, MailSearch, TriangleAlert, TimerReset, Undo2 } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { pesanAuth } from "@/lib/pesanAuth";
 import { siteUrl } from "@/lib/siteUrl";
+import { postLoginDestination } from "@/lib/postAuth";
+import { dengarVerifikasi } from "@/lib/verifikasiTab";
 import AuthPageShell from "@/components/AuthPageShell";
 import { ROUTES } from "@/lib/routes";
 
@@ -29,9 +32,51 @@ function InfoIcon({ children }: { children: React.ReactNode }) {
 }
 
 export default function VerifikasiContent({ email }: { email: string }) {
+  const router = useRouter();
   const [secondsLeft, setSecondsLeft] = useState(RESEND_COOLDOWN_SECONDS);
   const [resending, setResending] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
+  const [lanjut, setLanjut] = useState(false);
+  const pergi = useRef(false);
+
+  /**
+   * Begitu link verifikasi diklik di tab lain, tab ini ikut lanjut.
+   *
+   * Tiga pemicu, mana yang duluan: pesan serah-terima dari tab baru
+   * (lib/verifikasiTab), event SIGNED_IN yang disiarkan klien Supabase ke tab
+   * lain, dan pemeriksaan ulang sesi saat tab ini kembali difokuskan — yang
+   * terakhir menangkap peramban tanpa BroadcastChannel.
+   */
+  useEffect(() => {
+    let hidup = true;
+    const cobaLanjut = async () => {
+      if (!hidup || pergi.current) return;
+      const { data } = await supabase.auth.getSession();
+      if (!hidup || pergi.current || !data.session) return;
+      pergi.current = true;
+      setLanjut(true);
+      router.replace(await postLoginDestination());
+    };
+
+    const tutupKanal = dengarVerifikasi(() => void cobaLanjut());
+    const { data: langganan } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session && (event === "SIGNED_IN" || event === "INITIAL_SESSION")) void cobaLanjut();
+    });
+    const saatFokus = () => {
+      if (document.visibilityState === "visible") void cobaLanjut();
+    };
+    document.addEventListener("visibilitychange", saatFokus);
+    window.addEventListener("focus", saatFokus);
+    void cobaLanjut();
+
+    return () => {
+      hidup = false;
+      tutupKanal();
+      langganan.subscription.unsubscribe();
+      document.removeEventListener("visibilitychange", saatFokus);
+      window.removeEventListener("focus", saatFokus);
+    };
+  }, [router]);
 
   useEffect(() => {
     if (secondsLeft <= 0) return;
@@ -138,6 +183,18 @@ export default function VerifikasiContent({ email }: { email: string }) {
           {notice && (
             <p className="mt-5 text-center text-sm text-[#525252] sm:text-left">{notice}</p>
           )}
+
+          {/* Tab ini lanjut sendiri setelah link diklik; dikatakan terus terang
+              supaya pengguna tidak menunggu di tab yang salah. */}
+          <p
+            role="status"
+            className="mt-6 flex items-center justify-center gap-2 rounded-xl bg-[#F1EBFF] px-4 py-3 text-center text-[13px] text-[#4B21B5]"
+          >
+            <Loader2 className="h-4 w-4 shrink-0 animate-spin motion-reduce:animate-none" aria-hidden />
+            {lanjut
+              ? "Email terverifikasi! Menyiapkan langkah berikutnya…"
+              : "Setelah kamu klik link di email, halaman ini lanjut otomatis."}
+          </p>
 
           <hr className="my-7 border-slate-200" />
 
