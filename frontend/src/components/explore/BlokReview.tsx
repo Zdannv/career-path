@@ -18,6 +18,7 @@ import Link from "next/link";
 import { ArrowRight, Bookmark, Building2, ChevronRight, Dna, ScrollText, X } from "lucide-react";
 import type { CareerCard, SubIndustriRekomendasi } from "@/lib/explore";
 import { ROUTES, profesiPath } from "@/lib/routes";
+import { kelasChipSkor } from "@/lib/bandSkor";
 
 export type DnaKelompok = { nama: string; isi: string[] };
 
@@ -175,7 +176,7 @@ export function SubIndustriCard({ data }: { data: SubIndustriRekomendasi[] }) {
             <div className="mt-3 border-t border-slate-100 pt-3">
               <div className="flex items-center justify-between gap-2">
                 <p className="text-[13px] font-semibold text-slate-900">Mengapa direkomendasikan?</p>
-                <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[12px] font-semibold text-emerald-700">
+                <span className={`rounded-full px-2 py-0.5 text-[12px] font-semibold ${kelasChipSkor(s.skor)}`}>
                   {Math.round(Number(s.skor))}%
                 </span>
               </div>

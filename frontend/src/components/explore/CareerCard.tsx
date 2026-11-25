@@ -13,12 +13,12 @@
 import Link from "next/link";
 import { BarChart3, CircleDollarSign, History, ChevronRight, PieChart, Building2 } from "lucide-react";
 import {
-  bandTone,
   formatDuration,
   formatSalary,
   type CareerCard as CareerCardData,
   type ScoredCard,
 } from "@/lib/explore";
+import { bandDariSkor, labelBand, nadaBand } from "@/lib/bandSkor";
 
 type Props = {
   card: CareerCardData | ScoredCard;
@@ -40,7 +40,8 @@ export default function CareerCard({
 }: Props) {
   const scored = isScored(card) ? card : null;
   const score = scored?.match_score == null ? null : Math.round(Number(scored.match_score));
-  const tone = bandTone(scored?.band_code ?? null);
+  const band = bandDariSkor(score);
+  const nada = nadaBand(band);
 
   return (
     <Link
@@ -110,15 +111,9 @@ export default function CareerCard({
           <div className="flex items-center gap-2">
             <PieChart className="size-3.5 shrink-0 text-slate-500" aria-hidden />
             <span className="text-[12.5px] font-semibold text-slate-900">{score}%</span>
-            {scored?.band_label && (
-              <span
-                className={`rounded-md px-2 py-0.5 text-[11px] font-medium ${tone.bg} ${tone.text}`}
-              >
-                {scored.band_label === "Highly Recommended"
-                  ? "Sangat Direkomendasikan"
-                  : scored.band_label === "Recommended"
-                    ? "Direkomendasikan"
-                    : "Tidak Direkomendasikan"}
+            {band && (
+              <span className={`rounded-md px-2 py-0.5 text-[11px] font-medium ${nada.chip} ${nada.teks}`}>
+                {labelBand(band)}
               </span>
             )}
           </div>

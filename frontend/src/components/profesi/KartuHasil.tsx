@@ -12,6 +12,7 @@
 import Link from "next/link";
 import { BarChart3, Building2, ChevronRight, CircleDollarSign, PieChart } from "lucide-react";
 import { gajiKartu, type KartuProfesi } from "@/lib/careerDetail";
+import { bandDariSkor, kelasChipSkor, labelBand } from "@/lib/bandSkor";
 
 export default function KartuHasil({
   kartu,
@@ -78,7 +79,10 @@ export default function KartuHasil({
             {gajiKartu(kartu.salary_min, kartu.salary_max)}
           </span>
           {skor != null && (
-            <span className="ml-auto inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-1 text-[11.5px] font-semibold text-emerald-800">
+            <span
+              className={`ml-auto inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11.5px] font-semibold ${kelasChipSkor(skor)}`}
+              title={labelBand(bandDariSkor(skor))}
+            >
               <PieChart className="size-3" aria-hidden />
               {skor}%
             </span>

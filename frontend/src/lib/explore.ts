@@ -203,14 +203,3 @@ export function formatDuration(months: number | null): string {
     : `${low}-${high} tahun`;
 }
 
-/** Warna chip band mengikuti tiga pita di tabel match_score_bands. */
-export function bandTone(bandCode: string | null): { bg: string; text: string } {
-  switch (bandCode) {
-    case "HIGHLY_RECOMMENDED":
-      return { bg: "bg-emerald-100", text: "text-emerald-700" };
-    case "RECOMMENDED":
-      return { bg: "bg-sky-100", text: "text-sky-700" };
-    default:
-      return { bg: "bg-amber-100", text: "text-amber-700" };
-  }
-}

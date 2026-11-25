@@ -349,18 +349,6 @@ export function gajiKartu(min: number | null, max: number | null): string {
   return gajiPanjang(min, max).replace(" juta", " Juta");
 }
 
-export function labelBand(band: string | null): string {
-  switch (band) {
-    case "HIGHLY_RECOMMENDED":
-      return "Sangat Direkomendasikan";
-    case "RECOMMENDED":
-      return "Direkomendasikan";
-    case "EXPLORE":
-      return "Belum Direkomendasikan";
-    default:
-      return "Belum dinilai";
-  }
-}
 
 /** Tiga pita Ketahanan AI punya warnanya sendiri, terpisah dari band kecocokan. */
 export function nadaKetahanan(skor: number | null): {

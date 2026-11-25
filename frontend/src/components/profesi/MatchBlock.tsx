@@ -11,7 +11,8 @@ import { useState } from "react";
 import Link from "next/link";
 import { ArrowRight, Check, ChevronDown, Info, PieChart } from "lucide-react";
 import MatchGauge from "@/components/profesi/MatchGauge";
-import { labelBand, type Alasan, type PeringkatMatch } from "@/lib/careerDetail";
+import { type Alasan, type PeringkatMatch } from "@/lib/careerDetail";
+import { bandDariSkor, labelBand, nadaBand } from "@/lib/bandSkor";
 import { ROUTES } from "@/lib/routes";
 
 function TeksTebal({ teks }: { teks: string }) {
@@ -67,26 +68,16 @@ export function LencanaBand({
   band: string | null;
 }) {
   if (skor == null) return null;
-  const hijau = band === "HIGHLY_RECOMMENDED";
-  const biru = band === "RECOMMENDED";
+  // Pita dari angka yang tampil, bukan band_code — lihat lib/bandSkor.
+  const pita = bandDariSkor(skor) ?? band;
+  const nada = nadaBand(pita);
   return (
     <span
-      className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-[12.5px] ${
-        hijau
-          ? "border-emerald-200 bg-emerald-50"
-          : biru
-            ? "border-sky-200 bg-sky-50"
-            : "border-amber-200 bg-amber-50"
-      }`}
+      className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-[12.5px] ${nada.garis} ${nada.lembut}`}
     >
-      <PieChart
-        className={`size-3.5 ${hijau ? "text-emerald-700" : biru ? "text-sky-700" : "text-amber-700"}`}
-        aria-hidden
-      />
+      <PieChart className={`size-3.5 ${nada.teks}`} aria-hidden />
       <span className="font-semibold text-slate-900">{Math.round(skor)}%</span>
-      <span className={hijau ? "text-emerald-700" : biru ? "text-sky-700" : "text-amber-700"}>
-        {labelBand(band)}
-      </span>
+      <span className={nada.teks}>{labelBand(pita)}</span>
     </span>
   );
 }
